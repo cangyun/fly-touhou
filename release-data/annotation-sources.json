@@ -1,0 +1,30 @@
+{
+  "annotation_revision": "ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0",
+  "annotation_tag": "v2.1.0",
+  "materialization": 783,
+  "archive_url": "https://codeload.github.com/flyconnectome/flywire_annotations/zip/ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0",
+  "archive_sha256": "59ff98bd3b8e828612a47c39790ad5b39ccac28dcb3f4ee01fc012750cdc20d1",
+  "files": [
+    {
+      "name": "flywire_annotations_v2.1.0.tsv",
+      "url": "https://raw.githubusercontent.com/flyconnectome/flywire_annotations/ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0/supplemental_files/Supplemental_file1_neuron_annotations.tsv",
+      "git_blob_sha1": "1a3168731618ee62a47392252d3af7664e739e9e",
+      "sha256": "30be6c73975a70c56d930e27911f36455d3886e15abf383b78edd2a5d679e0b6",
+      "bytes": 27015208
+    },
+    {
+      "name": "annotations_README_v2.1.0.md",
+      "url": "https://raw.githubusercontent.com/flyconnectome/flywire_annotations/ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0/README.md",
+      "git_blob_sha1": "399f19ae5e803cc49dfb0b01bc5b4f9e356503cb",
+      "sha256": "5ad614c63f22609218428574078929609e0a3b28d93de6697dc73f3b4a14ebbe",
+      "bytes": 8926
+    },
+    {
+      "name": "annotations_columns_v2.1.0.md",
+      "url": "https://raw.githubusercontent.com/flyconnectome/flywire_annotations/ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0/supplemental_files/Supplemental_files_columns.md",
+      "git_blob_sha1": "9e0b9837db311410099f6c10e19f380a573ce3ff",
+      "sha256": "5bed86549dd6d2837397c2a451db7606718f5d5be8a8a7a7a49219aade1c9802",
+      "bytes": 6674
+    }
+  ]
+}

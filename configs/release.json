@@ -1,0 +1,19 @@
+{
+  "repository": "cangyun/fly-touhou",
+  "tag": "v0.1.0-clear",
+  "branch": "main",
+  "checkpoint": "cycle087-parameters.pt",
+  "checkpoint_path": "models/cycle087-parameters.pt",
+  "native_asset": "native-windows-x86.zip",
+  "environment": "configs/environment.json",
+  "evaluation_seed": 2027432926,
+  "policy_seed": 2027432927,
+  "action_selection": "family_mode",
+  "opening_seeds": [
+    3574003864
+  ],
+  "original_cycle": 87,
+  "source": "archived cycle087-v6-first-clear-20261102/source-snapshot.zip",
+  "result": "one verified fixed-seed six-stage Lunatic clear",
+  "training_started_by_release_setup": false
+}

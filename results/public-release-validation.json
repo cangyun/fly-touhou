@@ -1,0 +1,19 @@
+{
+  "branch": "main",
+  "source_syntax": "passed",
+  "portable_entrypoint_tests": 5,
+  "checkpoint_strict_CPU_load": "passed",
+  "nodes": 138639,
+  "edges": 15091983,
+  "visual_projection_ports": 8053,
+  "descending_ports": 1299,
+  "trainable_parameters": 21836958,
+  "NVRTC_compilation": [
+    "deterministic_csr_spmm.cu",
+    "fused_edge_gradient.cu"
+  ],
+  "wheel_resource_check": "passed",
+  "game_started": false,
+  "training_started": false,
+  "native_replay_repeated_for_packaging": false
+}

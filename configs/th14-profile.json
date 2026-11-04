@@ -1,0 +1,638 @@
+{
+  "name": "th14-1.00b-original-japanese",
+  "game_id": 14,
+  "executable_names": [
+    "th14.exe"
+  ],
+  "sha256": [
+    "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353"
+  ],
+  "offsets": {
+    "statics": {
+      "game_speed": 888664,
+      "score": 1005616,
+      "continues": 1005624,
+      "graze": 1005632,
+      "piv": 1005644,
+      "power": 1005656,
+      "lives": 1005668,
+      "life_pieces": 1005672,
+      "bombs": 1005680,
+      "bomb_pieces": 1005684,
+      "stage_chapter": 1005740,
+      "rank": 1005628,
+      "input": 879248,
+      "visual_rng": 898312,
+      "replay_rng": 898320,
+      "game_screen": 890440,
+      "pause_state": 1014472
+    },
+    "environment": {
+      "character": 1005608,
+      "subshot": 1005612,
+      "difficulty": 1005620,
+      "stage": 1005732
+    },
+    "player": {
+      "player_pointer": 898684,
+      "zPlayer_pos": 1504,
+      "zPlayer_db_timer": 1680,
+      "zPlayer_state": 1668,
+      "zPlayer_hit_rad": 1608,
+      "zPlayer_iframes": 99012,
+      "zPlayer_focused": 99504,
+      "zPlayer_flags": 99028,
+      "zPlayer_option_array": 55020,
+      "zPlayer_option_array_len": 8,
+      "zPlayer_shots_array": 1736,
+      "zPlayer_shots_array_len": 256,
+      "zPlayerFlags_cant_shoot": 20
+    },
+    "player_options": {
+      "zPlayerOption_active": 0,
+      "zPlayerOption_pos": 92,
+      "zPlayerOption_anm_id": 176,
+      "zPlayerOption_len": 228
+    },
+    "player_shots": {
+      "zPlayerShot_timer": 28,
+      "zPlayerShot_pos": 84,
+      "zPlayerShot_speed": 108,
+      "zPlayerShot_angle": 112,
+      "zPlayerShot_vel": 136,
+      "zPlayerShot_state": 152,
+      "zPlayerShot_damage": 172,
+      "zPlayerShot_hitbox": 176,
+      "zPlayerShot_len": 208
+    },
+    "bomb": {
+      "bomb_pointer": 898348,
+      "zBomb_state": 64
+    },
+    "bullets": {
+      "bullet_manager_pointer": 898352,
+      "zBulletManager_list": 124,
+      "zBullet_flags": 32,
+      "zBullet_iframes": 36,
+      "zBullet_pos": 3008,
+      "zBullet_velocity": 3020,
+      "zBullet_speed": 3032,
+      "zBullet_angle": 3036,
+      "zBullet_hitbox_radius": 3040,
+      "zBullet_scale": 5052,
+      "zBullet_state": 3086,
+      "zBullet_timer": 5060,
+      "zBullet_type": 5100,
+      "zBullet_color": 5102,
+      "zBulletFlags_grazed": 4
+    },
+    "enemies": {
+      "enemy_manager_pointer": 898372,
+      "zEnemyManager_ecl_file": 204,
+      "zEnemyManager_list": 208,
+      "zEnemyManager_list_cnt": 216,
+      "zEclFile_sub_count": 8,
+      "zEclFile_subroutines": 140,
+      "zEnemy_ecl_ref": 12,
+      "zEnemy_data": 4592,
+      "zEnemyData_pos": 68,
+      "zEnemyData_vel": 120,
+      "zEnemyData_hurtbox": 272,
+      "zEnemyData_hitbox": 280,
+      "zEnemyData_rotation": 288,
+      "zEnemyData_anm_vm_id": 292,
+      "zEnemyData_anm_page": 616,
+      "zEnemyData_anm_id": 620,
+      "zEnemyData_ecl_timer": 704,
+      "zEnemyData_alive_timer": 724,
+      "zEnemyData_movement_bounds": 16224,
+      "zEnemyData_score_reward": 16240,
+      "zEnemyData_hp": 16244,
+      "zEnemyData_hp_max": 16248,
+      "zEnemyData_drops": 16272,
+      "zEnemyData_iframes": 16368,
+      "zEnemyData_flags": 16468,
+      "zEnemyData_subboss_id": 16484,
+      "zEnemyData_interrupts_arr": 16492,
+      "zEnemy_interrupts_arr_len": 8,
+      "zEnemyInterrupt_hp": 0,
+      "zEnemyInterrupt_time": 4,
+      "zEnemyInterrupt_hp_sub": 8,
+      "zEnemyInterrupt_time_sub": 12,
+      "zEnemyInterrupt_len": 16,
+      "zEnemyData_revenge_ecl_sub": 16648,
+      "zEnemyData_special_func": 16652,
+      "zEnemyFlags_no_hurtbox": 1,
+      "zEnemyFlags_no_hitbox": 2,
+      "zEnemyFlags_invincible": 16,
+      "zEnemyFlags_intangible": 32,
+      "zEnemyFlags_is_grazeable": 512,
+      "zEnemyFlags_is_rectangle": 4096,
+      "zEnemyFlags_has_move_limit": 131072,
+      "zEnemyFlags_is_boss": 8388608,
+      "zEnemyData_contact_timer_previous": 16384,
+      "zEnemyData_contact_timer": 16388,
+      "zEnemyData_contact_timer_float": 16392,
+      "zEnemyData_contact_timer_scale": 16396,
+      "zEnemyData_contact_callback": 16664,
+      "zEnemyData_tick_callback": 16652,
+      "zEnemyFlags_no_body_contact": 67108864,
+      "zEnemyFlags_move_limit": 131072,
+      "zEnemyData_move_limit": 16224,
+      "zEnemyData_damage_accumulated": 16264,
+      "zEnemyData_interrupts": 16492,
+      "zEnemyData_phase_timer": 704,
+      "zEnemyData_phase_timer_float": 708,
+      "zEnemyData_phase_timer_scale": 712
+    },
+    "items": {
+      "item_manager_pointer": 898656,
+      "zItemManager_array": 20,
+      "zItemManager_array_len": 4696,
+      "zItemManager_item_cnt": 14538868,
+      "zItem_state": 3056,
+      "zItem_type": 3060,
+      "zItem_pos": 2988,
+      "zItem_vel": 3000,
+      "zItem_timer": 3020,
+      "zItem_len": 3096,
+      "zItemState_autocollect": 3,
+      "zItemState_attracted": 4
+    },
+    "laser_base": {
+      "laser_manager_pointer": 898660,
+      "zLaserManager_list": 1488,
+      "zLaserBaseClass_state": 16,
+      "zLaserBaseClass_type": 20,
+      "zLaserBaseClass_timer": 28,
+      "zLaserBaseClass_offset": 84,
+      "zLaserBaseClass_angle": 108,
+      "zLaserBaseClass_length": 112,
+      "zLaserBaseClass_width": 116,
+      "zLaserBaseClass_speed": 120,
+      "zLaserBaseClass_iframes": 1460,
+      "zLaserBaseClass_sprite": 1464,
+      "zLaserBaseClass_color": 1468,
+      "zLaserBaseClass_len": 1472
+    },
+    "laser_line": {
+      "zLaserLine_start_pos": 0,
+      "zLaserLine_mgr_angle": 12,
+      "zLaserLine_max_length": 16,
+      "zLaserLine_mgr_speed": 32,
+      "zLaserLine_distance": 44
+    },
+    "laser_infinite": {
+      "zLaserInfinite_start_pos": 0,
+      "zLaserInfinite_velocity": 12,
+      "zLaserInfinite_mgr_angle": 24,
+      "zLaserInfinite_angle_vel": 28,
+      "zLaserInfinite_final_len": 32,
+      "zLaserInfinite_mgr_len": 36,
+      "zLaserInfinite_final_width": 40,
+      "zLaserInfinite_mgr_speed": 44,
+      "zLaserInfinite_start_time": 48,
+      "zLaserInfinite_expand_time": 52,
+      "zLaserInfinite_active_time": 56,
+      "zLaserInfinite_shrink_time": 60,
+      "zLaserInfinite_mgr_distance": 76
+    },
+    "laser_curve": {
+      "zLaserCurve_max_length": 32,
+      "zLaserCurve_distance": 36,
+      "zLaserCurve_array": 3820
+    },
+    "laser_curve_node": {
+      "zLaserCurveNode_pos": 0,
+      "zLaserCurveNode_vel": 12,
+      "zLaserCurveNode_angle": 24,
+      "zLaserCurveNode_speed": 28,
+      "zLaserCurveNode_size": 32
+    },
+    "anm": {
+      "anm_manager_pointer": 1005260,
+      "zAnmManager_list": 16679432,
+      "zAnmManager_fast_arr": 220,
+      "zAnmVm_rotation_z": 80,
+      "zAnmVm_id": 1344,
+      "zAnmVm_entity_pos": 1436,
+      "zAnmFastVm_alive": 1500,
+      "zAnmFastVm_size": 1508,
+      "zAnmFastVmId_mask": 8191
+    },
+    "spell_card": {
+      "spell_card_pointer": 898356,
+      "zSpellCard_indicator": 32,
+      "zSpellCard_id": 120,
+      "zSpellCard_bonus": 128
+    },
+    "fps_counter": {
+      "fps_counter_pointer": 898380,
+      "zFpsCounter_fps": 52
+    },
+    "gui": {
+      "gui_pointer": 898384,
+      "zGui_dialogue": 404
+    },
+    "game_thread": {
+      "game_thread_pointer": 898392,
+      "zGameThread_stage_timer": 20,
+      "zGameThread_flags": 128,
+      "zGameThreadFlags_ending": 16384
+    },
+    "misc": {
+      "transition_stage_ptr": 898340,
+      "ascii_manager_ptr": 898336,
+      "global_timer": 102880
+    },
+    "associations": {
+      "bullet_types": [
+        [
+          "Pellet",
+          16
+        ],
+        [
+          "Pellet",
+          16
+        ],
+        [
+          "Popcorn",
+          16
+        ],
+        [
+          "Small Pellet",
+          16
+        ],
+        [
+          "Ball",
+          16
+        ],
+        [
+          "Ball",
+          16
+        ],
+        [
+          "Outline",
+          16
+        ],
+        [
+          "Outline",
+          16
+        ],
+        [
+          "Rice",
+          16
+        ],
+        [
+          "Kunai",
+          16
+        ],
+        [
+          "Shard",
+          16
+        ],
+        [
+          "Amulet",
+          16
+        ],
+        [
+          "Arrowhead",
+          16
+        ],
+        [
+          "Bullet",
+          16
+        ],
+        [
+          "Laser Head",
+          16
+        ],
+        [
+          "Bacteria",
+          16
+        ],
+        [
+          "Small Star CW",
+          16
+        ],
+        [
+          "Coin",
+          3
+        ],
+        [
+          "Mentos",
+          8
+        ],
+        [
+          "Mentos",
+          8
+        ],
+        [
+          "Jellybean",
+          8
+        ],
+        [
+          "Knife",
+          8
+        ],
+        [
+          "Butterfly",
+          8
+        ],
+        [
+          "Big Star CW",
+          8
+        ],
+        [
+          "Red Fireball",
+          0
+        ],
+        [
+          "Purple Fireball",
+          0
+        ],
+        [
+          "Violet Fireball",
+          0
+        ],
+        [
+          "Orange Fireball",
+          0
+        ],
+        [
+          "Heart",
+          8
+        ],
+        [
+          "Pulsing Mentos",
+          8
+        ],
+        [
+          "Arrow",
+          8
+        ],
+        [
+          "Bubble",
+          4
+        ],
+        [
+          "Orb",
+          8
+        ],
+        [
+          "Droplet",
+          16
+        ],
+        [
+          "Spinning Rice",
+          16
+        ],
+        [
+          "Spinning Shard",
+          16
+        ],
+        [
+          "Small Star CCW",
+          16
+        ],
+        [
+          "Laser",
+          16
+        ],
+        [
+          "Red Note",
+          0
+        ],
+        [
+          "Blue Note",
+          0
+        ],
+        [
+          "Yellow Note",
+          0
+        ],
+        [
+          "Purple Note",
+          0
+        ],
+        [
+          "Rest",
+          8
+        ]
+      ],
+      "enemy_anms": {
+        "0": "Blue Fairy",
+        "5": "Red Fairy",
+        "10": "Green Fairy",
+        "15": "Yellow Fairy",
+        "20": "Blue Flower Fairy",
+        "25": "Red Flower Fairy",
+        "30": "Maroon Fairy",
+        "35": "Teal Fairy",
+        "40": "Sunflower Fairy",
+        "53": "Red Yin-Yang",
+        "56": "Green Yin-Yang",
+        "59": "Blue Yin-Yang",
+        "62": "Purple Yin-Yang",
+        "65": "Red Yin-Yang",
+        "68": "Green Yin-Yang",
+        "71": "Blue Yin-Yang",
+        "74": "Purple Yin-Yang",
+        "78": "Red Spirit",
+        "79": "Red Spirit",
+        "80": "Red Inverted Spirit",
+        "82": "Blue Spirit",
+        "83": "Green Spirit",
+        "87": "Blue Spirit",
+        "91": "Yellow Spirit",
+        "106": "Yellow Spirit",
+        "147": "Blue Hell Fairy",
+        "152": "Red Hell Fairy",
+        "157": "Yellow Hell Fairy",
+        "162": "Purple Fairy",
+        "167": "Hellflower Fairy",
+        "84": "Green Inverted Spirit",
+        "88": "Blue Inverted Spirit",
+        "92": "Yellow Inverted Spirit"
+      },
+      "item_types": {
+        "1": "Power",
+        "2": "Point",
+        "3": "Big Power",
+        "4": "Life Piece",
+        "5": "Life",
+        "6": "Bomb Piece",
+        "7": "Bomb",
+        "8": "Full Power",
+        "9": "Green",
+        "10": "Cancel",
+        "11": "Big Cancel",
+        "12": "Undiff. Piece"
+      },
+      "pause_states": [
+        "Pause (/Stage Transition/Ending Sequence)",
+        "Not in Run (Main Menu/Game Over/Practice End)",
+        "Actively Playing"
+      ],
+      "game_screens": {
+        "1": "Loading",
+        "4": "Main Menu",
+        "7": "Game World",
+        "15": "Ending/Credits"
+      },
+      "characters": [
+        "Reimu",
+        "Marisa",
+        "Sakuya"
+      ],
+      "subshots": [
+        "A",
+        "B"
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra",
+        "Overdrive"
+      ],
+      "deathbomb_window_frames": 8,
+      "marisa_lower_poc_line": true,
+      "life_piece_req": 3,
+      "bomb_piece_req": 8,
+      "world_width": 384,
+      "world_height": 448
+    },
+    "game_specific": {
+      "zBullet_ex_delay_timer": 4844,
+      "seija_anm_pointer": 889128,
+      "seija_flip_x": 96,
+      "seija_flip_y": 100,
+      "zPlayer_scale": 99080,
+      "bonus_count": 1005716,
+      "sukuna_penult_func": 4377344
+    }
+  },
+  "verification": "Identity exact matched to thcrap original v1.00b; hook signatures and core globals statically inspected; inherited ParaKit object layouts require runtime validation.",
+  "provenance": {
+    "url": "https://github.com/Guy-L/parakit",
+    "revision": "2f2db40f045fd73bec4679c419d755a25230316c",
+    "source": "offsets.py",
+    "note": "Offsets describe supported full versions; do not apply them to demos without verification.",
+    "identity_reference": {
+      "url": "https://raw.githubusercontent.com/thpatch/thcrap-tsa/master/base_tsa/versions.js",
+      "local_file": "third_party/thcrap-evidence/base_tsa_versions.js",
+      "line": 105,
+      "record": [
+        "th14",
+        "v1.00b",
+        "(original)"
+      ]
+    },
+    "static_evidence": "artifacts/full_game/hooks_static.json",
+    "runtime_status": "Root runtime evidence verifies exact-hash native process input, real gameplay/bullets, restart, isolated APPDATA and Lunatic menu start; late-stage completion remains unverified.",
+    "runtime_notes": [
+      {
+        "evidence": "artifacts/full_game/runtime/20261018T123250Z/evidence.json",
+        "result": "passed=true; exact executable SHA unchanged; original directory entries unchanged; private userdata; desktop_input=false; real gameplay, bullets and native restart exercised by root."
+      },
+      {
+        "evidence": "artifacts/full_game/menu_probes/20261018T124306Z/events.json",
+        "result": "41 events; native difficulty selection3 entered screen7 stage1 with ReimuA, lives2, bombs3, continues0, player state1/radius1 at stage_frame6; desktop_input=false. World-construction snapshots can precede player initialization and must not be treated as usable player observations."
+      }
+    ]
+  },
+  "hooks": {
+    "schema": 1,
+    "input": {
+      "rva": 6320,
+      "pristine_bytes": "558bec83e4f881ec54010000a1c00c4d",
+      "role": "stdcall raw keyboard/joystick mask merger; replace return value onLeave"
+    },
+    "window_proc": {
+      "rva": 433840,
+      "pristine_bytes": "558bec568b7510578b7d0c83ff200f87",
+      "role": "WndProc; WM_ACTIVATEAPP writes the process-local active/inactive flags"
+    },
+    "window_init": {
+      "rva": 438000,
+      "pristine_bytes": "558bec83ec2c53560f57c0578bd96a04",
+      "role": "Window and D3D presentation initialization; apply window mode before entry"
+    },
+    "active_rva": 1006120,
+    "inactive_rva": 1006124,
+    "hwnd_rva": 1006104,
+    "window_mode_rva": 889171,
+    "window_mode_value": 3,
+    "mute_u8": [
+      889174,
+      889175
+    ],
+    "mute_i32": [
+      1036716,
+      1036720
+    ],
+    "mute_attenuation_rva": 1036724,
+    "retry_mask": 2097152,
+    "retry_pointer_rva": 898680,
+    "retry_ready_state": 3,
+    "retry_state_offset": 4,
+    "menu_pointer_rva": 898724,
+    "menu_page_offset": 28,
+    "menu_substate_offset": 36,
+    "menu_selection_offset": 40,
+    "menu_ready_substate": 2,
+    "game_thread_replay_offset": 148,
+    "run_flags_rva": 1005752,
+    "run_mode_mask": 48,
+    "run_mode_shift": 4,
+    "run_mode_regular": 0,
+    "run_mode_stage_practice": 1,
+    "run_mode_spell_practice": 2,
+    "game_thread_ending_timer_offset": 152,
+    "game_thread_ending_flag": 16384,
+    "game_thread_paused_flag": 16,
+    "pause_menu_result_offset": 500,
+    "pause_menu_state_offset": 4,
+    "pause_menu_selection_offset": 56,
+    "pause_menu_loss_start_state": 14,
+    "pause_menu_continue_ready_state": 15,
+    "pause_menu_clear_start_state": 23,
+    "ending_game_screen": 15,
+    "ending_unpaused_frames": 380,
+    "player_scale_verified": true,
+    "player_scale_offset": 99080,
+    "player_base_hitbox_radius_offset": 1608,
+    "seija_anm_pointer_rva": 889128,
+    "seija_scale_x_offset": 96,
+    "seija_scale_y_offset": 100,
+    "raw_input_rva": 878712,
+    "raw_previous_input_rva": 878716,
+    "raw_repeat_input_rva": 878720,
+    "raw_pressed_input_rva": 878724,
+    "raw_released_input_rva": 878728,
+    "gameplay_rng_rva": 898320,
+    "gameplay_rng_counter_rva": 898324,
+    "visual_rng_rva": 898312,
+    "visual_rng_counter_rva": 898316,
+    "rng_initialization": {
+      "rva": 281119,
+      "pristine_bytes": "a388964d0066a310b54d0066a308b54d",
+      "role": "After timeGetTime, EAX is copied to timestamp and both native 16-bit seeds"
+    },
+    "appdata_api": "GetEnvironmentVariableA",
+    "appdata_iat_rva": 725456,
+    "appdata_environment_name": "APPDATA",
+    "userdata_path_buffer_rva": 1006149,
+    "resource_path_buffer_rva": 1010245,
+    "userdata_suffix": "\\ShanghaiAlice\\th14\\",
+    "native_enemy_forecast": "th14-native-enemy-v1",
+    "native_focus_gate": "th14-native-focus-v1",
+    "native_curve_laser_geometry": "th14-native-curve-v1",
+    "native_position_hold_forecast": "th14-ex-position-hold-v1",
+    "native_ex8_polar4_forecast": "th14-ex8-polar4-candidate-v1",
+    "native_wall_reactive_forecast": "th14-distance-reactive-orbs-v1",
+    "native_ex_scale_forecast": "th14-native-ex400000-collision-scale-v1"
+  }
+}

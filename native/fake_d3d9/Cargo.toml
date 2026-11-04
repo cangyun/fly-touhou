@@ -1,0 +1,24 @@
+[package]
+name = "th14_fake_d3d9"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+windows = { version = "0.62", default-features = false, features = ["Win32_Foundation", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D9", "Win32_Graphics_Gdi"] }
+windows-numerics = { version = "0.3", default-features = false }
+windows-core = { version = "0.62", default-features = false }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+panic = "abort"

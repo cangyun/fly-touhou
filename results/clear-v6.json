@@ -1,0 +1,5380 @@
+{
+  "status": "completed",
+  "episodes": 1,
+  "clears": 1,
+  "frozen_decoding": {
+    "from_stage": 6,
+    "protected_exit": true,
+    "route_gain": 2.0,
+    "long_risk_fraction": 0.5,
+    "early_neural_weight": 0.25
+  },
+  "native_repair_revisions": {
+    "geometry": "compact-native-ecl-motion-contact-line-spawn-v3",
+    "enemy_ecl": "th14-native-ecl-stack-motion-contact-polar-v3",
+    "line_geometry": "th14-native-line-motion-contact-v1",
+    "partial_point_danger": "conditional-discrete-point-danger-v1",
+    "bullet_collision": "native-state2-pre-release-collision-v1",
+    "resource_reference": "native-positive-route-resource-reference-v1",
+    "reactive_orbs": "th14-distance-reactive-orbs-v1",
+    "bullet_scale": "th14-native-ex400000-collision-scale-v1"
+  },
+  "stage_counts": {
+    "1": 1,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+    "6": 1
+  },
+  "episode_results": [
+    {
+      "native_episode": 1,
+      "outcome": "clear",
+      "native_frames": 135934,
+      "total_frames": 135934,
+      "input_ticks": 135934,
+      "policy_decisions": 33828,
+      "reward_vector": [
+        21.811020609751836,
+        5.175648749721404,
+        -9.137920869845402
+      ],
+      "raw_reward_vector": [
+        21.811020609751836,
+        5.175648749721404,
+        -9.137920869845402
+      ],
+      "stage_history": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "stage": 6,
+      "stage_frame": 33299,
+      "misses": 6,
+      "bombs_used": 25,
+      "point_items": 1681,
+      "bombs_remaining": 1,
+      "bomb_requests": 25,
+      "end_reason": "six-stage-clear",
+      "endpoints": {
+        "start": {
+          "frame": 552,
+          "stage": 1,
+          "stage_frame": 6,
+          "lives": 2,
+          "bombs_remaining": 3,
+          "power": 100,
+          "native_focus": {
+            "schema": "th14-no-activation-v1",
+            "enabled": true,
+            "isolated_desktop_name": "fly-touhou-job-repaired-eval-37320",
+            "focus_scope": "private-non-input-desktop",
+            "installed_before_resume": true,
+            "blocked_activation_calls": 0,
+            "blocked_cursor_calls": 0,
+            "blocked_capture_calls": 0,
+            "activation_messages": 2,
+            "focus_messages": 2,
+            "app_activation_messages": 1,
+            "foreground_samples": 51,
+            "owned_foreground_samples": 0,
+            "last_foreground_pid": 0,
+            "sampling_only": true,
+            "complete_desktop_event_coverage": false,
+            "foreground_restore_called": false,
+            "startup_desktop_path": "WinSta0\\fly-touhou-job-repaired-eval-37320",
+            "startup_desktop_verified": true,
+            "last_sample_reason": "input-checkpoint"
+          },
+          "hook_checkpoint": 629
+        },
+        "end": {
+          "frame": 136486,
+          "stage": 6,
+          "stage_frame": 33299,
+          "lives": 0,
+          "bombs_remaining": 1,
+          "power": 400,
+          "native_focus": {
+            "schema": "th14-no-activation-v1",
+            "enabled": true,
+            "isolated_desktop_name": "fly-touhou-job-repaired-eval-37320",
+            "focus_scope": "private-non-input-desktop",
+            "installed_before_resume": true,
+            "blocked_activation_calls": 0,
+            "blocked_cursor_calls": 0,
+            "blocked_capture_calls": 0,
+            "activation_messages": 2,
+            "focus_messages": 2,
+            "app_activation_messages": 1,
+            "foreground_samples": 186,
+            "owned_foreground_samples": 0,
+            "last_foreground_pid": 0,
+            "sampling_only": true,
+            "complete_desktop_event_coverage": false,
+            "foreground_restore_called": false,
+            "startup_desktop_path": "WinSta0\\fly-touhou-job-repaired-eval-37320",
+            "startup_desktop_verified": true,
+            "last_sample_reason": "input-checkpoint"
+          },
+          "hook_checkpoint": 35116
+        }
+      },
+      "reward_mapping_complete": true,
+      "reward_unsupported": [],
+      "reward_diagnostics": {
+        "schema": "th14-completion-episode-diagnostics-v1",
+        "policy_decisions": 33828,
+        "actual_bombs_used": 25,
+        "confirmed_deathbombs": 24,
+        "ordinary_or_unconfirmed_bombs": 1,
+        "native_misses": 6,
+        "vulnerable_frames": 124472,
+        "protected_decisions": 2295,
+        "bomb_requests": 25,
+        "empty_inventory_bomb_requests": 0,
+        "deathbomb_decision_count": 37,
+        "deathbomb_usable_decision_count": 24,
+        "deathbomb_usable_bomb_requests": 24,
+        "deathbomb_requested_consumed_decision_count": 24,
+        "deathbomb_requested_consumed_without_miss_decision_count": 24,
+        "deathbomb_observed_window_count": 30,
+        "deathbomb_timer1_usable_decision_count": 0,
+        "deathbomb_native_window_coverage_complete": false,
+        "deathbomb_observation_scope": "policy pre/post snapshots only; unseen between-snapshot windows are not counted; the first observed state4 after reset/prefix starts one observed window",
+        "boss_raw_hp_damage": 325454.0,
+        "boss_hp_fraction": 25.878243765600942,
+        "boss_phase_changes": 265,
+        "boss_hp_invalid_transitions": 0,
+        "hp_diagnostic_counts": {},
+        "reward_component_sums": {
+          "vulnerable_progress": 31.118000000015048,
+          "corner": -2.30698059757531,
+          "death": -12.0,
+          "native_gameover": 0.0,
+          "native_clear": 5.0,
+          "boss_damage": 5.175648753120019,
+          "bomb_used": -2.900000000000001,
+          "power_potential": -6.237921000001846
+        }
+      },
+      "training_mode": "full-story-v1",
+      "full_story_episode": true,
+      "full_story_native_seed": 42987,
+      "native_seed_split": "development",
+      "full_story_prefix_played_by_current_policy": true,
+      "episode_statistics_scope": "entire-policy-played-native-run",
+      "evaluation_game": 1,
+      "evaluation_seed": 3574003864
+    }
+  ],
+  "full_game": true,
+  "teacher_actions": 0,
+  "optimizer_updates": 0,
+  "elapsed_seconds": 8430.375,
+  "student_decisions": 33828,
+  "action_selection": "family_mode",
+  "policy_seed": 2027432927,
+  "evaluation_split": "development",
+  "native_position_hold_forecast": "th14-ex-position-hold-v1",
+  "native_ex8_polar4_forecast": "th14-ex8-polar4-candidate-v1",
+  "native_hidden_enemy_contacts": null,
+  "native_wall_reactive_forecast": "th14-distance-reactive-orbs-v1",
+  "dodge_diagnostics": {
+    "schema": "compact-SNN-full-story-event-diagnostics-v1",
+    "student_decisions": 33828,
+    "pre_event_history_decisions": 32,
+    "events": 67,
+    "event_counts": {
+      "stage_transition": 5,
+      "contact_window_entered": 30,
+      "Bomb_used": 25,
+      "life_lost": 6,
+      "native_terminal": 1
+    },
+    "mixed_immediate_rows": 6619,
+    "chosen_predicted_unsafe_in_mixed": 0,
+    "Bomb_in_mixed": 1,
+    "no_constant_action_forecast_escape_rows": 24,
+    "bomb_opportunities": {
+      "stocked_ordinary_decisions": 29927,
+      "stocked_deathbomb_decisions": 24,
+      "ordinary_Bomb_requests": 1,
+      "deathbomb_Bomb_requests": 24,
+      "actual_ordinary_Bombs": 1,
+      "actual_deathbomb_Bombs": 24,
+      "actual_ordinary_Bombs_with_safe4": 1,
+      "actual_protected_Bombs": 0
+    },
+    "event_summaries": [
+      {
+        "event": 1,
+        "world": 0,
+        "kinds": [
+          "stage_transition"
+        ],
+        "before": {
+          "stage": 1,
+          "stage_frame": 14722,
+          "episode_frames": 14716,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 15268
+        },
+        "after": {
+          "stage": 2,
+          "stage_frame": 4,
+          "episode_frames": 14841,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 15393
+        },
+        "last_action": 1,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00001.pt"
+      },
+      {
+        "event": 2,
+        "world": 0,
+        "kinds": [
+          "stage_transition"
+        ],
+        "before": {
+          "stage": 2,
+          "stage_frame": 17684,
+          "episode_frames": 32551,
+          "lives": 2,
+          "bombs": 4,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 33103
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 4,
+          "episode_frames": 32678,
+          "lives": 2,
+          "bombs": 4,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 33230
+        },
+        "last_action": 2,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00002.pt"
+      },
+      {
+        "event": 3,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 5344,
+          "episode_frames": 38048,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 38600
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 5348,
+          "episode_frames": 38052,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 38604
+        },
+        "last_action": 8,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.5426654815673828,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00003.pt"
+      },
+      {
+        "event": 4,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 5348,
+          "episode_frames": 38052,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 0,
+          "bombs_used": 0,
+          "compact_observation_frame": 38604
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 5352,
+          "episode_frames": 38056,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 1,
+          "compact_observation_frame": 38608
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 2,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00004.pt"
+      },
+      {
+        "event": 5,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 5948,
+          "episode_frames": 38652,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 1,
+          "compact_observation_frame": 39204
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 5952,
+          "episode_frames": 38656,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 1,
+          "compact_observation_frame": 39208
+        },
+        "last_action": 8,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.4758901596069336,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00005.pt"
+      },
+      {
+        "event": 6,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 5952,
+          "episode_frames": 38656,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 0,
+          "bombs_used": 1,
+          "compact_observation_frame": 39208
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 5956,
+          "episode_frames": 38660,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 2,
+          "compact_observation_frame": 39212
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00006.pt"
+      },
+      {
+        "event": 7,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 13480,
+          "episode_frames": 46184,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 2,
+          "compact_observation_frame": 46736
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 13484,
+          "episode_frames": 46188,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 2,
+          "compact_observation_frame": 46740
+        },
+        "last_action": 5,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.7256542444229126,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00007.pt"
+      },
+      {
+        "event": 8,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 13484,
+          "episode_frames": 46188,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 2,
+          "compact_observation_frame": 46740
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 13488,
+          "episode_frames": 46192,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 0,
+          "bombs_used": 3,
+          "compact_observation_frame": 46744
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00008.pt"
+      },
+      {
+        "event": 9,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 17632,
+          "episode_frames": 50336,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 3,
+          "compact_observation_frame": 50888
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 17636,
+          "episode_frames": 50340,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 3,
+          "compact_observation_frame": 50892
+        },
+        "last_action": 8,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            106
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.52742338180542,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00009.pt"
+      },
+      {
+        "event": 10,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 17636,
+          "episode_frames": 50340,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 0,
+          "bombs_used": 3,
+          "compact_observation_frame": 50892
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 17640,
+          "episode_frames": 50344,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 0,
+          "bombs_used": 4,
+          "compact_observation_frame": 50896
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            2,
+            107
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 14,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00010.pt"
+      },
+      {
+        "event": 11,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 17924,
+          "episode_frames": 50628,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 0,
+          "bombs_used": 4,
+          "compact_observation_frame": 51180
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 17928,
+          "episode_frames": 50632,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 0,
+          "bombs_used": 4,
+          "compact_observation_frame": 51184
+        },
+        "last_action": 3,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            12,
+            12,
+            12
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            1,
+            1,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -9.305068016052246,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": true,
+        "trace_file": "event-00011.pt"
+      },
+      {
+        "event": 12,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 17928,
+          "episode_frames": 50632,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 0,
+          "bombs_used": 4,
+          "compact_observation_frame": 51184
+        },
+        "after": {
+          "stage": 3,
+          "stage_frame": 17932,
+          "episode_frames": 50636,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 51188
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            1,
+            1,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00012.pt"
+      },
+      {
+        "event": 13,
+        "world": 0,
+        "kinds": [
+          "stage_transition"
+        ],
+        "before": {
+          "stage": 3,
+          "stage_frame": 21120,
+          "episode_frames": 53824,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 54376
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 4,
+          "episode_frames": 53950,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 54502
+        },
+        "last_action": 2,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00013.pt"
+      },
+      {
+        "event": 14,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 4152,
+          "episode_frames": 58128,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 58680
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 4156,
+          "episode_frames": 58132,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 58684
+        },
+        "last_action": 8,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.9447165727615356,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00014.pt"
+      },
+      {
+        "event": 15,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 4160,
+          "episode_frames": 58136,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 0,
+          "bombs_used": 5,
+          "compact_observation_frame": 58688
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 4164,
+          "episode_frames": 58140,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 1,
+          "bombs_used": 5,
+          "compact_observation_frame": 58692
+        },
+        "last_action": 5,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -3.1634774208068848,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00015.pt"
+      },
+      {
+        "event": 16,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 9256,
+          "episode_frames": 63232,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 1,
+          "bombs_used": 5,
+          "compact_observation_frame": 63784
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 9260,
+          "episode_frames": 63236,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 1,
+          "bombs_used": 5,
+          "compact_observation_frame": 63788
+        },
+        "last_action": 7,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.3201051950454712,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00016.pt"
+      },
+      {
+        "event": 17,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 9260,
+          "episode_frames": 63236,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 1,
+          "bombs_used": 5,
+          "compact_observation_frame": 63788
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 9264,
+          "episode_frames": 63240,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 6,
+          "compact_observation_frame": 63792
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 9,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00017.pt"
+      },
+      {
+        "event": 18,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 9824,
+          "episode_frames": 63800,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 6,
+          "compact_observation_frame": 64352
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 9828,
+          "episode_frames": 63804,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 6,
+          "compact_observation_frame": 64356
+        },
+        "last_action": 15,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 33,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.0201053619384766,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00018.pt"
+      },
+      {
+        "event": 19,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 9828,
+          "episode_frames": 63804,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 6,
+          "compact_observation_frame": 64356
+        },
+        "after": {
+          "stage": 4,
+          "stage_frame": 9832,
+          "episode_frames": 63808,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 64360
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 34,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00019.pt"
+      },
+      {
+        "event": 20,
+        "world": 0,
+        "kinds": [
+          "stage_transition"
+        ],
+        "before": {
+          "stage": 4,
+          "stage_frame": 23864,
+          "episode_frames": 77840,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 78392
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 4,
+          "episode_frames": 77967,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 78519
+        },
+        "last_action": 5,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00020.pt"
+      },
+      {
+        "event": 21,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 10452,
+          "episode_frames": 88445,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 88997
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 10456,
+          "episode_frames": 88449,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 89001
+        },
+        "last_action": 14,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            83,
+            120,
+            120
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            60,
+            180
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.6806291937828064,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00021.pt"
+      },
+      {
+        "event": 22,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 10456,
+          "episode_frames": 88449,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 1,
+          "bombs_used": 7,
+          "compact_observation_frame": 89001
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 10460,
+          "episode_frames": 88453,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 1,
+          "bombs_used": 8,
+          "compact_observation_frame": 89005
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            63,
+            124,
+            154
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            90,
+            210
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 4,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00022.pt"
+      },
+      {
+        "event": 23,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 10744,
+          "episode_frames": 88737,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 1,
+          "bombs_used": 8,
+          "compact_observation_frame": 89289
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 10748,
+          "episode_frames": 88741,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 1,
+          "bombs_used": 8,
+          "compact_observation_frame": 89293
+        },
+        "last_action": 1,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            71,
+            128,
+            128
+          ],
+          "unresolved_release_points_4_12_24": [
+            30,
+            114,
+            236
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -21.52381134033203,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": true,
+        "trace_file": "event-00023.pt"
+      },
+      {
+        "event": 24,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 10748,
+          "episode_frames": 88741,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 1,
+          "bombs_used": 8,
+          "compact_observation_frame": 89293
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 10752,
+          "episode_frames": 88745,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 1,
+          "bombs_used": 9,
+          "compact_observation_frame": 89297
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            114,
+            160,
+            160
+          ],
+          "unresolved_release_points_4_12_24": [
+            30,
+            110,
+            238
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00024.pt"
+      },
+      {
+        "event": 25,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 11036,
+          "episode_frames": 89029,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 1,
+          "bombs_used": 9,
+          "compact_observation_frame": 89581
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 11040,
+          "episode_frames": 89033,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 1,
+          "bombs_used": 9,
+          "compact_observation_frame": 89585
+        },
+        "last_action": 6,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            64,
+            64,
+            64
+          ],
+          "unresolved_release_points_4_12_24": [
+            25,
+            138,
+            282
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -13.97647476196289,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": true,
+        "trace_file": "event-00025.pt"
+      },
+      {
+        "event": 26,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 11044,
+          "episode_frames": 89037,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 1,
+          "bombs_used": 9,
+          "compact_observation_frame": 89589
+        },
+        "after": {
+          "stage": 5,
+          "stage_frame": 11048,
+          "episode_frames": 89041,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 89593
+        },
+        "last_action": 3,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            69,
+            146,
+            294
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -12.927129745483398,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00026.pt"
+      },
+      {
+        "event": 27,
+        "world": 0,
+        "kinds": [
+          "stage_transition"
+        ],
+        "before": {
+          "stage": 5,
+          "stage_frame": 24340,
+          "episode_frames": 102333,
+          "lives": 2,
+          "bombs": 4,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 102885
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 4,
+          "episode_frames": 102460,
+          "lives": 2,
+          "bombs": 4,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 103012
+        },
+        "last_action": 2,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00027.pt"
+      },
+      {
+        "event": 28,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 4472,
+          "episode_frames": 106958,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 107510
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 4476,
+          "episode_frames": 106962,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 107514
+        },
+        "last_action": 16,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            126,
+            200,
+            200
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            160
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.3037146031856537,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00028.pt"
+      },
+      {
+        "event": 29,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 4476,
+          "episode_frames": 106962,
+          "lives": 3,
+          "bombs": 4,
+          "misses": 2,
+          "bombs_used": 9,
+          "compact_observation_frame": 107514
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 4480,
+          "episode_frames": 106966,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 2,
+          "bombs_used": 10,
+          "compact_observation_frame": 107518
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            85,
+            159,
+            159
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            40,
+            200
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00029.pt"
+      },
+      {
+        "event": 30,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 9784,
+          "episode_frames": 112270,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 2,
+          "bombs_used": 10,
+          "compact_observation_frame": 112822
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 9788,
+          "episode_frames": 112274,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 2,
+          "bombs_used": 10,
+          "compact_observation_frame": 112826
+        },
+        "last_action": 0,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.09019263833761215,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00030.pt"
+      },
+      {
+        "event": 31,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 9788,
+          "episode_frames": 112274,
+          "lives": 3,
+          "bombs": 3,
+          "misses": 2,
+          "bombs_used": 10,
+          "compact_observation_frame": 112826
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 9792,
+          "episode_frames": 112278,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 2,
+          "bombs_used": 11,
+          "compact_observation_frame": 112830
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            1,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 17,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00031.pt"
+      },
+      {
+        "event": 32,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 10792,
+          "episode_frames": 113278,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 2,
+          "bombs_used": 11,
+          "compact_observation_frame": 113830
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 10796,
+          "episode_frames": 113282,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 2,
+          "bombs_used": 11,
+          "compact_observation_frame": 113834
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -2.5049240589141846,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00032.pt"
+      },
+      {
+        "event": 33,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 10796,
+          "episode_frames": 113282,
+          "lives": 3,
+          "bombs": 2,
+          "misses": 2,
+          "bombs_used": 11,
+          "compact_observation_frame": 113834
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 10800,
+          "episode_frames": 113286,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 2,
+          "bombs_used": 12,
+          "compact_observation_frame": 113838
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            1,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 12,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00033.pt"
+      },
+      {
+        "event": 34,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 11340,
+          "episode_frames": 113826,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 2,
+          "bombs_used": 12,
+          "compact_observation_frame": 114378
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 11344,
+          "episode_frames": 113830,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 2,
+          "bombs_used": 12,
+          "compact_observation_frame": 114382
+        },
+        "last_action": 1,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.5343151092529297,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00034.pt"
+      },
+      {
+        "event": 35,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 11344,
+          "episode_frames": 113830,
+          "lives": 3,
+          "bombs": 1,
+          "misses": 2,
+          "bombs_used": 12,
+          "compact_observation_frame": 114382
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 11348,
+          "episode_frames": 113834,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 2,
+          "bombs_used": 13,
+          "compact_observation_frame": 114386
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            1,
+            2
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00035.pt"
+      },
+      {
+        "event": 36,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 15140,
+          "episode_frames": 117626,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 2,
+          "bombs_used": 13,
+          "compact_observation_frame": 118178
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 15144,
+          "episode_frames": 117630,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 2,
+          "bombs_used": 13,
+          "compact_observation_frame": 118182
+        },
+        "last_action": 2,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -27.390573501586914,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00036.pt"
+      },
+      {
+        "event": 37,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 15148,
+          "episode_frames": 117634,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 2,
+          "bombs_used": 13,
+          "compact_observation_frame": 118186
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 15152,
+          "episode_frames": 117638,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 3,
+          "bombs_used": 13,
+          "compact_observation_frame": 118190
+        },
+        "last_action": 2,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            12,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -19.159332275390625,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00037.pt"
+      },
+      {
+        "event": 38,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 16144,
+          "episode_frames": 118630,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 3,
+          "bombs_used": 13,
+          "compact_observation_frame": 119182
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 16148,
+          "episode_frames": 118634,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 3,
+          "bombs_used": 13,
+          "compact_observation_frame": 119186
+        },
+        "last_action": 8,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.3397548198699951,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00038.pt"
+      },
+      {
+        "event": 39,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 16148,
+          "episode_frames": 118634,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 3,
+          "bombs_used": 13,
+          "compact_observation_frame": 119186
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 16152,
+          "episode_frames": 118638,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 3,
+          "bombs_used": 14,
+          "compact_observation_frame": 119190
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            12,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00039.pt"
+      },
+      {
+        "event": 40,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 16640,
+          "episode_frames": 119126,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 3,
+          "bombs_used": 14,
+          "compact_observation_frame": 119678
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 16644,
+          "episode_frames": 119130,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 3,
+          "bombs_used": 14,
+          "compact_observation_frame": 119682
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -15.969196319580078,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00040.pt"
+      },
+      {
+        "event": 41,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 16644,
+          "episode_frames": 119130,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 3,
+          "bombs_used": 14,
+          "compact_observation_frame": 119682
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 16648,
+          "episode_frames": 119134,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 3,
+          "bombs_used": 15,
+          "compact_observation_frame": 119686
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00041.pt"
+      },
+      {
+        "event": 42,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 17072,
+          "episode_frames": 119558,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 3,
+          "bombs_used": 15,
+          "compact_observation_frame": 120110
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 17076,
+          "episode_frames": 119562,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 3,
+          "bombs_used": 15,
+          "compact_observation_frame": 120114
+        },
+        "last_action": 11,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            12,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.5622538924217224,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00042.pt"
+      },
+      {
+        "event": 43,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 17076,
+          "episode_frames": 119562,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 3,
+          "bombs_used": 15,
+          "compact_observation_frame": 120114
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 17080,
+          "episode_frames": 119566,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 3,
+          "bombs_used": 16,
+          "compact_observation_frame": 120118
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            12,
+            24
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00043.pt"
+      },
+      {
+        "event": 44,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 19040,
+          "episode_frames": 121526,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 3,
+          "bombs_used": 16,
+          "compact_observation_frame": 122078
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 19044,
+          "episode_frames": 121530,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 3,
+          "bombs_used": 16,
+          "compact_observation_frame": 122082
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            27
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            12,
+            24
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -4.702051639556885,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00044.pt"
+      },
+      {
+        "event": 45,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 19048,
+          "episode_frames": 121534,
+          "lives": 3,
+          "bombs": 0,
+          "misses": 3,
+          "bombs_used": 16,
+          "compact_observation_frame": 122086
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 19052,
+          "episode_frames": 121538,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 4,
+          "bombs_used": 16,
+          "compact_observation_frame": 122090
+        },
+        "last_action": 6,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            32
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            18,
+            30
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 15,
+        "chosen_immediate_margin": -5.114608287811279,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00045.pt"
+      },
+      {
+        "event": 46,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 20428,
+          "episode_frames": 122914,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 16,
+          "compact_observation_frame": 123466
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 20432,
+          "episode_frames": 122918,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 16,
+          "compact_observation_frame": 123470
+        },
+        "last_action": 5,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            18,
+            24
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -6.364609241485596,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00046.pt"
+      },
+      {
+        "event": 47,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 20432,
+          "episode_frames": 122918,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 16,
+          "compact_observation_frame": 123470
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 20436,
+          "episode_frames": 122922,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 4,
+          "bombs_used": 17,
+          "compact_observation_frame": 123474
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            18,
+            30
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00047.pt"
+      },
+      {
+        "event": 48,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 20816,
+          "episode_frames": 123302,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 17,
+          "compact_observation_frame": 123854
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 20820,
+          "episode_frames": 123306,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 17,
+          "compact_observation_frame": 123858
+        },
+        "last_action": 4,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 4,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 16,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -7.749766826629639,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00048.pt"
+      },
+      {
+        "event": 49,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 20820,
+          "episode_frames": 123306,
+          "lives": 2,
+          "bombs": 3,
+          "misses": 4,
+          "bombs_used": 17,
+          "compact_observation_frame": 123858
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 20824,
+          "episode_frames": 123310,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 4,
+          "bombs_used": 18,
+          "compact_observation_frame": 123862
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 17,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00049.pt"
+      },
+      {
+        "event": 50,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 22880,
+          "episode_frames": 125366,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 4,
+          "bombs_used": 18,
+          "compact_observation_frame": 125918
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 22884,
+          "episode_frames": 125370,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 4,
+          "bombs_used": 18,
+          "compact_observation_frame": 125922
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            1,
+            6
+          ],
+          "unresolved_release_points_4_12_24": [
+            6,
+            6,
+            6
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            1,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -14.979619979858398,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00050.pt"
+      },
+      {
+        "event": 51,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 22884,
+          "episode_frames": 125370,
+          "lives": 2,
+          "bombs": 2,
+          "misses": 4,
+          "bombs_used": 18,
+          "compact_observation_frame": 125922
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 22888,
+          "episode_frames": 125374,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 4,
+          "bombs_used": 19,
+          "compact_observation_frame": 125926
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            1,
+            12
+          ],
+          "unresolved_release_points_4_12_24": [
+            12,
+            12,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            1
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 1,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00051.pt"
+      },
+      {
+        "event": 52,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 23888,
+          "episode_frames": 126374,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 4,
+          "bombs_used": 19,
+          "compact_observation_frame": 126926
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 23892,
+          "episode_frames": 126378,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 4,
+          "bombs_used": 19,
+          "compact_observation_frame": 126930
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            6,
+            12,
+            18
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -11.228825569152832,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00052.pt"
+      },
+      {
+        "event": 53,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 23892,
+          "episode_frames": 126378,
+          "lives": 2,
+          "bombs": 1,
+          "misses": 4,
+          "bombs_used": 19,
+          "compact_observation_frame": 126930
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 23896,
+          "episode_frames": 126382,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 4,
+          "bombs_used": 20,
+          "compact_observation_frame": 126934
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            6,
+            12,
+            18
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00053.pt"
+      },
+      {
+        "event": 54,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 24948,
+          "episode_frames": 127434,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 4,
+          "bombs_used": 20,
+          "compact_observation_frame": 127986
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 24952,
+          "episode_frames": 127438,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 4,
+          "bombs_used": 20,
+          "compact_observation_frame": 127990
+        },
+        "last_action": 4,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            6,
+            12
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -5.941745758056641,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00054.pt"
+      },
+      {
+        "event": 55,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 24956,
+          "episode_frames": 127442,
+          "lives": 2,
+          "bombs": 0,
+          "misses": 4,
+          "bombs_used": 20,
+          "compact_observation_frame": 127994
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 24960,
+          "episode_frames": 127446,
+          "lives": 1,
+          "bombs": 0,
+          "misses": 5,
+          "bombs_used": 20,
+          "compact_observation_frame": 127998
+        },
+        "last_action": 6,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          false,
+          false,
+          false
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            6,
+            12,
+            18
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 2,
+        "chosen_immediate_margin": -23.579496383666992,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00055.pt"
+      },
+      {
+        "event": 56,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 25664,
+          "episode_frames": 128150,
+          "lives": 1,
+          "bombs": 3,
+          "misses": 5,
+          "bombs_used": 20,
+          "compact_observation_frame": 128702
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 25668,
+          "episode_frames": 128154,
+          "lives": 1,
+          "bombs": 3,
+          "misses": 5,
+          "bombs_used": 20,
+          "compact_observation_frame": 128706
+        },
+        "last_action": 1,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.0433634519577026,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00056.pt"
+      },
+      {
+        "event": 57,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 25668,
+          "episode_frames": 128154,
+          "lives": 1,
+          "bombs": 3,
+          "misses": 5,
+          "bombs_used": 20,
+          "compact_observation_frame": 128706
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 25672,
+          "episode_frames": 128158,
+          "lives": 1,
+          "bombs": 2,
+          "misses": 5,
+          "bombs_used": 21,
+          "compact_observation_frame": 128710
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00057.pt"
+      },
+      {
+        "event": 58,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 26140,
+          "episode_frames": 128626,
+          "lives": 1,
+          "bombs": 2,
+          "misses": 5,
+          "bombs_used": 21,
+          "compact_observation_frame": 129178
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 26144,
+          "episode_frames": 128630,
+          "lives": 1,
+          "bombs": 2,
+          "misses": 5,
+          "bombs_used": 21,
+          "compact_observation_frame": 129182
+        },
+        "last_action": 5,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.6405028700828552,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00058.pt"
+      },
+      {
+        "event": 59,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 26144,
+          "episode_frames": 128630,
+          "lives": 1,
+          "bombs": 2,
+          "misses": 5,
+          "bombs_used": 21,
+          "compact_observation_frame": 129182
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 26148,
+          "episode_frames": 128634,
+          "lives": 1,
+          "bombs": 1,
+          "misses": 5,
+          "bombs_used": 22,
+          "compact_observation_frame": 129186
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00059.pt"
+      },
+      {
+        "event": 60,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 26556,
+          "episode_frames": 129042,
+          "lives": 1,
+          "bombs": 1,
+          "misses": 5,
+          "bombs_used": 22,
+          "compact_observation_frame": 129594
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 26560,
+          "episode_frames": 129046,
+          "lives": 1,
+          "bombs": 1,
+          "misses": 5,
+          "bombs_used": 22,
+          "compact_observation_frame": 129598
+        },
+        "last_action": 5,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -1.273944616317749,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00060.pt"
+      },
+      {
+        "event": 61,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 26560,
+          "episode_frames": 129046,
+          "lives": 1,
+          "bombs": 1,
+          "misses": 5,
+          "bombs_used": 22,
+          "compact_observation_frame": 129598
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 26564,
+          "episode_frames": 129050,
+          "lives": 1,
+          "bombs": 0,
+          "misses": 5,
+          "bombs_used": 23,
+          "compact_observation_frame": 129602
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00061.pt"
+      },
+      {
+        "event": 62,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 27000,
+          "episode_frames": 129486,
+          "lives": 1,
+          "bombs": 0,
+          "misses": 5,
+          "bombs_used": 23,
+          "compact_observation_frame": 130038
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 27004,
+          "episode_frames": 129490,
+          "lives": 1,
+          "bombs": 0,
+          "misses": 5,
+          "bombs_used": 23,
+          "compact_observation_frame": 130042
+        },
+        "last_action": 0,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -0.0701974406838417,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00062.pt"
+      },
+      {
+        "event": 63,
+        "world": 0,
+        "kinds": [
+          "life_lost"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 27012,
+          "episode_frames": 129498,
+          "lives": 1,
+          "bombs": 0,
+          "misses": 5,
+          "bombs_used": 23,
+          "compact_observation_frame": 130050
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 27016,
+          "episode_frames": 129502,
+          "lives": 0,
+          "bombs": 0,
+          "misses": 6,
+          "bombs_used": 23,
+          "compact_observation_frame": 130054
+        },
+        "last_action": 6,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 1.83034348487854,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00063.pt"
+      },
+      {
+        "event": 64,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 27892,
+          "episode_frames": 130378,
+          "lives": 0,
+          "bombs": 3,
+          "misses": 6,
+          "bombs_used": 23,
+          "compact_observation_frame": 130930
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 27896,
+          "episode_frames": 130382,
+          "lives": 0,
+          "bombs": 2,
+          "misses": 6,
+          "bombs_used": 24,
+          "compact_observation_frame": 130934
+        },
+        "last_action": 18,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 12,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00064.pt"
+      },
+      {
+        "event": 65,
+        "world": 0,
+        "kinds": [
+          "contact_window_entered"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 31564,
+          "episode_frames": 134050,
+          "lives": 0,
+          "bombs": 2,
+          "misses": 6,
+          "bombs_used": 24,
+          "compact_observation_frame": 134602
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 31568,
+          "episode_frames": 134054,
+          "lives": 0,
+          "bombs": 2,
+          "misses": 6,
+          "bombs_used": 24,
+          "compact_observation_frame": 134606
+        },
+        "last_action": 6,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": -7.973971843719482,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00065.pt"
+      },
+      {
+        "event": 66,
+        "world": 0,
+        "kinds": [
+          "Bomb_used"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 31568,
+          "episode_frames": 134054,
+          "lives": 0,
+          "bombs": 2,
+          "misses": 6,
+          "bombs_used": 24,
+          "compact_observation_frame": 134606
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 31572,
+          "episode_frames": 134058,
+          "lives": 0,
+          "bombs": 1,
+          "misses": 6,
+          "bombs_used": 25,
+          "compact_observation_frame": 134610
+        },
+        "last_action": 18,
+        "pre_action_normal": false,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 0,
+        "chosen_immediate_margin": null,
+        "pre_action_deathbomb_window": true,
+        "pre_action_protected": false,
+        "trace_file": "event-00066.pt"
+      },
+      {
+        "event": 67,
+        "world": 0,
+        "kinds": [
+          "native_terminal"
+        ],
+        "before": {
+          "stage": 6,
+          "stage_frame": 33295,
+          "episode_frames": 135930,
+          "lives": 0,
+          "bombs": 1,
+          "misses": 6,
+          "bombs_used": 25,
+          "compact_observation_frame": 136482
+        },
+        "after": {
+          "stage": 6,
+          "stage_frame": 33299,
+          "episode_frames": 135934,
+          "lives": 0,
+          "bombs": 1,
+          "misses": 6,
+          "bombs_used": 25,
+          "compact_observation_frame": 136486
+        },
+        "last_action": 0,
+        "pre_action_normal": true,
+        "pre_action_trusted": [
+          true,
+          true,
+          true
+        ],
+        "pre_action_uncertainty": {
+          "unknown_laser_segments": 0,
+          "unknown_laser_segments_scope": "Uncertified existing laser motion over the next4 native ticks",
+          "native_curve_segments": 0,
+          "unresolved_curve_segments_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "native_curve_motion_forecast": true,
+          "native_line_forecasts": 0,
+          "near_growth_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_release_points_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "unresolved_enemy_forecasts_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "hidden_enemy_unreadable_geometry": 0,
+          "hidden_enemy_contact_bodies": 0,
+          "unresolved_focus_transition_4_12_24": [
+            false,
+            false,
+            false
+          ],
+          "unknown_laser_player_motion_conditional": true,
+          "growth_motion_modeled": true,
+          "pending_native_arming_forecast": true,
+          "scope": "Read-only reasons for existing forecast trust flags;not extra policy features"
+        },
+        "geometric_immediate_safe_candidates": 18,
+        "chosen_immediate_margin": 64.0,
+        "pre_action_deathbomb_window": false,
+        "pre_action_protected": false,
+        "trace_file": "event-00067.pt"
+      }
+    ],
+    "metric_scope": "Current-observation physical forecasts;not measured future collision probabilities. Contact windows and lost lives are distinct events.",
+    "policy_changed": false,
+    "teacher_actions": 0,
+    "brain_traces": "DN filtered spikes+subthreshold membrane for all18 candidates;FP16 storage only"
+  }
+}

@@ -1,0 +1,14 @@
+# Install CUDA PyTorch first, as shown in README.md. Python 3.11 on Windows.
+torch==2.8.0
+numpy==1.26.4
+scipy==1.15.1
+pandas==2.2.3
+pyarrow==19.0.0
+gymnasium==1.2.0
+stable-baselines3==2.7.0
+sb3-contrib==2.7.0
+psutil==7.2.2
+Pillow==11.1.0
+frida==17.24.1
+optuna==5.0.0
+pywin32==308; sys_platform == 'win32'
