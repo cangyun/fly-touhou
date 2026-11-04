@@ -139,7 +139,7 @@ class THRLNativeEnv(GeometryHazardResourceCampaignEnv):
         """Episode-local behavior evidence, never inherited from replay history."""
         self._episode_reward_diagnostics = None
         self._diagnostic_deathbomb_observation_active = False
-        if self.reward_model.specification()['schema'] == 'th14-completion-reward-v3':
+        if self.reward_model.specification()['schema'] in ('th14-completion-reward-v3','th14-completion-reward-v4'):
             self._episode_reward_diagnostics = dict(
                 schema='th14-completion-episode-diagnostics-v1',
                 policy_decisions=0, actual_bombs_used=0, confirmed_deathbombs=0,
@@ -158,6 +158,7 @@ class THRLNativeEnv(GeometryHazardResourceCampaignEnv):
                     'the first observed state4 after reset/prefix starts one observed window'),
                 boss_raw_hp_damage=0., boss_hp_fraction=0., boss_phase_changes=0,
                 boss_hp_invalid_transitions=0, hp_diagnostic_counts={},
+                attackable_boss_decisions=0, attackable_boss_frames=0, boss_time_credit_removed=0.,
                 reward_component_sums={})
 
     def _reward_diagnostics_copy(self):
@@ -178,6 +179,9 @@ class THRLNativeEnv(GeometryHazardResourceCampaignEnv):
                     'boss_hp_fraction', 'boss_phase_changes'):
             data[key] += step[key]
         data['protected_decisions'] += step['protected_decision']
+        data['attackable_boss_decisions'] += step.get('attackable_boss_phase',0)
+        data['attackable_boss_frames'] += step.get('attackable_boss_phase',0)*max(0,after.frame-before.frame)
+        data['boss_time_credit_removed'] += step.get('boss_time_credit_removed',0.)
         data['bomb_requests'] += int(bomb_requested)
         data['empty_inventory_bomb_requests'] += int(bomb_requested and before.bombs <= 0)
         player = before.player

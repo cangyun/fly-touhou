@@ -16,9 +16,9 @@ class THRLFullStoryEnv(THRLNativeEnv):
                for key in kwargs):
             raise ValueError('Full-story worker cannot receive segment/curriculum options')
         if (kwargs.get('wall_time_limit_seconds') is not None or kwargs.get('policy_action_count') != 19
-                or kwargs.get('reward_schema') != 'th14-completion-reward-v3'
+                or kwargs.get('reward_schema') not in ('th14-completion-reward-v3','th14-completion-reward-v4')
                 or kwargs.get('frame_skip',4) != 4):
-            raise ValueError('Full-story worker requires original terminal, source19, reward v3 and four ticks')
+            raise ValueError('Full-story worker requires original terminal, source19, reward v3/v4 and four ticks')
         self.full_story_split = full_story_split
         self._full_story_rng = np.random.default_rng(full_story_seed)
         self._full_story_userdata_root = Path(kwargs['private_appdata'])

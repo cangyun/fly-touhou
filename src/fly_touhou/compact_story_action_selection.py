@@ -10,9 +10,12 @@ MODES=('joint_mode','family_mode','sample')
 
 
 class StoryActionSelector:
-    def __init__(self,mode,worlds,*,seed):
+    def __init__(self,mode,worlds,*,seed,movement_temperature=1.,bomb_temperature=1.):
         if mode not in MODES:raise ValueError(f'Unknown action selection: {mode}')
+        from .compact_story_behavior import sampling_temperature
         self.mode=mode
+        self.movement_temperature=sampling_temperature(movement_temperature)
+        self.bomb_temperature=sampling_temperature(bomb_temperature)
         # Each original game owns its policy RNG stream. Receive/batch order
         # must not change which random draw that game receives.
         self.generators=[torch.Generator(device='cpu').manual_seed(
@@ -26,7 +29,9 @@ class StoryActionSelector:
             # This is not the joint distribution's mode.
             move=logits[:,:18]
             return torch.where(logits[:,18]>torch.logsumexp(move,-1),18,move.argmax(-1))
-        probability=logits.detach().float().softmax(-1).cpu()
+        from .compact_story_behavior import story_behavior_logits
+        behavior=story_behavior_logits(logits.detach().float(),self.movement_temperature,self.bomb_temperature)
+        probability=behavior.softmax(-1).cpu()
         chosen=[torch.multinomial(row,1,generator=self.generators[i]).item()
                 for row,i in zip(probability,worlds)]
         return torch.tensor(chosen,device=logits.device,dtype=torch.long)

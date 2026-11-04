@@ -3,12 +3,12 @@
   "profile": "configs/th14-profile.json",
   "training_mode": "full-story-v1",
   "input_schema": "semantic-separated-observed-laser-segments-v5",
-  "training_recipe": "th14-completion-v3",
-  "reward_schema": "th14-completion-reward-v3",
+  "training_recipe": "th14-completion-v4",
+  "reward_schema": "th14-completion-reward-v4",
   "policy_action_count": 19,
   "headless": true,
   "autonomous_bomb": true,
-  "seed": 202610335,
+  "seed": 2026110401,
   "first_hit_terminal": false,
   "native_frame_horizon": null,
   "continues_allowed": false,
@@ -32,7 +32,7 @@
   "compact_native_position_hold_forecast": "th14-ex-position-hold-v1",
   "compact_native_hidden_enemy_contacts": null,
   "compact_native_ex8_polar4_forecast": "th14-ex8-polar4-candidate-v1",
-  "compact_protected_exit_forecast": false,
+  "compact_protected_exit_forecast": true,
   "native_ecl_instruction_read_revision": "native-ecl-empty-body-read-v1",
   "native_growth_collision_revision": "native-state2-pre-release-collision-v1",
   "compact_native_curve_motion_forecast": true,
@@ -45,5 +45,15 @@
     "route_gain": 2.0,
     "long_risk_fraction": 0.5,
     "early_neural_weight": 0.25
+  },
+  "compact_combat_position_guidance_coefficient": 0.1,
+  "experiment": "lower-field-default-one-natural-round-v1",
+  "compact_protected_exit_from_stage": 6,
+  "compact_protected_exit_preserve_long_shield": true,
+  "compact_lower_field_default": true,
+  "compact_lower_field_reward": {
+    "target_y": 256.0,
+    "potential_scale": 0.05,
+    "upper_cost_per_four_frames": 0.0005
   }
 }

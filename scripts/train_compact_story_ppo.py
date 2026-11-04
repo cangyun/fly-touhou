@@ -200,6 +200,8 @@ def main():
     p.add_argument('--cycles',type=int,default=2);p.add_argument('--workers',type=int,default=16)
     p.add_argument('--games-per-world',type=int,default=0,
         help='Finish after every persistent world completes this many natural games;cycles stays a hard cap. No stage resets.')
+    p.add_argument('--defer-final-evaluation',action='store_true',
+        help='Save and close training worlds at the round/budget end; an external runner owns the frozen evaluation.')
     p.add_argument('--cycle-offset',type=int,default=0,
         help='Completed predecessor cycles;continue file and monitoring cycle numbers from here')
     p.add_argument('--steps',type=int,default=512);p.add_argument('--micro-scenes',type=int,default=8)
@@ -371,7 +373,7 @@ def main():
     write_json(a.output/'tensorboard-registration.json',register_tensorboard_run(a.output))
     sources=[Path(__file__),*(ROOT/'src/fly_touhou'/n for n in ('native.py','compact_story_model.py','compact_story_ppo.py',
         'compact_story_ready.py','compact_story_ready_data.py','compact_story_schedule.py','compact_story_coverage.py',
-        'compact_story_shared_checkpoint.py',
+        'compact_story_shared_checkpoint.py','compact_story_schedule_control.py',
         'compact_story_batch_selection.py',
         'compact_story_tape_retention.py',
         'compact_story_sensation.py','compact_full_story.py','compact_story_diagnostics.py','compact_story_storage.py',
@@ -383,10 +385,10 @@ def main():
         'compact_native_budget.py','compact_story_risk_composition.py','compact_growth_forecast.py','dynamic_planner.py','compact_story_idle_prior.py',
         'compact_native_forecast.py','native_enemy_motion.py','native_enemy_damage.py','native_enemy_ecl.py','native_enemy_contact.py','native_bullet_release.py','native_bullet_wrap.py','native_bullet_pending.py','resources.py','hazard_reader.py',
         'thrl_geometry_observation.py','thrl_movement_teacher.py','compact_story_task_drive.py','native_focus_gate.py',
-        'compact_boss_attack_guidance.py','compact_guided_wall_candidate.py',
+        'compact_boss_attack_guidance.py','compact_guided_wall_candidate.py','compact_combat_position.py','compact_lower_field.py','compact_lower_field_reward.py','compact_frozen_decoding.py',
         'native_curve_laser_reader.py','native_curve_laser_contact.py','native_curve_laser_paths.py',
         'native_curve_laser_motion.py','native_curve_motion_paths.py',
-        'fly_gru_aligned_guidance.py','th14_completion_v3.py','th14_completion_protocol.py','continuous_sparse.py',
+        'fly_gru_aligned_guidance.py','th14_completion_v3.py','th14_completion_v4.py','th14_completion_protocol.py','thrl_full_story_env.py','thrl_native_env.py','thrl_training_mode.py','continuous_sparse.py',
         'fused_edge_gradient.py','csrc/fused_edge_gradient.cu','deterministic_spmm.py','csrc/deterministic_csr_spmm.cu',
         'candidate_spiking_model.py','compact_spiking_model.py','spiking_engineered_control.py','dn_residual_risk.py'))]
     pinned={n:n.read_bytes() for n in sources}
@@ -495,6 +497,23 @@ def main():
             from fly_touhou.compact_story_idle_prior import checked_idle_scale
             model.idle_prior_scale=checked_idle_scale(a.idle_prior_scale)
         model.full_story_action_selection=a.evaluation_selection
+        model.combat_position_guidance_coefficient=float(cfg.get('compact_combat_position_guidance_coefficient',
+            getattr(model,'combat_position_guidance_coefficient',0.)))
+        if not 0<=model.combat_position_guidance_coefficient<=1:
+            raise ValueError('Combat position guidance coefficient must be in [0,1]')
+        launch['combat_position_guidance_coefficient']=model.combat_position_guidance_coefficient
+        model.lower_field_default=bool(cfg.get('compact_lower_field_default',getattr(model,'lower_field_default',False)))
+        from fly_touhou.compact_lower_field import REVISION as LOWER_FIELD_REVISION
+        launch['lower_field_default']=model.lower_field_default
+        launch['lower_field_guidance_revision']=LOWER_FIELD_REVISION if model.lower_field_default else None
+        launch['defer_final_evaluation']=a.defer_final_evaluation
+        if cfg.get('compact_lower_field_reward') is not None:
+            from fly_touhou.compact_lower_field_reward import LowerFieldReward
+            launch['lower_field_reward']=LowerFieldReward(gamma=cfg.get('parameters',{}).get('gamma',.999),
+                **cfg['compact_lower_field_reward']).specification()
+        if cfg.get('compact_frozen_decoding'):
+            from fly_touhou.compact_frozen_decoding import configure
+            launch['deployment_decoding']=configure(model,cfg)
         cfg['compact_forecast_native_arming']=model.anticipate_point_arming
         cfg['compact_forecast_growth_motion']=model.forecast_growth_motion
         cfg['compact_native_motion_forecast']=model.native_motion_forecast
@@ -523,14 +542,25 @@ def main():
             for source in ([] if replay_archive.get('critical_replay') is not None else a.critical_replay_source):
                 old_tape=torch.load(source,map_location='cpu',weights_only=False)
                 critical_replay.add(old_tape,source=str(source.resolve()));del old_tape
-            if replay_archive.get('critical_replay') is not None:critical_replay=replay_archive['critical_replay']
+            if replay_archive.get('critical_replay') is not None:
+                old_critical=replay_archive['critical_replay']
+                if old_critical.protected_exit_forecast==model.protected_exit_forecast:
+                    critical_replay=old_critical
+                else:
+                    from fly_touhou.compact_story_tape_retention import merge_native_deathbombs
+                    # The old protected inputs remain valid factual DB examples,
+                    # but cannot teach movement under the new shield encoding.
+                    for entry in old_critical.sequences:entry['data']['rule_weights'].zero_()
+                    launch['critical_replay_protection_migration']=merge_native_deathbombs(critical_replay,replay_archive)
             write_json(a.output/'critical-teacher-replay.json',critical_replay.summary())
         late_replay=None
         if late_coefficient:
             from fly_touhou.compact_late_stage_replay import LateStageReplay,SENSOR_FLAGS
             from fly_touhou.thrl_dodge_diagnostics import _shared_binary
             late_replay=LateStageReplay(sensor_flags={key:getattr(model,key,False) for key in SENSOR_FLAGS},
-                native_repair_revisions=current_revisions)
+                native_repair_revisions=current_revisions,
+                protected_exit_from_stage=getattr(model,'protected_exit_from_stage',1),
+                protected_exit_preserve_long_shield=getattr(model,'protected_exit_preserve_long_shield',False))
             if replay_archive.get('late_replay') is not None:
                 late_replay.merge_payload(replay_archive['late_replay'],source=str(student_replay_archive))
             for bank_path in late_bank_paths:
@@ -640,6 +670,8 @@ def main():
                 else 'Diagnostic only;complete selected-data epochs without KL early stopping'),
             native_game_round=dict(target_games_per_world=a.games_per_world,maximum_cycles=a.cycles,
                 game_states_persist_between_PPO_chunks=True,checkpoints_do_not_restore_native_games=True),
+            lower_field_guidance_revision=LOWER_FIELD_REVISION if model.lower_field_default else None,
+            internal_frozen_evaluation=not a.defer_final_evaluation,
             partial_risk='Known-point conditional danger retained under scene uncertainty;existing BCE budget shared;no safe-label or margin invention',
             teacher_resource_correction='native-positive-route-resource-reference-v1',
             guidance='original safe,future,hit,ResourceV10 rule,deathbomb;teacher never executes',
@@ -699,6 +731,8 @@ def main():
         last_learning_row=None
         def save(tag,*,training_state=True):
             payload=model.parameter_payload(dict(inherited_costs,PPO_updates=updates,new_student_actions=decisions))
+            payload['PPO_sampling']=dict(action_selection='sample',movement_sampling_temperature=movement_temperature,
+                bomb_sampling_temperature=bomb_temperature)
             path=a.output/(tag+'-parameters.pt');temp=path.with_suffix('.pt.tmp')
             with temp.open('wb') as f:torch.save(payload,f);f.flush();os.fsync(f.fileno())
             os.replace(temp,path)
@@ -840,6 +874,11 @@ def main():
                 if updates%4==0:save('latest')
             numerical_before=optimizer.sampled_update_snapshot()
             learning_started=time.monotonic()
+            from fly_touhou.compact_combat_position import rollout_position_summary
+            write_json(a.output/f'position-cycle{cycle:03}.json',rollout_position_summary(rollout))
+            if model.lower_field_default:
+                from fly_touhou.compact_lower_field import rollout_summary as lower_field_summary
+                write_json(a.output/f'lower-field-cycle{cycle:03}.json',lower_field_summary(rollout))
             learning_result=update(model,optimizer,rollout,epochs=a.epochs,micro_scenes=a.micro_scenes,seed=a.seed+cycle,
                 guard=guard,progress=learning,critical_replay=critical_replay,
                 world_aligned=a.world_aligned_updates,checkpoint_chunks=a.checkpoint_candidate_chunks,
@@ -891,8 +930,9 @@ def main():
                 append_jsonl(a.output/'tape-retention.jsonl',dict(retention,cycle=cycle,
                     supervision_archive=student_replay_archive,checkpoint_cycle=completed_cycle))
             paid=decisions-action_origin
+            final_node=(game_target_met or local_cycle==a.cycles or paid>=student_budget)
             evaluation_node=((ready_schedule.evaluation_due(paid) if ready_schedule else local_cycle%a.evaluation_every==0)
-                or local_cycle==a.cycles or game_target_met)
+                or final_node) and not a.defer_final_evaluation
             parameter_node=ready_schedule.checkpoint_due(paid) if ready_schedule else local_cycle%a.parameter_checkpoint_every==0
             checkpoint=(save(f'cycle{cycle:03}',training_state=evaluation_node)
                 if evaluation_node or parameter_node else None)
@@ -901,6 +941,7 @@ def main():
             if (a.output/'STOP_AFTER_CYCLE').exists():raise RuntimeError('Operator STOP_AFTER_CYCLE')
             if not evaluation_node:
                 progress('student_cycle_completed',cycle=cycle)
+                if final_node:break
                 continue
             # Training worlds stay parked with their genuine carried brain/game
             # states. These separate frozen games share no training actions.
@@ -928,14 +969,18 @@ def main():
                 write_json(a.output/'native-budget-stop.json',budget_stop);break
         coverage=collector.coverage.summary(games_per_world=a.games_per_world)
         write_json(a.output/'stage-coverage.json',coverage)
-        save('final');collector.close();collector=None;native_closed=True
+        final_checkpoint=save('final');collector.close();collector=None;native_closed=True
         best=dict(checkpoint=best_checkpoint,report=best_report)
         write_json(a.output/'result.json',dict(status='completed_finite_full_story_PPO',PPO_updates=updates,
-            new_student_actions=decisions,best_parameters=best['checkpoint'],best_clears=best['report']['clears'],
+            new_student_actions=decisions,best_parameters=best['checkpoint'],
+            final_parameters=str(final_checkpoint),
+            best_clears=best['report']['clears'] if best['report'] is not None else None,
             student_actions_this_job=decisions-action_origin,PPO_updates_this_job=updates-update_origin,
             PPO_trained_rows_this_job=trained_rows,
             stage_coverage=coverage,requested_native_game_round_complete=coverage['game_target_met'],
-            evaluated_episodes=a.evaluation_episodes,best_action_selection=a.evaluation_selection,native_budget_stop=budget_stop,
+            evaluated_episodes=0 if a.defer_final_evaluation else a.evaluation_episodes,
+            frozen_evaluation_deferred=a.defer_final_evaluation,
+            best_action_selection=a.evaluation_selection,native_budget_stop=budget_stop,
             goal_complete_claimed=False,full_lunatic_stable_clear_not_yet_established=True))
         progress('completed_finite_full_story_PPO')
     except BaseException as error:

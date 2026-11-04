@@ -62,6 +62,19 @@ def export_calibration(exporter,label,root,*,launch,read_json):
     cursor=exporter.state.setdefault('compact_spiking_cursors',{}).setdefault(label,{})
     if full_story and not cursor.get('scope') and (root/'algorithm.json').exists():
         common._text(exporter,prefix+'scope',read_json(root/'algorithm.json'),0);cursor['scope']=True
+    if full_story:
+        position_files=[*root.glob('position-cycle*.json'),*root.glob('development-cycle*/position-metrics.json')]
+        for path in sorted(position_files):
+            key=str(path.relative_to(root));stamp=path.stat().st_mtime_ns
+            if cursor.setdefault('position_exports',{}).get(key)==stamp:continue
+            frozen=path.name=='position-metrics.json'
+            cycle=int(path.parent.name.removeprefix('development-cycle')) if frozen else int(path.stem.removeprefix('position-cycle'))
+            role='frozen_position' if frozen else 'training_position'
+            for stage,values in read_json(path)['stages'].items():
+                for name in ('upper_fraction','unprotected_upper_fraction','mean_y','contacts_per_10000_frames',
+                             'above_boss_frames','boss_frames','top112_frames','bottom400_frames','misses','upper_misses'):
+                    if name in values:common._scalar(exporter,prefix+role+'/stage'+stage+'/'+name,values[name],cycle)
+            cursor['position_exports'][key]=stamp
     if full_story and (root/'learning.jsonl').exists():
         with _shared_binary(root/'learning.jsonl') as stream:
             stream.seek(cursor.get('offset',0))

@@ -106,7 +106,9 @@ class Collector:
                 unprotected_mask=np.asarray([x['normal'] for x in label],bool),
                 rule_probabilities=np.asarray([x['probabilities'] for x in expert],np.float32),
                 rule_weights=np.asarray([x.get('guidance_weight',1.) for x in expert],np.float32),
-                deathbomb_mask=(f[:,4]>0)&(f[:,12]>0)&(f[:,17]>.5))
+                deathbomb_mask=(f[:,4]>0)&(f[:,12]>0)&(f[:,17]>.5),
+                lower_field_exception=np.asarray([x.get('lower_field_exception',f[i,111]>.99)
+                    or expert[i].get('native_route_guidance',{}).get('applied',False) for i,x in enumerate(label)],bool))
             # Preserve the decision-time mask for unbiased diagnostics. The
             # training mask below can be invalidated after observing outcomes.
             record['recorded_pre_action_trusted']=record['trusted'].copy()
@@ -143,6 +145,8 @@ class Collector:
             if np.asarray(truncated).any():raise RuntimeError('A full-story rollout may end games only at native terminals')
             if any(x.get('reward_mapping_complete') is not True for x in infos):raise RuntimeError('Incomplete original reward mapping')
             rewards=np.asarray([x['reward_vector'] for x in infos],np.float32)
+            for reward_key in ('lower_field_potential','avoidable_upper_residence'):
+                record[reward_key]=np.asarray([x.get('reward_components_raw',{}).get(reward_key,0.) for x in infos],np.float32)
             if getattr(model,'native_contact_risk_calibration',False) or partial_present:
                 record['native_action_frames']=np.asarray([
                     info['episode_frames']-before[i]['episode_frames'] for i,info in enumerate(infos)],np.int32)
@@ -221,6 +225,8 @@ class Collector:
                 movement_sampling_temperature=self.movement_sampling_temperature,
                 bomb_sampling_temperature=self.bomb_sampling_temperature,
                 protected_exit_forecast=any('protected_exit_revision' in x for x in label),
+                protected_exit_from_stage=getattr(model,'protected_exit_from_stage',1),
+                protected_exit_preserve_long_shield=getattr(model,'protected_exit_preserve_long_shield',False),
                 protected_exit_revision=label[0].get('protected_exit_revision'),
                 native_contact_risk_calibration=getattr(model,'native_contact_risk_calibration',False),
                 native_motion_forecast=getattr(model,'native_motion_forecast',False),
@@ -455,6 +461,16 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
             normalizers=gru_aligned_guidance_loss(torch.zeros(length,B,19),**task,actions=batch['actions'],
                 veto_rule_on_contact=True)['denominators']
             attack_normalizer=None
+            position_coefficient=getattr(model,'combat_position_guidance_coefficient',0.)
+            position_normalizer=None
+            if position_coefficient:
+                from .compact_combat_position import position_targets
+                position_kwargs={}
+                if getattr(model,'lower_field_default',False):
+                    from .compact_lower_field import position_targets
+                    position_kwargs=dict(exceptions=batch.get('lower_field_exception'))
+                position_normalizer=position_targets(batch['features'],batch['margins'],batch['trusted'],
+                    batch['unprotected_mask'],batch['rule_probabilities'],batch['rule_weights'],**position_kwargs)[0].sum()
             if boss_attack_coefficient:
                 from .compact_boss_attack_guidance import eligible_and_closing
                 attack_normalizer=eligible_and_closing(batch['features'],batch['margins'],batch['trusted'],
@@ -486,6 +502,8 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
             if recorded_batch is not None:
                 metrics.update(exact_action_KL=0.,exact_bomb_KL=0.,exact_weighted_movement_KL=0.,bomb_KL_legacy_saturation_rows=0)
             if boss_attack_coefficient:metrics['boss_attack_guidance']=0.
+            if position_coefficient:
+                metrics.update(combat_position_guidance=0.,combat_position_rows=int(position_normalizer))
             if conditional_wall_coefficient:
                 metrics.update(conditional_wall_guidance=0.,conditional_wall_rows=int(wall_normalizer))
             if guided_wall_coefficient:
@@ -523,13 +541,26 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
                     micro['old_values'],micro['advantages'],micro['returns'],cfg)
                 aux={k:micro[k] for k in task}
                 guide=gru_aligned_guidance_loss(result['logits'],**aux,actions=micro['actions'],normalizers=normalizers,
-                    veto_rule_on_contact=True)
+                    veto_rule_on_contact=True,
+                    position_features=micro['features'] if getattr(model,'lower_field_default',False) else None,
+                    position_exceptions=micro.get('lower_field_exception'))
                 native=None if not factual_risk else dict(actions=micro['actions'],outcomes=micro['outcomes'],
                     unprotected=native_exposure_mask(micro['features'],micro['unprotected_mask']),elapsed_frames=micro['native_action_frames'],
                     weights=native_weights[:,start:stop].to(model.device),share=native_share)
                 risk=risk_loss(result['horizon_scores'],micro['margins'],rw[:,start:stop].to(model.device),cw[:,start:stop].to(model.device),native=native,
                     partial=None if pw is None else pw[:,start:stop].to(model.device))
                 loss=ppo['total_loss']*(count/B)+guide['total_loss']+risk
+                if position_coefficient:
+                    from .compact_combat_position import combat_position_loss
+                    position_kwargs={}
+                    if getattr(model,'lower_field_default',False):
+                        from .compact_lower_field import combat_position_loss
+                        position_kwargs=dict(exceptions=micro.get('lower_field_exception'))
+                    position,_=combat_position_loss(result['logits'],micro['features'],micro['margins'],
+                        micro['trusted'],micro['unprotected_mask'],micro['rule_probabilities'],
+                        micro['rule_weights'],normalizer=position_normalizer,**position_kwargs)
+                    loss=loss+position_coefficient*position
+                    metrics['combat_position_guidance']+=float(position.detach())*position_coefficient
                 if boss_attack_coefficient:
                     from .compact_boss_attack_guidance import boss_attack_guidance
                     attack,_=boss_attack_guidance(result['logits'],micro['features'],micro['margins'],micro['trusted'],

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fly-touhou"
-version = "0.1.0"
+version = "0.2.0.dev101"
 description = "Native Touhou process control with a FlyWire-constrained spiking student and teacher-guided learning"
 requires-python = ">=3.11"
 readme = "README.md"

@@ -94,7 +94,14 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
     _attach=THRLTeacherEnv._attach
     def __init__(self,*args,teacher_revision=None,forecast_native_arming=False,primary_attack_target=False,forecast_growth_motion=False,full_native_teacher_support=False,protected_exit_forecast=False,protected_exit_from_stage=1,protected_exit_preserve_long_shield=False,stage6_prefix_capture=None,frozen_prefix_replay=None,native_motion_forecast=False,native_focus_gate=False,unknown_laser_player_motion=False,native_curve_laser_geometry=False,native_curve_motion_forecast=False,native_enemy_damage_bound=False,**kwargs):
         self.frozen_stage6_metrics=kwargs.pop('frozen_stage6_metrics',None)
+        lower_reward=kwargs.pop('lower_field_reward',None)
+        if lower_reward is not None and kwargs.get('reward_schema')!='th14-completion-reward-v4':
+            raise ValueError('Lower-field shaping is calibrated to completion reward v4')
         super().__init__(*args,**kwargs)
+        self.lower_field_reward=None
+        if lower_reward is not None:
+            from .compact_lower_field_reward import LowerFieldReward
+            self.lower_field_reward=LowerFieldReward(gamma=self.reward_model.gamma,**lower_reward)
         self.stage6_prefix_capture=stage6_prefix_capture
         self.frozen_prefix_replay=frozen_prefix_replay
         self.native_enemy_damage_bound=bool(native_enemy_damage_bound)
@@ -172,7 +179,8 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
             d=r['details']
             info['compact_observation_frame']=self.snapshot.frame
             info['compact_targets']=dict(margins=d['margins'].tolist(),trusted=d['trusted'].tolist(),normal=d['normal'],
-                frame=r['frame'],native_episode=int(self.episode_id),uncertainty=d.get('uncertainty'))
+                frame=r['frame'],native_episode=int(self.episode_id),uncertainty=d.get('uncertainty'),
+                lower_field_exception=bool((r.get('source_native_forecasts') or {}).get('reactive_bullets')))
             if 'partial_point_danger' in d:
                 info['compact_targets'].update(partial_point_danger=d['partial_point_danger'].tolist(),
                     partial_point_danger_revision=d['partial_point_danger_revision'])
@@ -191,6 +199,9 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
             from .compact_frozen_prefix_replay import restore_environment
             obs,info=restore_environment(self,self.frozen_prefix_replay)
         if self._teacher is not None:info=self._label_current(info)
+        if getattr(self,'lower_field_reward',None) is not None:
+            self.lower_field_reward.reset(self.snapshot)
+            info['reward_shaping']=self.lower_field_reward.specification()
         if getattr(self,'stage6_prefix_capture',None):
             from .compact_frozen_prefix import start
             start(self)
@@ -202,6 +213,11 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
         from .compact_frozen_prefix import before_step,after_step
         capture_before=before_step(self)
         obs,reward,done,truncated,info=super().step(action)
+        if getattr(self,'lower_field_reward',None) is not None:
+            from .compact_lower_field_reward import apply_reward
+            components,diagnostics=self.lower_field_reward.transition(previous_snapshot,self.snapshot,
+                previous_encoding,info['reward_diagnostics'],terminal=done)
+            reward=apply_reward(self,info,components,diagnostics)
         from .compact_story_contact_evidence import contact_transition
         evidence=contact_transition(previous_snapshot,getattr(self,'snapshot',None),
             before_encoding=previous_encoding,after_encoding=getattr(self.encoder,'last_result',None),
@@ -233,6 +249,8 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
         from .resource_teacher_v10 import REVISION
         cfg['teacher_revision']=REVISION;cfg.setdefault('movement_guidance',{})['online_teacher_coefficient']=.1
     rows=train_thrl_native.make_env_kwargs(cfg,Path(output),workers,role)
+    if cfg.get('compact_lower_field_reward') is not None:
+        for r in rows:r['lower_field_reward']=dict(cfg['compact_lower_field_reward'])
     if cfg.get('compact_capture_stage6_prefix'):
         for i,r in enumerate(rows):r['stage6_prefix_capture']=str(Path(output)/'stage6-prefix'/f'world-{i}.json')
     if cfg.get('compact_capture_stage6_prefix') or cfg.get('compact_frozen_prefix_replay'):
@@ -273,7 +291,8 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
 
 @torch.no_grad()
 def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,guard=lambda:None,progress=lambda x:None,record_diagnostics=True,
-             action_selection=None,policy_seed=2027432927,evaluation_split='development',opening_seeds=None):
+             action_selection=None,policy_seed=2027432927,evaluation_split='development',opening_seeds=None,
+             movement_sampling_temperature=1.,bomb_sampling_temperature=1.):
     from . import thrl_vector
     from .compact_spiking_run import kwargs,infer
     from .fly_dn_cost_native_policy import make_dn_cost_evaluation_vector
@@ -291,7 +310,8 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
     replay_spec=config.get('compact_frozen_prefix_replay')
     if replay_spec and (episodes!=1 or action_selection=='sample'):
         raise ValueError('Recorded brain continuation uses one deterministic frozen branch')
-    selector=StoryActionSelector(action_selection,episodes,seed=policy_seed)
+    selector=StoryActionSelector(action_selection,episodes,seed=policy_seed,
+        movement_temperature=movement_sampling_temperature,bomb_temperature=bomb_sampling_temperature)
     if action_selection!='joint_mode' and not getattr(model,'candidate_conditioned',False):
         raise ValueError('Alternate decoding requires action-consistent candidate-state commits')
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
@@ -304,11 +324,14 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
         finite_native_lives=True,continues=False,frame_cap=None,teacher_actions=0,optimizer_updates=0,
         detailed_contact_diagnostics=record_diagnostics,action_selection=action_selection,policy_seed=policy_seed,
         evaluation_split=evaluation_split,frozen_prefix_replay=replay_spec,
+        movement_sampling_temperature=movement_sampling_temperature,bomb_sampling_temperature=bomb_sampling_temperature,
         live_policy_all_six_stages=not bool(replay_spec)))
     states={};pending={};infos={};observations={};results=[];decisions=0;begun=time.monotonic();last=0
     captured_brains=set()
     from .compact_story_diagnostics import StoryDiagnostics
     diagnostics=StoryDiagnostics(output/'diagnostics',episodes) if record_diagnostics else None
+    from .compact_combat_position import PositionMonitor
+    position_monitor=PositionMonitor()
     try:
         thrl_vector.worker_factory=factory
         Vector=make_dn_cost_evaluation_vector(worker_cpus,output)
@@ -318,6 +341,14 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
             guard();ready=[]
             for msg in vector.receive_ready(max_wait_ms=2,min_batch=min(4,episodes),check_stop=guard):
                 i=msg['index'];info=msg['info'];features=msg['observation']['features']
+                if msg['operation']!='reset':
+                    previous=infos[i]
+                    position_monitor.add(observations[i],
+                        frames=max(0,int(info.get('episode_frames',0))-int(previous.get('episode_frames',0))),
+                        contacts=int((info.get('misses',0)>previous.get('misses',0) and observations[i][14]>.5)
+                            or (features[17]>.5 and observations[i][17]<.5)),
+                        misses=max(0,int(info.get('misses',0))-int(previous.get('misses',0))),
+                        bombs=max(0,int(info.get('bombs_used',0))-int(previous.get('bombs_used',0))),world=i)
                 if diagnostics is not None and msg['operation']!='reset':
                     diagnostics.after_action(i,infos[i],info,observations[i],features,terminated=bool(msg.get('terminated')))
                 infos[i]=info;observations[i]=features
@@ -362,9 +393,12 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
                 vector.submit_at(ready,'step',actions.tolist())
             if time.monotonic()-last>5:
                 d=dict(phase='frozen_full_story',completed=len(results),target=episodes,student_decisions=decisions,
-                    elapsed_seconds=time.monotonic()-begun,action_selection=action_selection,active=[dict(world=i,**{k:infos[i].get(k) for k in
+                    elapsed_seconds=time.monotonic()-begun,action_selection=action_selection,
+                    movement_sampling_temperature=movement_sampling_temperature,bomb_sampling_temperature=bomb_sampling_temperature,
+                    active=[dict(world=i,**{k:infos[i].get(k) for k in
                     ('stage','stage_frame','episode_frames','lives','bombs','misses','bombs_used')}) for i in vector._inflight if i in infos])
                 write_json(output/'progress.json',d);progress(d);last=time.monotonic()
+                write_json(output/'position-metrics.json',position_monitor.summary())
         from .compact_native_forecast import native_repair_revisions
         report=dict(status='completed',episodes=episodes,clears=sum(r['outcome']=='clear' for r in results),
             frozen_decoding=getattr(model,'frozen_decoding',None),
@@ -374,13 +408,17 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
             episode_results=sorted(results,key=lambda r:r['evaluation_game']),full_game=not bool(replay_spec),
             full_native_run=True,frozen_prefix_replay=replay_spec,teacher_actions=0,optimizer_updates=0,
             elapsed_seconds=time.monotonic()-begun,student_decisions=decisions,action_selection=action_selection,policy_seed=policy_seed,
-            evaluation_split=evaluation_split,native_position_hold_forecast=(
+            evaluation_split=evaluation_split,
+            movement_sampling_temperature=movement_sampling_temperature,bomb_sampling_temperature=bomb_sampling_temperature,
+            native_position_hold_forecast=(
                 native_position_hold_revision(config) if getattr(model,'native_motion_forecast',False) else None),
             native_ex8_polar4_forecast=(native_ex8_polar4_revision(config)
                 if getattr(model,'native_motion_forecast',False) else None),
             native_hidden_enemy_contacts=native_hidden_enemy_revision(config),
             native_wall_reactive_forecast=native_wall_revision(config))
         if diagnostics is not None:report['dodge_diagnostics']=diagnostics.finish()
+        report['position_metrics']=position_monitor.summary()
+        write_json(output/'position-metrics.json',report['position_metrics'])
         write_json(output/'report.json',report);return report
     finally:
         thrl_vector.worker_factory=old

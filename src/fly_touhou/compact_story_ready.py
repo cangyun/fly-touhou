@@ -92,6 +92,8 @@ class ReadyCollector(Collector):
                         margins=np.asarray(label['margins'],np.float32),trusted=np.asarray(label['trusted'],bool),
                         unprotected_mask=normal,rule_probabilities=np.asarray(expert['probabilities'],np.float32),
                         rule_weights=np.float32(weight),deathbomb_mask=bool(f[4]>0 and f[12]>0 and f[17]>.5),
+                        lower_field_exception=bool(label.get('lower_field_exception',f[111]>.99)
+                            or expert.get('native_route_guidance',{}).get('applied',False)),
                         partial_point_danger=np.asarray(label.get('partial_point_danger',np.zeros((3,18),bool)),bool),
                         risk_training_eligible=bool(label.get('risk_training_eligible',normal)),
                         risk_training_trusted=np.asarray(label.get('risk_training_trusted',label['trusted']),bool),
@@ -152,7 +154,9 @@ class ReadyCollector(Collector):
                 # was protected. Risk supervision selects exposed rows later.
                 outcome=int(hit) if record['features'][14]>.5 and action<18 else -1
                 record.update(native_action_frames=np.int32(elapsed),outcomes=np.int8(outcome),
-                    recorded_observed_contacts=hit,reward_vectors=np.asarray(info['reward_vector'],np.float32),terminated=done)
+                    recorded_observed_contacts=hit,reward_vectors=np.asarray(info['reward_vector'],np.float32),terminated=done,
+                    lower_field_potential=np.float32(info.get('reward_components_raw',{}).get('lower_field_potential',0.)),
+                    avoidable_upper_residence=np.float32(info.get('reward_components_raw',{}).get('avoidable_upper_residence',0.)))
                 from .compact_native_contact_targets import native_exposure_mask
                 if native_exposure_mask(record['features'],record['unprotected_mask']) and action<18:
                     stats['safe_forecast_but_native_contact']+=int(hit and 0<elapsed<=4 and record['margins'][0,action]>0)
@@ -216,5 +220,7 @@ class ReadyCollector(Collector):
                 'unknown_laser_player_motion','native_curve_laser_geometry','native_curve_motion_forecast','native_enemy_damage_bound','primary_attack_target','forecast_growth_motion',
                 'anticipate_point_arming','task_progress_ports'):
             metadata[key]=bool(getattr(model,key,False))
+        metadata.update(protected_exit_from_stage=getattr(model,'protected_exit_from_stage',1),
+            protected_exit_preserve_long_shield=getattr(model,'protected_exit_preserve_long_shield',False))
         progress(report())
         return pack_world_records(records,states,bootstrap['values'].cpu(),metadata)

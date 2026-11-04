@@ -2,9 +2,9 @@
 
 使用完整 FlyWire 连接组约束的可训练脉冲神经网络，控制原作《东方辉针城》TH14 1.00b。Windows 原作接口、无渲染运行、教师辅助 PPO、神经风险读出与冻结评估的研究工程。
 
-**本分支是已通关的第 87 批 v6 配置。** 已记录一次固定开局种子的 Lunatic 六面、不续关、有限残机通关；这不是稳定通关率的证明。推理时使用同一个果蝇网络，教师不接管动作。
+**本分支是第 101 批最新实验，已确认退化。** 冻结 20 局得到 0 次通关、1 局到达六面；同组开局的第 96 批为 1 次通关、16 局到达六面。要使用已通关的第 87 批 v6 配置，请切换到 [`main`](https://github.com/cangyun/fly-touhou/tree/main)。
 
-English: A full-connectome-constrained spiking controller for the original Touhou 14. This branch preserves one verified fixed-seed Lunatic 1CC, not a claim of robust or multi-seed clearing. Code, weights, native backend source and evaluation evidence are released separately from the copyrighted game.
+English: This is the cycle101 experimental branch. It regressed to 0/20 development clears, with only 1/20 reaching stage 6. Use `main` for the archived fixed-seed Lunatic clear. Both positive and negative results are retained; the latest code is not claimed to be the best policy.
 
 ## 两个版本
 
@@ -15,19 +15,21 @@ English: A full-connectome-constrained spiking controller for the original Touho
 
 实验版保留负面结果以供研究，**不推荐用来替换通关基线**。请让源码分支、Release 权重和配置保持配套。
 
-## 已验证的通关记录
+## 最新实验结果
 
-| 项目 | 数值 |
-|---|---:|
-| 开局种子 | `3574003864` |
-| 难度 / 规则 | Lunatic，六面，有限残机，禁止续关 |
-| 原作累计帧 / 策略决策 | 135,934 / 33,828 |
-| Miss / Bomb | 6 / 25 |
-| 确认的决死 Bomb | 24 |
-| 推理选择 | `family_mode` |
-| 评估时训练更新 / 教师动作 | 0 / 0 |
+| 冻结开发评估，共 20 局 | 第 96 批对照 | 本分支第 101 批 |
+|---|---:|---:|
+| 到达第四面 | 20 | 19 |
+| 到达第五面 | 17 | 4 |
+| 到达第六面 | 16 | 1 |
+| 通关 | 1 | 0 |
+| 第一面上半场占比 | 44.99% | 27.44% |
 
-原始数值报告见 [results/clear-v6.json](results/clear-v6.json)。这是开发阶段选定的种子，后续动作会影响原作 RNG；不要把一次通关表述为“100% 通关率”。
+下半场停留增加了，但推进和通关能力退化。两者不能混为同一个优化目标。本轮增加了 327,680 次学生决策和 320 次 Adam 更新，停在第 101 批；未自动恢复训练。冻结评估全程不更新参数，也没有教师接管。
+
+修改同时涉及位置势函数、上半场条件惩罚和移动教师目标重分配，尚不能单独归因于某一项。完整结果：[冻结 20 局](results/cycle101-frozen20.json)、[与第 96 批对比](results/cycle096-vs-cycle101.json)、[实验分析](docs/EXPERIMENT-CYCLE101.md)。相同开局种子在不同动作后仍可能出现不同 RNG 轨迹；这是开发对照，不是独立正式测试。
+
+历史首次通关证据仍保留在 [clear-v6.json](results/clear-v6.json)，对应 `main` 的第 87 批权重，**不是本分支的第 101 批结果**。
 
 ## 模型究竟是什么
 

@@ -66,7 +66,7 @@ def validate_gru_aligned_guidance_inputs(logits,margins,trusted,actions,outcomes
 
 def gru_aligned_guidance_loss(logits,margins,trusted,actions,outcomes,*,valid_mask=None,
         unprotected_mask,config=DEFAULT_CONFIG,normalizers=None,rule_probabilities=None,
-        rule_weights=None,deathbomb_mask=None,veto_rule_on_contact=False):
+        rule_weights=None,deathbomb_mask=None,veto_rule_on_contact=False,position_features=None,position_exceptions=None):
     """Local sums / whole256-row counts; sum four microblocks without reweighting.
 
 Call the host validator on sealed CPU evidence first. This tensor path has no
@@ -75,6 +75,9 @@ scores; hit/rule/DB use the original T1 policy clamp and inventory support.
 """
     c,v,a,y,valid,normal,p,w,db=_inputs(logits,margins,trusted,actions,outcomes,valid_mask,
         unprotected_mask,config,rule_probabilities,rule_weights,deathbomb_mask)
+    if position_features is not None:
+        from .compact_lower_field import movement_reference
+        p,_=movement_reference(position_features,c,v,normal,p,w,exceptions=position_exceptions)
     eligible=valid&normal
     trust=v&eligible[...,None]
     # Eligibility deliberately does NOT depend on sampled action or outcome.

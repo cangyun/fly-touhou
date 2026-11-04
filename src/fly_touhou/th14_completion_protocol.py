@@ -69,11 +69,14 @@ def make_reward_model(bounds,*,reward_schema=LEGACY_REWARD,reward_gamma=.995,req
     if reward_schema=='th14-completion-reward-v3':
         from .th14_completion_v3 import ResourceCompletionReward
         return ResourceCompletionReward(bounds,gamma=reward_gamma,require_complete=require_complete)
+    if reward_schema=='th14-completion-reward-v4':
+        from .th14_completion_v4 import CombatCompletionReward
+        return CombatCompletionReward(bounds,gamma=reward_gamma,require_complete=require_complete)
     raise ValueError('Unknown versioned reward schema: '+str(reward_schema))
 
 
 def baseline_parameters(config):
-    if config.get('training_recipe')=='th14-completion-v3':
+    if config.get('training_recipe') in ('th14-completion-v3','th14-completion-v4'):
         return dict(learning_rate=1e-4,gamma=.999,gae_lambda=.98,entropy_coeff_start=.01)
     return (dict(learning_rate=1e-4,gamma=.999,gae_lambda=.98,entropy_coeff_start=.02)
         if config.get('training_recipe')==RECIPE else
@@ -81,7 +84,7 @@ def baseline_parameters(config):
 
 
 def exploration_parameters(config,start):
-    if config.get('training_recipe')=='th14-completion-v3':
+    if config.get('training_recipe') in ('th14-completion-v3','th14-completion-v4'):
         decisions=config['entropy_decay_decisions']
         if type(decisions) is not int or decisions<=0:raise ValueError('Positive decision-based exploration budget required')
         return dict(entropy_coeff_end=start*.1,entropy_anneal_updates=math.ceil(decisions/config['rollout_total_decisions']))
@@ -93,14 +96,14 @@ def exploration_parameters(config,start):
 
 def learning_overrides(config):
     """Pinned recipe options, independent of the panel's worker count."""
-    if config.get('training_recipe')=='th14-completion-v3':
+    if config.get('training_recipe') in ('th14-completion-v3','th14-completion-v4'):
         from .thrl_learning_revision import auxiliary_parameters
         return dict(seqs_per_batch=16,gae_chunk_size=0,target_kl=.03,**auxiliary_parameters(config))
     return {}
 
 
 def search_space(config):
-    if config.get('training_recipe')=='th14-completion-v3':
+    if config.get('training_recipe') in ('th14-completion-v3','th14-completion-v4'):
         return dict(learning_rate=(3e-5,1e-4),gamma=[.999],gae_lambda=[.98],entropy_coeff_start=[.005,.01])
     if config.get('training_recipe')==RECIPE:
         return dict(learning_rate=(3e-5,3e-4),gamma=[.995,.999],gae_lambda=[.95,.98],entropy_coeff_start=[.01,.02])

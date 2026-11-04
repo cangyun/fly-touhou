@@ -22,8 +22,9 @@ def validate_training_mode(config):
     if forbidden:
         raise ValueError('Full-story mode forbids curriculum/segment configuration: '+', '.join(sorted(forbidden)))
     required = {'first_hit_terminal':False, 'native_frame_horizon':None,
-                'continues_allowed':False, 'policy_action_count':19,
-                'reward_schema':'th14-completion-reward-v3'}
+                'continues_allowed':False, 'policy_action_count':19}
+    if config.get('reward_schema') not in ('th14-completion-reward-v3','th14-completion-reward-v4'):
+        raise ValueError('Full-story mode requires explicit reward_schema v3 or v4')
     for key, expected in required.items():
         if key not in config or config[key] != expected or (
                 isinstance(expected, bool) and type(config[key]) is not bool):

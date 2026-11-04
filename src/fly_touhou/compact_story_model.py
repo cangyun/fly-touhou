@@ -102,6 +102,8 @@ class CompactStoryPolicy(nn.Module):
         self.native_contact_risk_calibration=False
         self.neural_risk_scale=1.
         self.idle_prior_scale=1.
+        self.combat_position_guidance_coefficient=0.
+        self.lower_field_default=False
         self.full_story_action_selection='joint_mode'
         width=2*len(self.core.output_indices)
         self.route=nn.Sequential(nn.LayerNorm(width),nn.Linear(width,128),nn.SiLU(),nn.Linear(128,1))
@@ -255,6 +257,8 @@ class CompactStoryPolicy(nn.Module):
             native_contact_target_revision=NATIVE_REVISION if self.native_contact_risk_calibration else None,
             neural_risk_scale=self.neural_risk_scale,
             idle_prior_scale=self.idle_prior_scale,
+            combat_position_guidance_coefficient=self.combat_position_guidance_coefficient,
+            lower_field_default=self.lower_field_default,
             full_story_action_selection=self.full_story_action_selection,
             soft_risk_composition=self.soft_risk_composition,
             risk_readout_kind=getattr(self.risk,'readout_kind','DN-only-nonlinear-risk-v1'),
@@ -319,6 +323,8 @@ def from_story_checkpoint(connectome,payload,*,device='cuda:0'):
     model.neural_risk_scale=checked_risk_scale(payload.get('neural_risk_scale',1.))
     from .compact_story_idle_prior import checked_idle_scale
     model.idle_prior_scale=checked_idle_scale(payload.get('idle_prior_scale',1.))
+    model.combat_position_guidance_coefficient=payload.get('combat_position_guidance_coefficient',0.)
+    model.lower_field_default=payload.get('lower_field_default',False)
     model.full_story_action_selection=payload.get('full_story_action_selection','joint_mode')
     model.soft_risk_composition=payload.get('soft_risk_composition',False)
     model.core.sparse.deterministic_spmm=payload.get('deterministic_spmm',model.core.sparse.deterministic_spmm)

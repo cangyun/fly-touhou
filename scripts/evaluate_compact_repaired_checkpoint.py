@@ -17,6 +17,11 @@ def main():
     parser.add_argument('--episodes', type=int, default=4)
     parser.add_argument('--evaluation-seed', type=int, default=2027432926)
     parser.add_argument('--policy-seed', type=int, default=2027432927)
+    parser.add_argument('--action-selection',choices=('family_mode','joint_mode','sample'),default='family_mode')
+    parser.add_argument('--movement-sampling-temperature',type=float,default=1.,
+        help='For sample: use the training movement temperature to evaluate the learned behavior')
+    parser.add_argument('--bomb-sampling-temperature',type=float,default=1.,
+        help='For sample: use the training Bomb temperature; deterministic modes are unchanged')
     parser.add_argument('--opening-seeds',type=int,nargs='+',
         help='Exact episode reset seeds from a prior frozen episode plan')
     args = parser.parse_args()
@@ -55,7 +60,8 @@ def main():
             full_story=True,observation_features=129,neural_input_per_candidate=47,
             PID=proc.pid, create_time=proc.create_time(), argv=sys.argv,
             checkpoint=str(args.checkpoint), optimizer_updates=0, teacher_actions=0,
-            selection='family_mode', episodes=args.episodes, split='development',
+            selection=args.action_selection, episodes=args.episodes, split='development',
+            movement_sampling_temperature=args.movement_sampling_temperature,bomb_sampling_temperature=args.bomb_sampling_temperature,
             seed=args.evaluation_seed, policy_seed=args.policy_seed,
             opening_seeds=args.opening_seeds,native_repair_revisions=revisions,
             live_policy_all_six_stages=not bool(cfg.get('compact_frozen_prefix_replay')),
@@ -90,11 +96,14 @@ def main():
                 evaluation=info, seconds=time.monotonic()-begun))
         result = evaluate(model, cfg, args.output/'development', episodes=args.episodes,
             worker_cpus=cpus, guard=guard, progress=progress, seed=args.evaluation_seed,
-            policy_seed=args.policy_seed, action_selection='family_mode', evaluation_split='development',
-            opening_seeds=args.opening_seeds)
+            policy_seed=args.policy_seed, action_selection=args.action_selection, evaluation_split='development',
+            opening_seeds=args.opening_seeds,movement_sampling_temperature=args.movement_sampling_temperature,
+            bomb_sampling_temperature=args.bomb_sampling_temperature)
         write_json(args.output/'result.json', dict(status='completed', clears=result['clears'],
             stage_counts=result['stage_counts'], episodes=result['episodes'], optimizer_updates=0,
             native_repair_revisions=revisions, report=str(args.output/'development/report.json'),
+            action_selection=args.action_selection,movement_sampling_temperature=args.movement_sampling_temperature,
+            bomb_sampling_temperature=args.bomb_sampling_temperature,
             scope=('Native input prefix replay plus restored brain and live continuation;not a fresh all-online evaluation.'
                 if cfg.get('compact_frozen_prefix_replay') else
                 'Frozen development games, identical opening seeds; later action-dependent RNG can diverge.')))

@@ -57,6 +57,8 @@ class CriticalTeacherReplay:
         return True
     def _copy_block(self,rollout,t,w,source,*,rule_mask=None):
         data={k:rollout[k][t:t+16,w:w+1].detach().cpu().clone() for k in FIELDS}
+        if 'lower_field_exception' in rollout:
+            data['lower_field_exception']=rollout['lower_field_exception'][t:t+16,w:w+1].detach().cpu().clone()
         control=(data['features'][...,14]>.5)|(data['features'][...,17]>.5)
         self.ignored_rule_rows+=int(((data['rule_weights']>0)&~control).sum())
         data['rule_weights']*=control.to(data['rule_weights'].dtype)
@@ -137,10 +139,14 @@ class CriticalTeacherReplay:
             selected.append(normal);normal_rows=int((normal['data']['rule_weights']>0).sum())
         if not selected:raise ValueError('Teacher replay requires an observed student sequence')
         data={k:torch.cat([s['data'][k] for s in selected],1).to(model.device) for k in FIELDS}
+        from .compact_lower_field import special_pattern_mask
+        exceptions=torch.cat([special_pattern_mask(s['data']) for s in selected],1).to(model.device)
         before=SpikingState.pack([s['before'] for s in selected]).to(model.device)
         result=sequence(model,data['features'],data['episode_starts'],before,data['actions'])
         labels={k:data[k] for k in FIELDS if k not in ('features','episode_starts')}
-        loss=gru_aligned_guidance_loss(result['logits'],**labels,config=CONFIG,veto_rule_on_contact=True)
+        loss=gru_aligned_guidance_loss(result['logits'],**labels,config=CONFIG,veto_rule_on_contact=True,
+            position_features=data['features'] if getattr(model,'lower_field_default',False) else None,
+            position_exceptions=exceptions)
         # Refresh only the sampled critical window, using its current neural
         # prediction. This changes supervised sampling, never PPO weighting.
         if self.sequences:
