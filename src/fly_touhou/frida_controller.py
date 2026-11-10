@@ -223,12 +223,15 @@ class OriginalGameController:
             raise NativeError('Native tape requires an owned checkpoint')
         if (self._hook_ready or {}).get('native_tape',{}).get('schema')!=1:
             raise NativeError('This input backend does not implement native tapes')
-        if getattr(self, '_record_input_tape', False):
-            raise NativeError('Cannot record while replaying a prefix tape')
         self._checkpoint=None
         if hasattr(self._memory,'invalidate_prefetch'):self._memory.invalidate_prefetch()
         self._script.post({'type':'control','payload':{'tape':segments}})
         self._checkpoint=self._wait('checkpoint')
+        # A replay can be the prefix of a new, longer recording. Append the
+        # commands only after the native checkpoint acknowledges completion;
+        # adaptive loading continues to be recorded by advance().
+        if getattr(self, '_record_input_tape', False):
+            self._input_tape.extend((int(mask),int(ticks)) for mask,ticks in segments)
         return self.read()
 
     def tap(self, mask: int, ticks: int = 4) -> Snapshot:

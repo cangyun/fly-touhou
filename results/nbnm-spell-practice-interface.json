@@ -1,0 +1,32 @@
+{
+  "schema": "th14-native-spell-practice-qualification-v1",
+  "date": "2026-11-10",
+  "game_version": "TH14 1.00b",
+  "difficulty": "Lunatic",
+  "character": "ReimuA",
+  "native_run_mode": 2,
+  "preceding_stages_played": false,
+  "desktop_input": false,
+  "network_training": false,
+  "controller": "existing resource rule teacher, Bomb removed; no neural policy in this qualification",
+  "task": {
+    "stage": 3,
+    "attack": "BossCard1",
+    "spell_index": 1,
+    "spell_id": 31
+  },
+  "repeat_seed": 4747,
+  "attempts": 2,
+  "successes": 2,
+  "task_native_frames": [
+    1316,
+    1316
+  ],
+  "repeat_entry_features_identical": true,
+  "entry_seconds": [
+    3.438000000000102,
+    3.469000000000051
+  ],
+  "result_rule": "First native contact overrides capture. Success requires native practice result menu and positive capture bonus.",
+  "scope": "Interface and seed-repeat qualification, not learned avoidance or full-game NBNM evidence."
+}

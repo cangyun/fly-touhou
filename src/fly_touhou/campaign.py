@@ -36,19 +36,22 @@ class CampaignTouhouEnv(BackgroundTouhouEnv):
     def reset(self, **kwargs):
         observation, info = super().reset(**kwargs)
         try:
-            if self.snapshot.difficulty != self.difficulty or self.snapshot.stage != 1:
-                raise NativeError('Native menu did not start requested difficulty at stage one')
-            if self.snapshot.extra.get('continues') != 0:
-                raise NativeError('Fresh campaign already has continues; refusing acceptance run')
-            if self.snapshot.extra.get('run_mode') != 0 or self.snapshot.extra.get('replay_playback') != 0:
-                raise NativeError('Campaign requires native Story mode with live play, not Practice or replay playback')
-            self.stage_history = [1]
+            self._validate_initial_run()
+            self.stage_history = [self.snapshot.stage]
             self.life_decrements = self.bomb_actions = self.policy_steps = 0
             info.update(self._campaign_info())
             return observation, info
         except BaseException:
             self.close()
             raise
+
+    def _validate_initial_run(self):
+        if self.snapshot.difficulty != self.difficulty or self.snapshot.stage != 1:
+            raise NativeError('Native menu did not start requested difficulty at stage one')
+        if self.snapshot.extra.get('continues') != 0:
+            raise NativeError('Fresh campaign already has continues; refusing acceptance run')
+        if self.snapshot.extra.get('run_mode') != 0 or self.snapshot.extra.get('replay_playback') != 0:
+            raise NativeError('Campaign requires native Story mode with live play, not Practice or replay playback')
 
     def _advance_action(self, action):
         base_mask = action_mask(action % 18)

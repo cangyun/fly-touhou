@@ -67,6 +67,8 @@ def qualifies_speed(report, *, minimum_attempts=50, minimum_rate=.9):
 
 
 def assert_compatible_evaluations(before, after):
+    if before.get('entry_mode','story_prefix') != after.get('entry_mode','story_prefix'):
+        raise ValueError('Native practice and Story-prefix results are different evaluation protocols')
     for key in ('task', 'opening_seeds', 'action_selection'):
         if before.get(key) != after.get(key):
             raise ValueError('Compare matching frozen evaluation ' + key)

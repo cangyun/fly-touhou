@@ -27,7 +27,17 @@ def validate_spec(spec):
     group_block_budget(spec['world_groups'],spec['group_weights'],segment//16)
     for task in spec['tasks'].values():TaskTracker(task)
     needed=[t for t in spec['tasks'].values() if t['mode']!='full_story']
-    if needed:
+    from .nbnm_spell_practice import enabled,validate_task
+    if enabled(spec['nbnm']):
+        for task in spec['tasks'].values():validate_task(task)
+        validate_task(spec['nbnm']['task'])
+        if not Path(spec['nbnm']['score_template']).is_file():
+            raise ValueError('Supply an existing native score record with the requested spells unlocked')
+        from .thrl_training_mode import seed_split
+        for split, seeds in spec['nbnm']['practice_evaluation_seeds'].items():
+            if not seeds or len(set(seeds)) != len(seeds) or any(seed_split(s)!=split for s in seeds):
+                raise ValueError('Use unique native evaluation seeds belonging to their data split')
+    elif needed:
         bank=read(spec['nbnm']['start_bank'])
         if bank.get('schema')!=SCHEMA:raise ValueError('Prepare the native attack-start bank first')
         for task in needed:
@@ -98,6 +108,8 @@ def atomic_torch_save(value,path):
 
 
 def evaluation_seeds(spec, *, split='development', task=None):
+    from .nbnm_spell_practice import enabled
+    if enabled(spec['nbnm']):return list(spec['nbnm']['practice_evaluation_seeds'][split])
     task=task or spec['nbnm']['task']
     if task['mode']=='full_story':return list(spec['full_story_evaluation_seeds'])
     bank=read(spec['nbnm']['start_bank'])
@@ -117,12 +129,20 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
     cfg=environment(spec,evaluation=True);task=dict(task or spec['nbnm']['task'])
     cfg['nbnm']['task']=task
     seeds=evaluation_seeds(spec,split=split,task=task)
-    budget=len(seeds);workers=min(4,budget);results=[];begun=time.monotonic()
+    budget=len(seeds);workers=min(4,budget);results=[];entries={};begun=time.monotonic()
     old=thrl_vector.worker_factory;thrl_vector.worker_factory=factory;vector=None
     model.eval()
     try:
         vector=thrl_vector.THRLNativeVector(story_kwargs(cfg,output,workers,split,teacher=False),output/'workers',timeout=180)
         obs,infos=vector.reset(options=[dict(native_seed=s) for s in seeds[:workers]])
+        # Vector observations are immutable shared snapshots. The evaluator
+        # keeps its own writable staging batch while workers finish out of order.
+        obs={key:np.array(value,copy=True) for key,value in obs.items()}
+        def record_entry(index,info):
+            entries[str(info['native_seed'])]=dict(features=obs['features'][index].tolist(),
+                policy_burn_in=info.get('policy_burn_in'))
+            write_json(output/'entry-observations.json',entries)
+        for index,info in enumerate(infos):record_entry(index,info)
         state=SpikingState.pack([burn_in(model,info,model.initial_state(1)) for info in infos])
         pending=list(range(workers));next_seed=workers
         with torch.no_grad():
@@ -140,6 +160,7 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
                     i=msg['index'];info=msg['info']
                     for k,value in msg['observation'].items():obs[k][i]=value
                     if msg['operation']=='reset':
+                        record_entry(i,info)
                         fresh=burn_in(model,info,model.initial_state(1))
                         for target,value in zip(state.tensors(),fresh.tensors()):target[i:i+1].copy_(value)
                         pending.append(i);continue
@@ -153,6 +174,7 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
                             vector.submit_at([i],'reset',options=[dict(native_seed=seeds[next_seed])]);next_seed+=1
                     else:pending.append(i)
         report=dict(schema='frozen-NBNM-task-evaluation-v1',frozen=True,task=task,
+            entry_mode=spec['nbnm'].get('entry_mode','story_prefix'),
             opening_seeds=seeds,action_selection='joint_mode',evaluation_split=split,
             episode_results=sorted(results,key=lambda r:r['native_seed']),
             attempts=len(results),successes=sum(r['nbnm_success'] for r in results),

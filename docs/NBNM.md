@@ -103,3 +103,41 @@ $spec = Get-Content outputs/nbnm-preparation/route.json -Raw | ConvertFrom-Json
 训练环境补齐了 `tensorboard`，项目依赖声明也已登记。监控服务器的独立 Python 环境不自动供训练解释器导入；后续实验复用当前训练环境，不逐分支重装 PyTorch/CUDA。
 
 启动入口现在将导入和初始化错误写入 `launch-route/startup-日期时间.log`，配置预检会实际导入 TensorBoard。修复了 NBNM 状态记录方法遗漏 `elapsed` 参数的问题，新增回归测试；18 项 NBNM 测试通过。失败记录保留，当前试训输出使用 `s3-card1-route-pilot-v2`，预算和训练方法不变。
+
+## 试训结果与原生符卡入口（2026-11-10）
+
+首轮试训完成了 32,768 次决策、128 次 Adam 更新。训练结束后的自动评估曾因向只读观测数组写入而报错；参数已经保存，现已修复评估器并重新运行独立冻结对照。
+
+同样四个开发种子、相同 Story 前缀和脑状态预热输入下，第 87 批初始模型通过 4/4，试训后通过 3/4。新增失败为种子 35537、符卡第 1,340 帧。小样本没有证明避弹提升；其余配对耗时下降不能抵消失败。本轮不因此扩大到完整六面训练。
+
+TH14 1.00b 自带 **Spell Practice**。新增入口直接使用它，保留原作脚本、碰撞和随机数控制，不需要回放一至三面的道中。已实测的 Lunatic 灵梦 A 入口如下；菜单行和原作 ID 都从 0 开始，不能混用。
+
+| Stage | ECL | 本面菜单行 spell_index | 原作 spell_id |
+|---|---|---:|---:|
+| 3 | BossCard1 | 1 | 31 |
+| 3 | BossCard2 | 2 | 35 |
+| 4 | BossCard2 | 1 | 47 |
+
+已有用户存档需解锁对应符卡。只向每个实例的私有 APPDATA 复制该存档，不改原存档；未解锁会明确报错。菜单按键发给所拥有的原作进程，不操作桌面键鼠。新进程到第一张卡的脚本起点约 3–4 秒，后续推理/反传速度仍取决于模型。
+
+原生练习的满火力、人物位置和初始脑状态，与 Story 前缀不同：本入口在首个符卡脚本帧以零循环状态开始。两种入口在报告中分别记录，禁止跨入口直接配对声称改进。首触碰/Bomb 优先判失败；成功要求原作符卡结果菜单及正的取得奖励，不把 Boss 消失、外部超时或普通下一段当作原生符卡取得。单卡成功永远不是六面 NBNM。
+
+从已有本机 NBNM 配置生成第三面第二张 Boss 符卡配置（只写配置，不训练）：
+
+```powershell
+python scripts/prepare_nbnm_spell_practice.py --config outputs/nbnm-preparation/route.json --score D:/Saves/scoreth14.dat --stage 3 --spell-index 2 --spell-id 35 --attack BossCard2 --output outputs/s3-card2-native.json --run-output outputs/s3-card2-native-training
+```
+
+冻结测试指定模型：
+
+```powershell
+python scripts/train_nbnm.py --config outputs/s3-card2-native.json --evaluate-only models/cycle087-parameters.pt --evaluation-output outputs/s3-card2-native-evaluation
+```
+
+同种子比较两个模型：
+
+```powershell
+python scripts/compare_nbnm_frozen.py --config outputs/s3-card2-native.json --trained outputs/nbnm-route/latest-parameters.pt --output outputs/s3-card2-native-paired
+```
+
+模型和 Python 环境继续复用。明确加 `--execute` 才训练，训练时全部实例从该符卡开始，首次碰撞即终止，重试时从训练分区重新抽原作种子；配置中的四个开发种子只是快速筛查。正式结论需扩大独立测试，且再次确认 Story 入场的适应性。

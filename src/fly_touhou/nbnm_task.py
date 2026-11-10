@@ -5,7 +5,7 @@ from .nbnm_sensation import current_attack
 
 def attack_key(name):
     # Keep helper routines belonging to the SAME attack in that attack.
-    match = re.match(r'^(M?Boss)(Card)?(\d+)(?:\D.*)?$', name or '')
+    match = re.match(r'^(M?Boss[AB]?)(Card)?(\d+)(?:\D.*)?$', name or '')
     return (match[1], bool(match[2]), int(match[3])) if match else None
 
 
@@ -36,7 +36,7 @@ class TaskTracker:
         self.active = True
         self.reason = None
 
-    def terminal(self, snapshot, native_end=0):
+    def terminal(self, snapshot, native_end=0, *, allow_task_transition=True):
         if not self.active: return native_end
         e = snapshot.extra['thrl_events']
         if e['bombs_used'] > self.start_events['bombs_used']:
@@ -47,9 +47,9 @@ class TaskTracker:
             self.reason = 'native-gameover'; return 1
         if native_end == 2:
             self.reason = 'native-six-stage-clear'; return 2
-        if self.task['mode'] != 'full_story' and snapshot.stage > self.task['stage']:
+        if allow_task_transition and self.task['mode'] != 'full_story' and snapshot.stage > self.task['stage']:
             self.reason = 'native-stage-complete'; return 2
-        if self.task['mode'] == 'attack':
+        if allow_task_transition and self.task['mode'] == 'attack':
             key = attack_key(current_attack(snapshot))
             roles = e.get('ecl_roles', {})
             if roles.get('observed') is True and key is not None and key != attack_key(self.task['attack']):

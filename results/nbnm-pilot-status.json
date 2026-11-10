@@ -1,12 +1,12 @@
 {
   "schema": "nbnm-training-progress-analysis-v1",
-  "observed_utc": "2026-11-10T00:14:11.574947+00:00",
+  "observed_utc": "2026-11-10T01:08:37.353371+00:00",
   "status": {
-    "phase": "student_full_story_collection",
-    "cycle": 3,
-    "completed_decisions": 16384,
-    "optimizer_updates": 64,
-    "rollout_decisions": 1671,
+    "phase": "training_completed_paired_evaluation_completed",
+    "cycle": 4,
+    "completed_decisions": 32768,
+    "optimizer_updates": 128,
+    "rollout_decisions": 8192,
     "budget": 32768
   },
   "scope": "Training attempts grouped by segment of completion; episodes can span policy updates. Not frozen evaluation.",
@@ -110,9 +110,177 @@
           "unfinished_attempts_excluded": true
         }
       }
+    },
+    {
+      "cycle": 3,
+      "sampled_decisions": 8192,
+      "completed_optimizer_updates": 96,
+      "sampling_seconds": 360.75,
+      "learning_seconds": 419.0159999999996,
+      "contacts": 4,
+      "safe_forecast_but_native_contact": 0,
+      "task_group_decisions": {
+        "card": 6144,
+        "full": 2048
+      },
+      "tasks": {
+        "attack": {
+          "completed": 13,
+          "successes": 11,
+          "failures": 2,
+          "successful_mean_native_frames": 1688.3636363636363,
+          "failed_mean_native_frames": 1188,
+          "completed_native_seeds": [
+            34112,
+            34112,
+            34112,
+            15671,
+            62865,
+            15671,
+            34112,
+            62865,
+            51610,
+            15671,
+            34112,
+            15671,
+            51610
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        },
+        "full_story": {
+          "completed": 2,
+          "successes": 0,
+          "failures": 2,
+          "successful_mean_native_frames": null,
+          "failed_mean_native_frames": 1660,
+          "completed_native_seeds": [
+            6840,
+            25350
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        }
+      }
+    },
+    {
+      "cycle": 4,
+      "sampled_decisions": 8192,
+      "completed_optimizer_updates": 128,
+      "sampling_seconds": 313.15700000000015,
+      "learning_seconds": 426.28099999999995,
+      "contacts": 1,
+      "safe_forecast_but_native_contact": 0,
+      "task_group_decisions": {
+        "card": 6144,
+        "full": 2048
+      },
+      "tasks": {
+        "attack": {
+          "completed": 14,
+          "successes": 14,
+          "failures": 0,
+          "successful_mean_native_frames": 1781.7142857142858,
+          "failed_mean_native_frames": null,
+          "completed_native_seeds": [
+            15671,
+            51610,
+            34112,
+            34112,
+            15671,
+            34112,
+            34112,
+            15671,
+            62865,
+            15671,
+            62865,
+            51610,
+            15671,
+            51610
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        },
+        "full_story": {
+          "completed": 1,
+          "successes": 0,
+          "failures": 1,
+          "successful_mean_native_frames": null,
+          "failed_mean_native_frames": 1704,
+          "completed_native_seeds": [
+            6661
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        }
+      }
     }
   ],
-  "total_finished_training_attempts": 29,
-  "pending_segment_finished_attempts": 3,
-  "comparison": "Avoidance improvement is not established by this training-only report; compare frozen checkpoints on matched development starts."
+  "total_finished_training_attempts": 56,
+  "pending_segment_finished_attempts": 0,
+  "comparison": "Initial 4/4 versus trained 3/4 on identical native seeds, entry observations and 64-decision recurrent warmup inputs. No avoidance improvement demonstrated; no full-scene expansion.",
+  "training_budget_completed": true,
+  "automatic_evaluation_error": "Read-only observation write; checkpoint saved before error. Evaluator fixed and paired evaluation completed separately.",
+  "raw_progress_phase": "failed",
+  "paired_frozen_development": {
+    "task": {
+      "mode": "attack",
+      "stage": 3,
+      "attack": "BossCard1"
+    },
+    "action_selection": "joint_mode",
+    "pairs": [
+      {
+        "native_seed": 4747,
+        "initial_success": true,
+        "trained_success": true,
+        "initial_frames": 2356,
+        "trained_frames": 2012,
+        "initial_end": "native-next-attack",
+        "trained_end": "native-next-attack",
+        "identical_entry_observations": true
+      },
+      {
+        "native_seed": 22687,
+        "initial_success": true,
+        "trained_success": true,
+        "initial_frames": 2400,
+        "trained_frames": 2368,
+        "initial_end": "native-next-attack",
+        "trained_end": "native-next-attack",
+        "identical_entry_observations": true
+      },
+      {
+        "native_seed": 35537,
+        "initial_success": true,
+        "trained_success": false,
+        "initial_frames": 1856,
+        "trained_frames": 1340,
+        "initial_end": "native-next-attack",
+        "trained_end": "first-native-contact",
+        "identical_entry_observations": true
+      },
+      {
+        "native_seed": 35846,
+        "initial_success": true,
+        "trained_success": true,
+        "initial_frames": 2356,
+        "trained_frames": 1952,
+        "initial_end": "native-next-attack",
+        "trained_end": "native-next-attack",
+        "identical_entry_observations": true
+      }
+    ],
+    "attempts": 4,
+    "initial_successes": 4,
+    "trained_successes": 3,
+    "improved_pairs": 0,
+    "regressed_pairs": 1,
+    "exact_paired_success_p": 1.0,
+    "all_entry_observations_identical": true,
+    "scope": "Matched development starts; no training or teacher takeover. Small samples are screening evidence, not stable NBNM proof.",
+    "improvement_supported": false,
+    "optimizer_updates": 0,
+    "elapsed_seconds": 457.90700000000015
+  }
 }
