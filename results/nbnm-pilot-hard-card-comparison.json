@@ -1,0 +1,64 @@
+{
+  "task": {
+    "mode": "attack",
+    "stage": 4,
+    "attack": "BossCard2",
+    "spell_index": 1,
+    "spell_id": 47
+  },
+  "entry_mode": "native_spell_practice",
+  "action_selection": "joint_mode",
+  "pairs": [
+    {
+      "native_seed": 4747,
+      "initial_success": false,
+      "trained_success": true,
+      "initial_frames": 1576,
+      "trained_frames": 2548,
+      "initial_end": "first-native-contact",
+      "trained_end": "native-spell-capture",
+      "identical_entry_observations": true
+    },
+    {
+      "native_seed": 22687,
+      "initial_success": true,
+      "trained_success": false,
+      "initial_frames": 2584,
+      "trained_frames": 2316,
+      "initial_end": "native-spell-survived-timeout",
+      "trained_end": "first-native-contact",
+      "identical_entry_observations": true
+    },
+    {
+      "native_seed": 35537,
+      "initial_success": false,
+      "trained_success": true,
+      "initial_frames": 1236,
+      "trained_frames": 2584,
+      "initial_end": "first-native-contact",
+      "trained_end": "native-spell-survived-timeout",
+      "identical_entry_observations": true
+    },
+    {
+      "native_seed": 35846,
+      "initial_success": false,
+      "trained_success": true,
+      "initial_frames": 576,
+      "trained_frames": 2480,
+      "initial_end": "first-native-contact",
+      "trained_end": "native-spell-capture",
+      "identical_entry_observations": true
+    }
+  ],
+  "attempts": 4,
+  "initial_successes": 1,
+  "trained_successes": 3,
+  "improved_pairs": 3,
+  "regressed_pairs": 1,
+  "exact_paired_success_p": 0.625,
+  "all_entry_observations_identical": true,
+  "scope": "Matched development starts; no training or teacher takeover. Small samples are screening evidence, not stable NBNM proof.",
+  "improvement_supported": false,
+  "optimizer_updates": 0,
+  "elapsed_seconds": 977.8600000000006
+}

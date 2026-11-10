@@ -10,6 +10,16 @@ def read(path):
     return json.loads(Path(path).read_text(encoding='utf-8-sig'))
 
 
+def task_settings(spec, task):
+    """One shared policy can train native cards and real Story failure starts."""
+    settings=copy.deepcopy(spec['nbnm']);settings['task']=dict(task)
+    for group, candidate in spec.get('tasks',{}).items():
+        if candidate==task:
+            settings.update(copy.deepcopy(spec.get('task_entries',{}).get(group,{})))
+            break
+    return settings
+
+
 def validate_spec(spec):
     from .nbnm_objective import Objective, qualifies_speed
     from .nbnm_sampling import group_block_budget
@@ -26,24 +36,24 @@ def validate_spec(spec):
     if len(spec['world_groups'])!=workers:raise ValueError('One task group per worker required')
     group_block_budget(spec['world_groups'],spec['group_weights'],segment//16)
     for task in spec['tasks'].values():TaskTracker(task)
-    needed=[t for t in spec['tasks'].values() if t['mode']!='full_story']
     from .nbnm_spell_practice import enabled,validate_task
-    if enabled(spec['nbnm']):
-        for task in spec['tasks'].values():validate_task(task)
-        validate_task(spec['nbnm']['task'])
-        if not Path(spec['nbnm']['score_template']).is_file():
-            raise ValueError('Supply an existing native score record with the requested spells unlocked')
-        from .thrl_training_mode import seed_split
-        for split, seeds in spec['nbnm']['practice_evaluation_seeds'].items():
-            if not seeds or len(set(seeds)) != len(seeds) or any(seed_split(s)!=split for s in seeds):
-                raise ValueError('Use unique native evaluation seeds belonging to their data split')
-    elif needed:
-        bank=read(spec['nbnm']['start_bank'])
+    for task in spec['tasks'].values():
+        settings=task_settings(spec,task)
+        if enabled(settings):
+            validate_task(task)
+            if not Path(settings['score_template']).is_file():
+                raise ValueError('Supply an existing native score record with the requested spells unlocked')
+            from .thrl_training_mode import seed_split
+            for split, seeds in settings['practice_evaluation_seeds'].items():
+                if not seeds or len(set(seeds)) != len(seeds) or any(seed_split(s)!=split for s in seeds):
+                    raise ValueError('Use unique native evaluation seeds belonging to their data split')
+            continue
+        if task['mode']=='full_story':continue
+        bank=read(settings['start_bank'])
         if bank.get('schema')!=SCHEMA:raise ValueError('Prepare the native attack-start bank first')
-        for task in needed:
-            for split in ('train','development'):
-                entries=[r for r in bank['entries'] if r['task']==task and r['split']==split]
-                if not entries:raise ValueError(f'Missing {split} task starts: {task}')
+        for split in ('train','development'):
+            entries=[r for r in bank['entries'] if r['task']==task and r['split']==split]
+            if not entries:raise ValueError(f'Missing {split} task starts: {task}')
         train={r['native_seed'] for r in bank['entries'] if r['split']=='train'}
         dev={r['native_seed'] for r in bank['entries'] if r['split']=='development'}
         if train&dev:raise ValueError('Training and development native seeds overlap')
@@ -75,9 +85,11 @@ def environment(spec, *, evaluation=False):
                 'compact_capture_stage6_prefix','compact_conditional_wall_guidance_coefficient'):
         cfg.pop(key,None)
     cfg.update(seed=spec['seed'],nbnm=copy.deepcopy(spec['nbnm']),
-        compact_full_native_teacher_support=False,compact_protected_exit_forecast=False)
+        compact_full_native_teacher_support=spec['nbnm'].get('teacher_mode')=='resource-movement-v1',
+        compact_protected_exit_forecast=False)
     if not evaluation:
         cfg['nbnm']['world_tasks']=[spec['tasks'][group] for group in spec['world_groups']]
+        cfg['nbnm']['world_entries']=[spec.get('task_entries',{}).get(group,{}) for group in spec['world_groups']]
     return cfg
 
 
@@ -109,10 +121,11 @@ def atomic_torch_save(value,path):
 
 def evaluation_seeds(spec, *, split='development', task=None):
     from .nbnm_spell_practice import enabled
-    if enabled(spec['nbnm']):return list(spec['nbnm']['practice_evaluation_seeds'][split])
     task=task or spec['nbnm']['task']
+    settings=task_settings(spec,task)
+    if enabled(settings):return list(settings['practice_evaluation_seeds'][split])
     if task['mode']=='full_story':return list(spec['full_story_evaluation_seeds'])
-    bank=read(spec['nbnm']['start_bank'])
+    bank=read(settings['start_bank'])
     return sorted({r['native_seed'] for r in bank['entries'] if r['split']==split and r['task']==task})
 
 
@@ -127,12 +140,18 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
     from .thrl_durable_records import write_json,append_jsonl
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     cfg=environment(spec,evaluation=True);task=dict(task or spec['nbnm']['task'])
-    cfg['nbnm']['task']=task
+    cfg['nbnm']=task_settings(spec,task)
     seeds=evaluation_seeds(spec,split=split,task=task)
-    budget=len(seeds);workers=min(4,budget);results=[];entries={};begun=time.monotonic()
-    old=thrl_vector.worker_factory;thrl_vector.worker_factory=factory;vector=None
+    budget=len(seeds);workers=min(int(spec.get('evaluation_workers',4)),budget)
+    if not 1<=workers<=100:raise ValueError('Evaluation needs 1..100 workers and at least one seed')
+    results=[];entries={};begun=time.monotonic()
+    decisions=0
+    old=thrl_vector.worker_factory;thrl_vector.worker_factory=factory;vector=None;graphs=None
     model.eval()
     try:
+        if spec.get('cuda_graph_inference',False) and model.device.type=='cuda':
+            from .nbnm_cuda import InferenceGraphs
+            graphs=InferenceGraphs(model,sample=False)
         vector=thrl_vector.THRLNativeVector(story_kwargs(cfg,output,workers,split,teacher=False),output/'workers',timeout=180)
         obs,infos=vector.reset(options=[dict(native_seed=s) for s in seeds[:workers]])
         # Vector observations are immutable shared snapshots. The evaluator
@@ -152,7 +171,8 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
                     ids=torch.tensor(pending,device=model.device)
                     sub=SpikingState(*(v.index_select(0,ids) for v in state.tensors()))
                     features=np.stack([obs['features'][i] for i in pending])
-                    out,following,_=model.step(torch.as_tensor(features,device=model.device),sub)
+                    predict=graphs if graphs is not None else model.step
+                    out,following,_=predict(torch.as_tensor(features,device=model.device),sub)
                     for target,value in zip(state.tensors(),following.tensors()):target.index_copy_(0,ids,value)
                     vector.submit_at(pending,'step',out['actions'].cpu().tolist());pending=[]
                 messages=vector.receive_ready(max_wait_ms=1,min_batch=4,check_stop=guard)
@@ -164,6 +184,11 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
                         fresh=burn_in(model,info,model.initial_state(1))
                         for target,value in zip(state.tensors(),fresh.tensors()):target[i:i+1].copy_(value)
                         pending.append(i);continue
+                    decisions+=1
+                    if decisions%128==0:
+                        progress(dict(phase='frozen_NBNM_evaluation',completed=len(results),target=budget,
+                            successes=sum(r['nbnm_success'] for r in results),decisions=decisions,
+                            last_stage=info.get('stage'),last_stage_frame=info.get('stage_frame')))
                     if msg['truncated']:raise RuntimeError('Incomplete evaluation is not an NBNM failure or success')
                     if msg['terminated']:
                         row=dict(info['episode_summary'],evaluation_split=split)
@@ -174,15 +199,20 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
                             vector.submit_at([i],'reset',options=[dict(native_seed=seeds[next_seed])]);next_seed+=1
                     else:pending.append(i)
         report=dict(schema='frozen-NBNM-task-evaluation-v1',frozen=True,task=task,
-            entry_mode=spec['nbnm'].get('entry_mode','story_prefix'),
+            entry_mode=cfg['nbnm'].get('entry_mode','story_prefix'),
             opening_seeds=seeds,action_selection='joint_mode',evaluation_split=split,
             episode_results=sorted(results,key=lambda r:r['native_seed']),
             attempts=len(results),successes=sum(r['nbnm_success'] for r in results),
+            spell_captures=sum(r.get('spell_captured',False) for r in results),
+            spell_survived_timeouts=sum(r.get('spell_survived_timeout',False) for r in results),
             successful_mean_native_frames=(float(np.mean([r['task_native_frames'] for r in results if r['nbnm_success']]))
                 if any(r['nbnm_success'] for r in results) else None),
             elapsed_seconds=time.monotonic()-begun,training_updates=0)
+        report['cuda_graph_inference']=graphs is not None
+        report['graph_capture_seconds']=graphs.capture_seconds if graphs is not None else 0.
         write_json(output/'report.json',report)
         return report
     finally:
+        if graphs is not None:graphs.clear()
         if vector is not None:vector.close()
         thrl_vector.worker_factory=old

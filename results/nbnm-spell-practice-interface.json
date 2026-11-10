@@ -27,6 +27,7 @@
     3.438000000000102,
     3.469000000000051
   ],
-  "result_rule": "First native contact overrides capture. Success requires native practice result menu and positive capture bonus.",
+  "qualification_result_rule": "Both qualification runs captured the spell: native practice result menu and positive capture bonus; first native contact overrides capture.",
+  "current_NBNM_result_rule": "First contact or Bomb is failure. The native result menu can confirm a capture or no-contact timer survival; these are counted separately. External time limits and Boss disappearance alone are not success.",
   "scope": "Interface and seed-repeat qualification, not learned avoidance or full-game NBNM evidence."
 }

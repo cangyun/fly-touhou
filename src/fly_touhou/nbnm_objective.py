@@ -89,6 +89,7 @@ def movement_reference(label):
     p = np.asarray(label['probabilities'], np.float32).copy()
     if p.shape != (19,):
         raise ValueError('Expected source19 teacher probabilities')
+    removed_bomb=float(p[18])
     p[18] = 0.
     total = p.sum()
     if total > 0:
@@ -97,5 +98,6 @@ def movement_reference(label):
         p[:18] = 1. / 18
         label['guidance_weight'] = 0.
     label.update(probabilities=p.tolist(), action=int(p.argmax()), deathbomb=False,
+                 Bomb_target=0., removed_teacher_Bomb_mass=removed_bomb,
                  nb_nm_reference=True, teacher_action_executed=False)
     return label

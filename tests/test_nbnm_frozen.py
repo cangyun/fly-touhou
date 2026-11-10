@@ -51,6 +51,24 @@ def test_paired_comparison_requires_matching_inputs_and_reports_regressions():
     assert not result['improvement_supported']
 
 
+def test_reference_stays_original_after_pilot_warmstart():
+    choose=script('compare_nbnm_frozen').reference_checkpoint
+    spec=dict(initial_checkpoint='pilot.pt',reference_checkpoint='original.pt')
+    assert choose(spec)==Path('original.pt')
+    assert choose(spec,'explicit.pt')==Path('explicit.pt')
+    assert choose(dict(initial_checkpoint='pilot.pt'))==Path('pilot.pt')
+
+
+def test_paired_report_labels_test_split():
+    compare=script('compare_nbnm_frozen').comparison
+    a,b=reports([False],[True])
+    a['evaluation_split']=b['evaluation_split']='test'
+    entries={'0':dict(features=[0],policy_burn_in=None)}
+    result=compare(a,b,entries,entries)
+    assert result['evaluation_split']=='test'
+    assert 'Matched test starts' in result['scope']
+
+
 def test_recording_appends_acknowledged_native_replay_commands():
     from types import SimpleNamespace as NS
     from fly_touhou.frida_controller import OriginalGameController

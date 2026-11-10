@@ -52,3 +52,16 @@ def test_cannot_pair_native_practice_with_story_prefix_evaluation():
     report=dict(frozen=True,task=TASK,opening_seeds=[6],action_selection='joint_mode',episode_results=[])
     with pytest.raises(ValueError,match='different evaluation protocols'):
         assert_compatible_evaluations(report,dict(report,entry_mode='native_spell_practice'))
+
+
+def test_surviving_native_spell_timeout_is_nbnm_but_not_capture():
+    from fly_touhou.nbnm_env import NBNMEnv
+    env=NBNMEnv.__new__(NBNMEnv);env.nbnm=dict(entry_mode='native_spell_practice',task=TASK)
+    env.task_tracker=TaskTracker(TASK);env.task_tracker.begin(snapshot())
+    s=snapshot(frame=2700,name=None)
+    s.pause=1;s.extra.update(run_mode=2,pause_menu_state=25,pause_menu_result=0,
+                           native_spell_practice=dict(id=31,bonus=-5710))
+    assert env._native_end(s)==2
+    assert env.task_tracker.reason=='native-spell-survived-timeout'
+    s.player.state=4
+    assert env._native_end(s)==1

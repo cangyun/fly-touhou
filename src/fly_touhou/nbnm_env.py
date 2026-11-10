@@ -48,7 +48,9 @@ class NBNMEnv(CompactFullStoryEnv):
             if end: return end
             end = practice.result(snapshot, self.nbnm['task'])
             if end:
-                self.task_tracker.reason = 'native-spell-capture' if end == 2 else 'native-spell-not-captured'
+                captured = (snapshot.extra.get('pause_menu_state') == 30 and end == 2)
+                self.task_tracker.reason = ('native-spell-capture' if captured else
+                    'native-spell-survived-timeout' if end == 2 else 'native-spell-not-captured')
             return end
         native = super()._native_end(snapshot)
         return self.task_tracker.terminal(snapshot, native)
@@ -62,9 +64,16 @@ class NBNMEnv(CompactFullStoryEnv):
         return info
 
     def _label_current(self, info):
-        """All-direction supervision reuses measured geometry, no resource chase."""
+        """Movement distributions on student states; teacher never executes."""
+        if self.nbnm.get('teacher_mode')=='resource-movement-v1':
+            from .nbnm_objective import movement_reference
+            result=CompactFullStoryEnv._label_current(self,info)
+            self._teacher_label=movement_reference(self._teacher_label)
+            self._teacher_label['nbnm_teacher_mode']='resource-movement-v1'
+            return self._attach(result)
         from .nbnm_teacher import label_current
-        self._teacher_label = label_current(self.encoder.last_result, self.snapshot, self.episode_id)
+        self._teacher_label = label_current(self.encoder.last_result, self.snapshot, self.episode_id,
+            selective=self.nbnm.get('teacher_mode')=='selective-route-v2')
         self._teacher_queries += 1
         return self._attach(info)
 
@@ -115,7 +124,8 @@ class NBNMEnv(CompactFullStoryEnv):
             raise ValueError('Bomb is outside the NBNM action support, including deathbomb')
         observation, old_reward, terminal, truncated, info = super().step(action)
         end = 2 if terminal and self.task_tracker.reason in (
-            'native-six-stage-clear','native-stage-complete','native-next-attack','native-spell-capture') else 1 if terminal else 0
+            'native-six-stage-clear','native-stage-complete','native-next-attack',
+            'native-spell-capture','native-spell-survived-timeout') else 1 if terminal else 0
         task = self.task_tracker.report(self.snapshot, terminal=end)
         vector = self.objective.rewards(terminal=terminal, success=task['nbnm_success'],
             native_frames=task['task_native_frames'],
@@ -142,6 +152,8 @@ class NBNMEnv(CompactFullStoryEnv):
                 raw_reward_vector=self._task_returns.tolist(), native_seed=self.native_seed,
                 nbnm_entry_mode=self.nbnm.get('entry_mode','story_prefix'),
                 native_spell_practice=info.get('native_spell_practice'),
+                spell_captured=self.task_tracker.reason=='native-spell-capture',
+                spell_survived_timeout=self.task_tracker.reason=='native-spell-survived-timeout',
                 full_story_episode=self.nbnm['task']['mode']=='full_story',
                 full_story_prefix_played_by_current_policy=self.nbnm['task']['mode']=='full_story',
                 episode_statistics_scope='NBNM task only; prefix events are separately reported')

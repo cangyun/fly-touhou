@@ -114,14 +114,20 @@ def enter(controller, *, task, difficulty=3):
 
 
 def result(snapshot, task):
-    """1=failure, 2=confirmed capture; never equate disappearance with capture."""
-    if not (snapshot.extra.get('run_mode') == 2 and snapshot.pause == 1
-            and snapshot.extra.get('pause_menu_state') == 30
-            and snapshot.extra.get('pause_menu_result') == 1):
+    """Return a native spell end, including surviving the entire spell timer.
+
+    NBNM does not require spell capture: Story also advances on timeout. The
+    caller first rejects every contact/Miss/Bomb, then distinguishes capture
+    from survival without capture. No disappeared Boss alone is an end.
+    """
+    if not (snapshot.extra.get('run_mode') == 2 and snapshot.pause == 1):
         return 0
+    menu = (snapshot.extra.get('pause_menu_state'), snapshot.extra.get('pause_menu_result'))
+    if menu not in ((30, 1), (25, 0)): return 0
     spell = snapshot.extra.get('native_spell_practice') or {}
     if spell.get('id') != task['spell_id']:
         raise NativeError('Native result belongs to a different spell')
-    # Positive native capture bonus was observed together with the actual
-    # score award and result menu. A timeout/failed capture is not NBNM credit.
-    return 2 if spell.get('bonus', 0) > 0 else 1
+    if menu == (30, 1): return 2 if spell.get('bonus', 0) > 0 else 1
+    # Native failed-capture menu, observed after stage4 Card2's full timer
+    # with no contact and no Miss/Bomb. Contact has priority in NBNMEnv.
+    return 2

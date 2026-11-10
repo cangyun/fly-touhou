@@ -92,14 +92,10 @@ def route_context(encoding):
         native_forecasts=forecasts, unknown_laser_player_motion=True, player_path=paths).reshape(18,18)
     turn = np.minimum(margins[0, :, None], future)
     safe = turn > 1
-    x[:, 5] = safe.mean(-1)
+    from .nbnm_route_support import physical_exit_support
+    x[:, 5], x[:, 7] = physical_exit_support(ends, v, safe)
     best = np.clip(turn.max(-1), -256, 256)
     x[:, 6] = best / (32 + np.abs(best))
-    # Availability in opposite horizontal AND vertical directions makes the
-    # distinction between a spacious exit and a single narrow corridor.
-    horizontal = (safe & (v[None,:,0] < 0)).any(-1) & (safe & (v[None,:,0] > 0)).any(-1)
-    vertical = (safe & (v[None,:,1] < 0)).any(-1) & (safe & (v[None,:,1] > 0)).any(-1)
-    x[:, 7] = (horizontal.astype(float) + vertical.astype(float)) / 2
     return x
 
 
@@ -159,4 +155,5 @@ class NBNMEncoder(CompactStoryEncoder):
             features=dict(shape=[FEATURE_WIDTH],names=self.feature_names),
             feature_width=FEATURE_WIDTH, extension_per_candidate=EXTENSION_WIDTH,
             direction_names=DIRECTION_NAMES, context_names=CONTEXT_NAMES,
+            physical_exit_revision='clipped-distinct-endpoints-v2',
             long_horizons_are_labels=False, future_spawn_information=False)

@@ -72,6 +72,15 @@ def main():
         torch.manual_seed(spec['seed']);torch.cuda.manual_seed_all(spec['seed'])
         model,migrated=load_model(spec,a.resume)
         optimizer=optimizer_for(model)
+        warmstart_state=spec.get('warmstart_optimizer_checkpoint')
+        if not a.resume and warmstart_state:
+            # New on-policy tasks start fresh games, but retain learned Adam
+            # moments. Never replay the previous task's stored rollout here.
+            previous_state=torch.load(warmstart_state,map_location='cpu',weights_only=False)
+            optimizer.load_state_dict(previous_state['optimizer'])
+            warmstart_updates=int(previous_state['optimizer_updates'])
+            del previous_state
+        else:warmstart_updates=0
         if a.resume:
             state=torch.load(a.resume,map_location='cpu',weights_only=False)
             for field in ('nbnm','tasks','world_groups','segment_decisions'):
@@ -86,6 +95,10 @@ def main():
             training_updates=updates,network_training=True,topology_changed=False,
             formal_objective=spec['nbnm']['objective'],old_resource_reward_active=False,
             task_only_success_is_full_clear=False,resume=str(a.resume) if a.resume else None))
+        if warmstart_state and not a.resume:
+            write_json(output/'warmstart.json',dict(parameter_checkpoint=spec['initial_checkpoint'],
+                optimizer_checkpoint=warmstart_state,previous_optimizer_updates=warmstart_updates,
+                previous_rollout_reused=False,new_task_sampling=True))
         save()
         # Native collection is delayed until a resumed learner segment finishes.
         while completed<spec['decision_budget'] or in_progress is not None:
@@ -120,6 +133,10 @@ def main():
                             kind=record['task']['mode']
                             for key in ('nbnm_success','task_native_frames','task_misses','task_Bombs'):
                                 writer.add_scalar('train/'+kind+'/'+key,record[key],episode_index)
+                            task=record['task']
+                            task_name=('stage'+str(task['stage'])+'_'+task.get('attack',task['mode'])) if task['mode']!='full_story' else 'full_story'
+                            for key in ('nbnm_success','task_native_frames','spell_captured','spell_survived_timeout'):
+                                if key in record:writer.add_scalar('task/'+task_name+'/'+key,record[key],episode_index)
                         episode_offset=stream.tell()
                 # Rolling on-policy tape enables a stopped learner to finish
                 # this exact data; older tape arrays are replaced, logs remain.

@@ -260,6 +260,10 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
             if tasks:
                 if len(tasks)!=workers:raise ValueError('One NBNM task per native worker required')
                 r['nbnm']['task']=dict(tasks[i])
+            entries=config['nbnm'].get('world_entries')
+            if entries:
+                if len(entries)!=workers:raise ValueError('One NBNM entry protocol per native worker required')
+                r['nbnm'].update(entries[i])
     if cfg.get('compact_lower_field_reward') is not None:
         for r in rows:r['lower_field_reward']=dict(cfg['compact_lower_field_reward'])
     if cfg.get('compact_capture_stage6_prefix'):
