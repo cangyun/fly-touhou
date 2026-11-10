@@ -1,6 +1,7 @@
 """Compare gameplay state without comparing per-process native addresses.
 
 Keep positions, geometry, timers, velocities, HP, flags, forecasts and RNG.
+Predictor version labels are implementation metadata, not native game state.
 Normalize ECL instruction/interrupt addresses together, preserving offsets.
 """
 from copy import deepcopy
@@ -30,6 +31,13 @@ def gameplay_state(state):
     address_keys={'enemy_base','data_address','owner_address','context','address','manager','shot_definition'}
     for enemy in result.get('enemies',[]):
         resource=enemy.get('resource',{})
+        contact=resource.get('native_contact',{})
+        for key in ('image_base','ecl_revision','tick_callback_effects_revision'):
+            contact.pop(key,None)
+        resource.get('native_motion_forecast',{}).pop('ecl_revision',None)
+        ecl=resource.get('native_motion',{}).get('ecl_forecast',{})
+        for key in ('revision','tick_callback_effects_revision'):
+            ecl.pop(key,None)
         roots=[resource[k] for k in ('native_contact','native_motion','native_motion_forecast') if k in resource]
         pointers=[]
         def gather(x):
