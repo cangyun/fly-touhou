@@ -31,6 +31,7 @@ def attempts(records):
 
 def summarize(output):
     output=Path(output)
+    if not (output/'progress.json').exists():return dict(status='not_started',output=str(output),network_training=False)
     progress=read_shared_json(output/'progress.json')
     episodes=[]
     for path in sorted(output.glob('native-training-*/training-episodes.jsonl')):episodes+=rows(path)
@@ -44,7 +45,8 @@ def summarize(output):
             sampling_seconds=record['sample_seconds'],learning_seconds=record['learn_seconds'],
             contacts=collected['contacts'],safe_forecast_but_native_contact=collected['safe_forecast_but_native_contact'],
             task_group_decisions=collected['task_group_decisions'],
-            tasks={kind:attempts([r for r in part if r['task']['mode']==kind]) for kind in ('attack','full_story')},
+            route_guidance=collected.get('nbnm_route_guidance'),
+            tasks={kind:attempts([r for r in part if r['task']['mode']==kind]) for kind in ('attack','chain','stage','full_story')},
             by_task={name:attempts([r for r in part if task_name(r)==name]) for name in sorted({task_name(r) for r in part})}))
     report=dict(schema='nbnm-training-progress-analysis-v1',observed_utc=datetime.now(timezone.utc).isoformat(),
         status={k:progress.get(k) for k in ('phase','cycle','completed_decisions','optimizer_updates','rollout_decisions','budget')},
@@ -56,12 +58,20 @@ def summarize(output):
     if frozen.exists():
         data=read_shared_json(frozen)
         report['final_frozen']={k:data[k] for k in ('task','attempts','successes','successful_mean_native_frames','opening_seeds','action_selection')}
+    report['frozen_by_task']={}
+    for path in output.glob('frozen-*/report.json'):
+        data=read_shared_json(path)
+        report['frozen_by_task'][path.parent.name]={k:data[k] for k in ('task','attempts','successes','successful_mean_native_frames')}
+    report['current_workers']=progress.get('worlds',[])
+    report['current_route_guidance']=progress.get('nbnm_route_guidance')
     return report
 
 
 def task_name(record):
     task=record['task']
-    return (f"stage{task['stage']}-{task.get('attack',task['mode'])}" if task['mode']!='full_story' else 'full_story')+'-'+record.get('nbnm_entry_mode','story_prefix')
+    name=(f"stage{task['stage']}-{task.get('attack',task['mode'])}" if task['mode']!='full_story' else 'full_story')
+    if task['mode']=='chain':name+=f"-through-stage{task['end_stage']}-{task.get('end_attack','end')}"
+    return name+'-'+record.get('nbnm_entry_mode','story_prefix')
 
 
 if __name__=='__main__':

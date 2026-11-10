@@ -55,6 +55,7 @@ class ReadyCollector(Collector):
             normal_teacher_rows=0,normal_teacher_guided_rows=0,full_native_teacher_restored_rows=0,
             safe_forecast_but_native_contact=0)
         trusted_counts=np.zeros(3,np.int64)
+        route_stats=dict(teacher_seconds=0.,route_queries=0,three_leg_queries=0,unguided_rows=0)
         episode_initial_states={}
         selector=None;last_label={}
         if supervision_selection is not None:
@@ -121,6 +122,14 @@ class ReadyCollector(Collector):
                         recorded_policy_logits=network['logits'][j],recorded_behavior_policy_logits=behavior_cpu[j],
                         recorded_route_scores=network['route_scores'][j],recorded_selected_DN=selected[j])
                     record['recorded_pre_action_trusted']=record['trusted'].copy()
+                    if getattr(model,'nbnm',None):
+                        from .nbnm_objective import Objective
+                        record['objective_weights']=np.asarray(infos[j].get('nbnm_actor_weights',
+                            Objective(**model.nbnm.get('objective',{})).weights),np.float32)
+                        route_stats['teacher_seconds']+=float(expert.get('query_seconds',0.))
+                        route_stats['route_queries']+=int(expert.get('nb_nm_route',{}).get('route_search',False))
+                        route_stats['three_leg_queries']+=int(expert.get('nb_nm_route',{}).get('three_leg_paths',0)>0)
+                        route_stats['unguided_rows']+=int(weight<=0)
                     record['recorded_pre_action_partial_point_danger']=record['partial_point_danger'].copy()
                     stats['normal_teacher_rows']+=int(normal)
                     stats['normal_teacher_guided_rows']+=int(normal and weight>0)
@@ -139,10 +148,12 @@ class ReadyCollector(Collector):
                 stage_coverage=coverage.summary(),job_stage_coverage=self.coverage.summary(),
                 max_stage=max(x['stage'] for x in self.infos),elapsed_seconds=time.monotonic()-begun,
                 scheduling='ready_first_global_blocks',behavior_policy_version=self.policy_version,
+                nbnm_route_guidance=dict(route_stats),
                 world_decisions=counts.tolist(),policy_batch_size_histogram=dict(batch_counts),
                 worlds=[dict(world=i,stage=info['stage'],episode_frames=info['episode_frames'],
                     lives=info.get('lives'),bombs=info.get('bombs'),misses=info.get('misses'),
-                    segment_decisions=int(counts[i]),inflight=i in self.vector._inflight)
+                    segment_decisions=int(counts[i]),inflight=i in self.vector._inflight,
+                    task=info.get('nb_nm_task'),task_group=groups[i] if groups else None)
                     for i,info in enumerate(self.infos)])
 
         dispatch(list(range(self.workers)))
@@ -248,6 +259,7 @@ class ReadyCollector(Collector):
         result=pack_world_records(records,states,bootstrap['values'].cpu(),metadata)
         if getattr(model,'nbnm',None):
             result['metadata'].update(full_story=False,nbnm_tasks=True,
+                nbnm_route_guidance=dict(route_stats),
                 task_group_decisions={g:int(sum(counts[i] for i,k in enumerate(groups) if k==g))
                     for g in set(groups)} if groups is not None else {})
         if episode_initial_states:result['episode_initial_states']=episode_initial_states

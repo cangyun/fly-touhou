@@ -66,7 +66,14 @@ def prepare_ready_targets(data,cfg,device):
         truncated=boundary,truncation_values=tail_values,gamma=cfg.gamma,gae_lambda=cfg.gae_lambda,
         trace_cut_after=cuts)
     combined=torch.zeros_like(valid,dtype=values.dtype)
-    combined[valid]=combine_advantages(advantage[valid],cfg.objective_weights)
+    if 'objective_weights' in data:
+        # Qualifying one card for speed must not activate speed on hard cards.
+        weights=data['objective_weights'].to(device)
+        raw=(advantage[valid]*weights[valid]).sum(-1)
+        std=raw.std(unbiased=False)
+        combined[valid]=(raw-raw.mean())/(std+1e-8) if std>1e-5 else torch.zeros_like(raw)
+    else:
+        combined[valid]=combine_advantages(advantage[valid],cfg.objective_weights)
     return advantage,returns,combined
 
 

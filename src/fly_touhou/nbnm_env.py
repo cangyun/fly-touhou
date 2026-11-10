@@ -16,11 +16,15 @@ class NBNMEnv(CompactFullStoryEnv):
         self.objective = Objective(**nbnm.get('objective', {}))
         self.task_tracker = TaskTracker(nbnm['task'])
         self._task_returns = np.zeros(3, np.float64)
-        kwargs['observation_encoder'] = NBNMEncoder(risk_mode=nbnm.get('risk_mode','route'),task=nbnm['task'])
+        kwargs['observation_encoder'] = NBNMEncoder(risk_mode=nbnm.get('risk_mode','route'),task=nbnm['task'],
+            task_context=nbnm.get('task_context','legacy'))
         kwargs.pop('lower_field_reward',None)
         kwargs.pop('frozen_prefix_replay',None)
         kwargs['protected_exit_forecast'] = False
         super().__init__(*args, **kwargs)
+        if self._teacher is not None and nbnm.get('teacher_mode')=='nbnm-route-v1':
+            from .nbnm_route_teacher import make_teacher
+            self._teacher=make_teacher()
         self._bank_rng = np.random.default_rng(nbnm.get('seed', 20261109))
 
     def _create_controller(self):
@@ -58,6 +62,7 @@ class NBNMEnv(CompactFullStoryEnv):
     def _info(self, elapsed=0):
         info = super()._info(elapsed)
         info.update(episode_mode='NBNM-'+self.nbnm['task']['mode'],
+            nbnm_actor_weights=list(self.objective.weights),
             nb_nm_task=dict(self.nbnm['task']),
             nbnm_entry_mode=self.nbnm.get('entry_mode','story_prefix'),
             native_spell_practice=getattr(getattr(self,'controller',None),'spell_practice_entry',None))
@@ -65,11 +70,16 @@ class NBNMEnv(CompactFullStoryEnv):
 
     def _label_current(self, info):
         """Movement distributions on student states; teacher never executes."""
-        if self.nbnm.get('teacher_mode')=='resource-movement-v1':
+        started=time.perf_counter()
+        if self.nbnm.get('teacher_mode') in ('resource-movement-v1','nbnm-route-v1'):
             from .nbnm_objective import movement_reference
             result=CompactFullStoryEnv._label_current(self,info)
             self._teacher_label=movement_reference(self._teacher_label)
-            self._teacher_label['nbnm_teacher_mode']='resource-movement-v1'
+            if self.nbnm.get('teacher_mode')=='nbnm-route-v1':
+                from .nbnm_route_teacher import route_reference
+                self._teacher_label=route_reference(self._teacher_label,self.encoder.last_result)
+            self._teacher_label['nbnm_teacher_mode']=self.nbnm.get('teacher_mode')
+            self._teacher_label['query_seconds']=time.perf_counter()-started
             return self._attach(result)
         from .nbnm_teacher import label_current
         self._teacher_label = label_current(self.encoder.last_result, self.snapshot, self.episode_id,
@@ -88,7 +98,8 @@ class NBNMEnv(CompactFullStoryEnv):
         if seed is not None: self._bank_rng = np.random.default_rng(seed)
         entry = None
         requested = (options or {}).get('native_seed')
-        if self.nbnm['task']['mode'] != 'full_story' and not practice.enabled(self.nbnm):
+        from .nbnm_task import fresh_opening
+        if not fresh_opening(self.nbnm['task']) and not practice.enabled(self.nbnm):
             from .nbnm_prefix import choose_entry
             entry = choose_entry(self.nbnm['start_bank'], self.full_story_split,
                 self.nbnm['task'], self._bank_rng, native_seed=requested)
@@ -124,7 +135,7 @@ class NBNMEnv(CompactFullStoryEnv):
             raise ValueError('Bomb is outside the NBNM action support, including deathbomb')
         observation, old_reward, terminal, truncated, info = super().step(action)
         end = 2 if terminal and self.task_tracker.reason in (
-            'native-six-stage-clear','native-stage-complete','native-next-attack',
+            'native-six-stage-clear','native-stage-complete','native-next-attack','native-chain-complete',
             'native-spell-capture','native-spell-survived-timeout') else 1 if terminal else 0
         task = self.task_tracker.report(self.snapshot, terminal=end)
         vector = self.objective.rewards(terminal=terminal, success=task['nbnm_success'],

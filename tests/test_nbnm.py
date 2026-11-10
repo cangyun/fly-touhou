@@ -34,6 +34,7 @@ def test_native_step_elapsed_reaches_nbnm_info(monkeypatch):
     monkeypatch.setattr(CompactFullStoryEnv,'_info',lambda self,elapsed=0:dict(elapsed_frames=elapsed))
     env=NBNMEnv.__new__(NBNMEnv)
     env.nbnm=dict(task=dict(mode='attack',stage=3,attack='BossCard1'))
+    env.objective=Objective()
     assert env._info()['elapsed_frames']==0
     info=env._info(4)
     assert info['elapsed_frames']==4 and info['episode_mode']=='NBNM-attack'
@@ -116,14 +117,15 @@ def test_extended_clearance_does_not_reuse_the_old_64_pixel_clip():
     assert NBNMEncoder().specification()['features']['shape']==[281]
 
 
-def test_nbnm_parameter_checkpoint_restores_new_ports_and_masks(monkeypatch):
+@pytest.mark.parametrize('task_context',['legacy','critic-only-v1'])
+def test_nbnm_parameter_checkpoint_restores_new_ports_and_masks(monkeypatch,task_context):
     import fly_touhou.compact_story_model as module
     from test_candidate_spiking import model as base
     from fly_touhou.dn_residual_risk import DNResidualRisk
     from fly_touhou.nbnm_model import configure_model
     m=module.CompactStoryPolicy(base());width=2*len(m.core.output_indices)
     m.risk=DNResidualRisk(torch.zeros(width),torch.ones(width),torch.zeros(3,width),torch.zeros(3))
-    configure_model(m,dict(objective={},risk_mode='route'))
+    configure_model(m,dict(objective={},risk_mode='route',task_context=task_context))
     with torch.no_grad():m.core.input_encoder.extended_context.weight.fill_(.01)
     payload=m.parameter_payload({})
     monkeypatch.setattr(module,'build_compact_model',lambda *a,**k:base())

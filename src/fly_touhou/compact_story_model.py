@@ -1,7 +1,7 @@
 """Warm-started whole-connectome LIF actor with resources,Bomb and three values.
 
-All task information enters the same VP ports. Policy,risk and values read
-only DN activity. The18 counterfactual candidates share one brain/weights;
+Policy and risk read only DN activity after the shared VP input. NBNM can
+condition the artificial value heads on task scope separately. The18 candidates share one brain/weights;
 only the actual movement (neutral0 for Bomb) commits a following state.
 """
 import torch
@@ -122,7 +122,10 @@ class CompactStoryPolicy(nn.Module):
         base=story_candidates(features)
         if getattr(self,'nbnm',None):
             from .nbnm_sensation import candidate_extension
-            base=torch.cat((base,candidate_extension(features)),-1)
+            extension=candidate_extension(features)
+            if self.nbnm.get('task_context')=='critic-only-v1':
+                extension=torch.cat((extension[...,:-4],torch.zeros_like(extension[...,-4:])), -1)
+            base=torch.cat((base,extension),-1)
         return base
     def enable_task_progress_ports(self,*,amplitude=.025):
         from .compact_story_task_drive import TaskProgressPortDrive
@@ -201,7 +204,10 @@ class CompactStoryPolicy(nn.Module):
                 protected_from_stage=getattr(self,'protected_exit_from_stage',1))
         # Mean over every counterfactual is independent of the action sampled.
         value_input=pooled.detach()+.1*(pooled-pooled.detach())
-        return dict(logits=logits,values=self.critic(value_input),horizon_scores=scores,
+        if getattr(self,'task_critic',None) is not None:
+            value_input=value_input+self.task_critic(features[:,-4:])
+        values=self.critic(value_input)
+        return dict(logits=logits,values=values,horizon_scores=scores,
             predicted_margin=1-8*scores[...,0],DN_mean=pooled,legal_bomb=legal_bomb,route_scores=route)
     def step(self,features,state,*,actions=None,checkpointed=False,sample=False,return_all_DN=False,action_selector=None):
         if action_selector is not None and (actions is not None or sample):
@@ -240,6 +246,7 @@ class CompactStoryPolicy(nn.Module):
         return dict(schema=SCHEMA,input_schema=self.input_schema,seed=self.seed,costs=dict(costs),temperature=self.temperature,
             state_dict={k:v.detach().cpu().clone() for k,v in self.state_dict().items()},actual_binary_spikes=True,
             nbnm=getattr(self,'nbnm',None),
+            critic_task_scope_outside_brain=getattr(self,'task_critic',None) is not None,
             one_shared_brain=True,all_source_nodes_and_signed_edges_retained=True,neural_input_per_candidate=self.core.sensory_width,
             raw_geometry_or_teacher_action_bypass=False,map_in_policy=False,bombs_disabled=self.bombs_disabled,
             pad_candidate_batch=self.pad_candidate_batch,

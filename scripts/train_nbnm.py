@@ -41,7 +41,7 @@ def main():
     import torch
     import psutil
     from torch.utils.tensorboard import SummaryWriter
-    from fly_touhou.compact_story_ppo import optimizer_for,update
+    from fly_touhou.compact_story_ppo import optimizer_for,update,restore_optimizer
     from fly_touhou.compact_story_ready import ReadyCollector
     from fly_touhou.owned_worker_affinity import worker_cpu_pool
     from fly_touhou.thrl_job_paths import cleanup_native_temp
@@ -50,6 +50,12 @@ def main():
     begun=time.monotonic();collector=None;writer=SummaryWriter(spec.get('tensorboard_directory',str(output/'tensorboard')))
     completed=0;updates=0;cycle=0;in_progress=None;model=None;optimizer=None
     last_status={};stopped=False;episode_offset=0;episode_index=0
+    status_api=None
+    if spec.get('status_port') is not None:
+        from fly_touhou.thrl_study_io import StatusAPI
+        from summarize_nbnm_trial import summarize
+        status_api=StatusAPI(output,port=int(spec['status_port']),snapshot_reader=lambda:summarize(output))
+        write_json(output/'status-api.json',dict(url=status_api.url,read_only=True))
 
     def progress(data):
         last_status.update(data)
@@ -72,12 +78,17 @@ def main():
         torch.manual_seed(spec['seed']);torch.cuda.manual_seed_all(spec['seed'])
         model,migrated=load_model(spec,a.resume)
         optimizer=optimizer_for(model)
+        rehearsal=None;retention=spec.get('rehearsal',{})
+        if retention.get('coefficient',0)>0:
+            from fly_touhou.nbnm_rehearsal import SuccessRehearsal
+            rehearsal=SuccessRehearsal(retention['manifest'])
+            write_json(output/'rehearsal.json',rehearsal.summary())
         warmstart_state=spec.get('warmstart_optimizer_checkpoint')
         if not a.resume and warmstart_state:
             # New on-policy tasks start fresh games, but retain learned Adam
             # moments. Never replay the previous task's stored rollout here.
             previous_state=torch.load(warmstart_state,map_location='cpu',weights_only=False)
-            optimizer.load_state_dict(previous_state['optimizer'])
+            restore_optimizer(optimizer,previous_state['optimizer'])
             warmstart_updates=int(previous_state['optimizer_updates'])
             del previous_state
         else:warmstart_updates=0
@@ -165,6 +176,8 @@ def main():
 
             result=update(model,optimizer,rollout,epochs=1,micro_scenes=16,seed=spec['seed']+cycle,
                 checkpoint_chunks=True,target_kl=None,max_updates=0,sample_decisions=0,
+                rule_archive_replay=rehearsal,rule_archive_coefficient=retention.get('coefficient',0.),
+                rule_archive_every=retention.get('every_updates',8),
                 completed_update_prefix=tuple(in_progress['logs']),progress=learning_progress)
             learn_seconds=time.monotonic()-before
             row=dict(cycle=cycle,completed_decisions=completed,optimizer_updates=updates,
@@ -184,13 +197,31 @@ def main():
         if collector is not None:collector.close();collector=None
         progress(dict(phase='paused' if stopped else 'training_complete'))
         if not stopped and spec.get('evaluate_at_end',True):
-            report=evaluate(model,spec,output/'frozen-card-evaluation',progress=progress)
-            writer.add_scalar('frozen/task_success_rate',report['successes']/report['attempts'],completed)
-            if report['successful_mean_native_frames'] is not None:
-                writer.add_scalar('frozen/successful_mean_native_frames',report['successful_mean_native_frames'],completed)
-            write_json(output/'final-report.json',dict(training_complete=True,report=report,
+            reports={}
+            for group in spec.get('evaluation_tasks', ['primary']):
+                task=spec['tasks'][group] if group!='primary' else spec['nbnm']['task']
+                destination=output/('frozen-card-evaluation' if group=='primary' else 'frozen-'+group)
+                # An interrupted final evaluation need not repeat already
+                # completed tasks. Never reuse a changing-policy train report.
+                cached=read(destination/'report.json') if (destination/'report.json').exists() else None
+                same=cached and cached.get('learner_cursor')==dict(decisions=completed,optimizer_updates=updates)
+                if same:report=cached
+                else:
+                    if destination.exists():
+                        archived=output/(destination.name+'-interrupted-'+str(time.time_ns()))
+                        if destination.resolve().parent!=output.resolve() or archived.resolve().parent!=output.resolve():
+                            raise ValueError('Evaluation archive must remain inside its run directory')
+                        destination.rename(archived)
+                    report=evaluate(model,spec,destination,task=task,progress=progress)
+                    report['learner_cursor']=dict(decisions=completed,optimizer_updates=updates)
+                    write_json(destination/'report.json',report)
+                reports[group]=report
+                writer.add_scalar('frozen/'+group+'/success_rate',report['successes']/report['attempts'],completed)
+                if report['successful_mean_native_frames'] is not None:
+                    writer.add_scalar('frozen/'+group+'/successful_native_frames',report['successful_mean_native_frames'],completed)
+            write_json(output/'final-report.json',dict(training_complete=True,report=report,reports=reports,
                 full_game_NBNM_proven=False))
-            progress(dict(phase='complete',frozen_successes=report['successes'],frozen_attempts=report['attempts']))
+            progress(dict(phase='complete',frozen_tasks={g:dict(successes=r['successes'],attempts=r['attempts']) for g,r in reports.items()}))
     except StopAfterUpdate:
         save();progress(dict(phase='paused',reason='operator STOP after committed optimizer update'))
     except BaseException:
@@ -200,6 +231,7 @@ def main():
         raise
     finally:
         if collector is not None:collector.close()
+        if status_api is not None:status_api.close()
         writer.close();cleanup_native_temp(temporary)
 
 

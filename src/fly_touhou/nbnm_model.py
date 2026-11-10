@@ -23,6 +23,10 @@ def configure_model(model, config, *, reset_critics=True):
     model.pad_candidate_batch = False
     encoder.batch_invariant = True
     model.core.cache_inference_parameters = True
+    if config.get('task_context') == 'critic-only-v1' and not hasattr(model, 'task_critic'):
+        # Artificial value interface only; no new brain edges or action path.
+        model.task_critic = nn.Linear(4, 2*len(model.core.output_indices), bias=False, device=model.device)
+        nn.init.zeros_(model.task_critic.weight)
     if reset_critics:
         # The old three critics predicted different returns. Preserve learned
         # brain/risk/movement weights, not numerically incompatible values.

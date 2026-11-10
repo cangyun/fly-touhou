@@ -1,5 +1,9 @@
 param([ValidateSet('route','baseline')][string]$Mode = 'route', [string]$ConfigDirectory = '')
 $ErrorActionPreference = 'Stop'
+$localPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'outputs/nbnm-local.json'
+if (-not $ConfigDirectory -and (Test-Path -LiteralPath $localPath)) {
+    $ConfigDirectory = (Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json).config_directory
+}
 if (-not $ConfigDirectory) { $ConfigDirectory = Join-Path (Split-Path -Parent $PSScriptRoot) 'outputs/nbnm-preparation' }
 $configuration = Join-Path $ConfigDirectory ($Mode + '.json')
 $specification = Get-Content -LiteralPath $configuration -Raw | ConvertFrom-Json

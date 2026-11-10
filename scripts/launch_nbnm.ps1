@@ -6,6 +6,12 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$localPath = Join-Path $projectRoot 'outputs/nbnm-local.json'
+if (Test-Path -LiteralPath $localPath) {
+    $localSettings = Get-Content -LiteralPath $localPath -Raw | ConvertFrom-Json
+    if (-not $ConfigDirectory) { $ConfigDirectory = $localSettings.config_directory }
+    if (-not $Python) { $Python = $localSettings.python }
+}
 if (-not $ConfigDirectory) { $ConfigDirectory = Join-Path $projectRoot 'outputs/nbnm-preparation' }
 if (-not $Python) { $Python = $env:FLY_TOUHOU_PYTHON }
 if (-not $Python) { $Python = Join-Path $projectRoot '.venv/Scripts/python.exe' }

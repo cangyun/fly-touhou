@@ -30,6 +30,16 @@ def candidate_extension(features):
     return torch.cat((direction, context), -1)
 
 
+def critic_scope(task, stage, name):
+    from .nbnm_task import attack_key
+    end_stage = task.get('end_stage', task.get('stage', 6))
+    end = attack_key(task.get('end_attack', task.get('attack')))
+    number = ((end[2] if end[1] else -end[2])/32) if end else 0.
+    kind = {'full_story':0, 'stage':1, 'attack':2, 'chain':3}[task['mode']]/3
+    inside = bool(end and stage == end_stage and attack_key(name) == end)
+    return (kind, end_stage/6, number, inside)
+
+
 def current_attack(snapshot):
     roles = snapshot.extra.get('thrl_events', {}).get('ecl_roles', {})
     rows = roles.get('main_bosses', []) + roles.get('midbosses', [])
@@ -105,11 +115,12 @@ class NBNMEncoder(CompactStoryEncoder):
     feature_names = (*CompactStoryEncoder.feature_names,
         *(f'action{a}_{name}' for a in range(18) for name in DIRECTION_NAMES), *CONTEXT_NAMES)
 
-    def __init__(self, *, risk_mode='route', task=None):
+    def __init__(self, *, risk_mode='route', task=None, task_context='legacy'):
         super().__init__()
         if risk_mode not in ('baseline', 'route'): raise ValueError('baseline or route input required')
         self.risk_mode = risk_mode
         self.task = dict(task or {'mode':'full_story'})
+        self.task_context = task_context
         self._attack = None
         self._attack_start = 0
         self._nbnm_cache = None
@@ -131,10 +142,11 @@ class NBNMEncoder(CompactStoryEncoder):
             extra = teacher_route
         # Task and phase identity are shared by both input ablations. A card
         # completion is terminal in practice but not in a full-game episode.
-        attack = (snapshot.stage, current_attack(snapshot))
+        from .nbnm_task import attack_key
+        name = current_attack(snapshot) or ''
+        attack = (snapshot.stage, name)
         if attack != self._attack:
             self._attack, self._attack_start = attack, snapshot.frame
-        name = attack[1] or ''
         number = re.search(r'(\d+)', name)
         age = max(0, snapshot.frame-self._attack_start)
         from .nbnm_task import attack_key
@@ -144,6 +156,8 @@ class NBNMEncoder(CompactStoryEncoder):
             self.task.get('stage',0)/6,
             self.task['mode']=='attack' and snapshot.stage==self.task.get('stage')
                 and attack_key(name)==attack_key(self.task.get('attack')))
+        if self.task_context == 'critic-only-v1':
+            context[4:] = critic_scope(self.task, snapshot.stage, name)
         features = np.concatenate((original, extra.reshape(-1), context)).astype(np.float32)
         self.last_result = dict(self.last_result, features=features, route_context=teacher_route,
             route_context_scope='conditional current-scene forecast, not native future outcomes')
@@ -151,9 +165,14 @@ class NBNMEncoder(CompactStoryEncoder):
         return {'features': features.copy()}
 
     def specification(self):
+        names=self.feature_names
+        if self.task_context=='critic-only-v1':
+            names=(*names[:-4],'critic_task_kind','critic_end_stage','critic_end_attack','critic_inside_end_attack')
         return dict(super().specification(), schema=SCHEMA, risk_mode=self.risk_mode,
-            features=dict(shape=[FEATURE_WIDTH],names=self.feature_names),
+            features=dict(shape=[FEATURE_WIDTH],names=names),
             feature_width=FEATURE_WIDTH, extension_per_candidate=EXTENSION_WIDTH,
             direction_names=DIRECTION_NAMES, context_names=CONTEXT_NAMES,
             physical_exit_revision='clipped-distinct-endpoints-v2',
+            task_context=self.task_context,
+            task_scope_reaches_action_or_risk=self.task_context!='critic-only-v1',
             long_horizons_are_labels=False, future_spawn_information=False)

@@ -28,7 +28,7 @@ def main():
             input_ports=len(model.core.input_indices),output_ports=len(model.core.output_indices),
             ticks_per_decision=model.core.K,critic_reset=migrated)
         cfg=environment(spec,evaluation=True)
-        if a.native=='opening':cfg['nbnm']['task']=dict(mode='full_story')
+        if a.native=='opening':cfg['nbnm'].update(task=dict(mode='full_story'),entry_mode='story_prefix')
         env=factory(story_kwargs(cfg,a.output/'native',1,a.split,teacher=True)[0])
         started=time.perf_counter();obs,info=env.reset()
         result['native_reset_seconds']=time.perf_counter()-started

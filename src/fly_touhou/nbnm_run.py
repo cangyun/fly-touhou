@@ -23,10 +23,18 @@ def task_settings(spec, task):
 def validate_spec(spec):
     from .nbnm_objective import Objective, qualifies_speed, rule_guidance_coefficient
     from .nbnm_sampling import group_block_budget
-    from .nbnm_task import TaskTracker
+    from .nbnm_task import TaskTracker,entry_matches,fresh_opening
     from .nbnm_prefix import SCHEMA
     objective=Objective(**spec['nbnm']['objective'])
     rule_guidance_coefficient(spec['nbnm'])
+    if spec['nbnm'].get('task_context','legacy') not in ('legacy','critic-only-v1'):
+        raise ValueError('Unknown NBNM task-context protocol')
+    retention=spec.get('rehearsal',{})
+    if retention.get('coefficient',0)>0:
+        from .nbnm_rehearsal import SuccessRehearsal
+        SuccessRehearsal(retention['manifest'])
+        if not 0<retention['coefficient']<=.3 or type(retention.get('every_updates')) is not int or retention['every_updates']<1:
+            raise ValueError('Specify a small supervised retention coefficient and positive interval')
     if objective.phase=='speed':
         report=read(spec['speed_qualification_report'])
         if not qualifies_speed(report):raise ValueError('Speed phase requires frozen NBNM qualification')
@@ -37,9 +45,16 @@ def validate_spec(spec):
     if len(spec['world_groups'])!=workers:raise ValueError('One task group per worker required')
     group_block_budget(spec['world_groups'],spec['group_weights'],segment//16)
     for task in spec['tasks'].values():TaskTracker(task)
+    for group in spec.get('evaluation_tasks',[]):
+        if group not in spec['tasks']:raise ValueError('Unknown final evaluation task '+group)
     from .nbnm_spell_practice import enabled,validate_task
     for task in spec['tasks'].values():
         settings=task_settings(spec,task)
+        task_objective=Objective(**settings['objective'])
+        if task_objective.phase=='speed':
+            report=read(settings.get('speed_qualification_report',spec.get('speed_qualification_report')))
+            if not qualifies_speed(report) or report['task']!=task:
+                raise ValueError('Speed qualification is per task, not transferable to other cards')
         if enabled(settings):
             validate_task(task)
             if not Path(settings['score_template']).is_file():
@@ -49,11 +64,11 @@ def validate_spec(spec):
                 if not seeds or len(set(seeds)) != len(seeds) or any(seed_split(s)!=split for s in seeds):
                     raise ValueError('Use unique native evaluation seeds belonging to their data split')
             continue
-        if task['mode']=='full_story':continue
+        if fresh_opening(task):continue
         bank=read(settings['start_bank'])
         if bank.get('schema')!=SCHEMA:raise ValueError('Prepare the native attack-start bank first')
         for split in ('train','development'):
-            entries=[r for r in bank['entries'] if r['task']==task and r['split']==split]
+            entries=[r for r in bank['entries'] if entry_matches(r['task'],task) and r['split']==split]
             if not entries:raise ValueError(f'Missing {split} task starts: {task}')
         train={r['native_seed'] for r in bank['entries'] if r['split']=='train'}
         dev={r['native_seed'] for r in bank['entries'] if r['split']=='development'}
@@ -86,7 +101,7 @@ def environment(spec, *, evaluation=False):
                 'compact_capture_stage6_prefix','compact_conditional_wall_guidance_coefficient'):
         cfg.pop(key,None)
     cfg.update(seed=spec['seed'],nbnm=copy.deepcopy(spec['nbnm']),
-        compact_full_native_teacher_support=spec['nbnm'].get('teacher_mode')=='resource-movement-v1',
+        compact_full_native_teacher_support=spec['nbnm'].get('teacher_mode') in ('resource-movement-v1','nbnm-route-v1'),
         compact_protected_exit_forecast=False)
     if not evaluation:
         cfg['nbnm']['world_tasks']=[spec['tasks'][group] for group in spec['world_groups']]
@@ -125,9 +140,11 @@ def evaluation_seeds(spec, *, split='development', task=None):
     task=task or spec['nbnm']['task']
     settings=task_settings(spec,task)
     if enabled(settings):return list(settings['practice_evaluation_seeds'][split])
-    if task['mode']=='full_story':return list(spec['full_story_evaluation_seeds'])
+    from .nbnm_task import fresh_opening
+    if fresh_opening(task):return list(spec['full_story_evaluation_seeds'])
     bank=read(settings['start_bank'])
-    return sorted({r['native_seed'] for r in bank['entries'] if r['split']==split and r['task']==task})
+    from .nbnm_task import entry_matches
+    return sorted({r['native_seed'] for r in bank['entries'] if r['split']==split and entry_matches(r['task'],task)})
 
 
 def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x:None,guard=lambda:None):

@@ -332,7 +332,8 @@ def optimizer_for(model):
         dict(name='risk',params=list(model.risk.parameters()),lr=3e-5),
         dict(name='movement',params=list(model.route.parameters()),lr=1e-4),
         dict(name='Bomb',params=[*model.bomb.parameters(),model.bomb_urgency_gain],lr=1e-3),
-        dict(name='three_critics',params=list(model.critic.parameters()),lr=3e-4)],weight_decay=0.)
+        dict(name='three_critics',params=[*model.critic.parameters(),
+            *(model.task_critic.parameters() if hasattr(model,'task_critic') else ())],lr=3e-4)],weight_decay=0.)
 
 
 def restore_optimizer(optimizer,saved):
@@ -348,6 +349,8 @@ def restore_optimizer(optimizer,saved):
     for old,new in zip(groups,optimizer.param_groups):
         if old.get('name')!=new.get('name'):raise ValueError('Optimizer group order differs')
         if len(old['params'])==len(new['params']):continue
+        if old['name']=='three_critics' and len(new['params'])==len(old['params'])+1:
+            old['params'].append(next_id);next_id+=1;continue
         if old['name']=='new_context_ports' and len(new['params'])==len(old['params'])+1:
             old['params'].append(next_id);next_id+=1;task_promoted=True;continue
         if old['name']!='risk' or len(new['params'])!=len(old['params'])+2:
