@@ -375,7 +375,11 @@ def _script_boundary(state, horizon):
     if first_tick > horizon:
         return None, None
     if state.get("tick_callback"):
-        return first_tick, "native tick callback is not interpreted"
+        from .native_enemy_ecl import variable_only_tick_callback, CALLBACK_EFFECTS_REVISION
+        shared=state.get('ecl_forecast') or {}
+        resolved=(shared.get('tick_callback_effects_revision')==CALLBACK_EFFECTS_REVISION
+                  and variable_only_tick_callback(state['tick_callback'],state['image_base']))
+        if not resolved:return first_tick, "native tick callback is not interpreted"
     if not state.get("ecl_read", False):
         return first_tick, "ECL contexts were not read"
     if state.get("ecl_context_list_truncated"):

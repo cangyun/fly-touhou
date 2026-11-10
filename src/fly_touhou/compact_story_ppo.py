@@ -376,11 +376,12 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
     guidance_options={}
     if getattr(model,'nbnm',None):
         from dataclasses import replace
-        from .nbnm_objective import Objective
+        from .nbnm_objective import Objective, rule_guidance_coefficient
         from .fly_gru_aligned_guidance import DEFAULT_CONFIG
         objective=Objective(**model.nbnm.get('objective',{}))
         cfg=replace(cfg,gamma=1.,objective_weights=objective.weights,target_kl=None)
-        guidance_options['config']=replace(DEFAULT_CONFIG,deathbomb_coefficient=0.)
+        guidance_options['config']=replace(DEFAULT_CONFIG,deathbomb_coefficient=0.,
+            rule_coefficient=rule_guidance_coefficient(model.nbnm))
     length=cfg.seq_len
     behavior_temperature=rollout_sampling_temperature(rollout)
     bomb_temperature=rollout_bomb_sampling_temperature(rollout)
@@ -513,6 +514,8 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
                     native_exposure_mask(batch['features'],batch['unprotected_mask']),batch['native_action_frames'])
                 native_share=.25 if bool(native_weights.any()) else 0.
             optimizer.zero_grad(set_to_none=True);metrics=dict(loss=0.,PPO=0.,guidance=0.,risk=0.,KL=0.,entropy=0.)
+            if getattr(model,'nbnm',None):
+                metrics['rule_guidance_coefficient']=guidance_options['config'].rule_coefficient
             if recorded_batch is not None:
                 metrics.update(exact_action_KL=0.,exact_bomb_KL=0.,exact_weighted_movement_KL=0.,bomb_KL_legacy_saturation_rows=0)
             if boss_attack_coefficient:metrics['boss_attack_guidance']=0.

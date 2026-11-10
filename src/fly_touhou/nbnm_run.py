@@ -21,11 +21,12 @@ def task_settings(spec, task):
 
 
 def validate_spec(spec):
-    from .nbnm_objective import Objective, qualifies_speed
+    from .nbnm_objective import Objective, qualifies_speed, rule_guidance_coefficient
     from .nbnm_sampling import group_block_budget
     from .nbnm_task import TaskTracker
     from .nbnm_prefix import SCHEMA
     objective=Objective(**spec['nbnm']['objective'])
+    rule_guidance_coefficient(spec['nbnm'])
     if objective.phase=='speed':
         report=read(spec['speed_qualification_report'])
         if not qualifies_speed(report):raise ValueError('Speed phase requires frozen NBNM qualification')

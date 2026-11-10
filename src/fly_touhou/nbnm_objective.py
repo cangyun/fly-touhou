@@ -12,6 +12,14 @@ import numpy as np
 SCHEMA = 'th14-nbnm-success-first-v1'
 
 
+def rule_guidance_coefficient(settings):
+    """Scale existing rule-distribution guidance, independently of reward."""
+    value=settings.get('rule_guidance_coefficient', .1)
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=1:
+        raise ValueError('NBNM rule guidance coefficient must be finite in [0,1]')
+    return float(value)
+
+
 @dataclass(frozen=True)
 class Objective:
     phase: str = 'completion'

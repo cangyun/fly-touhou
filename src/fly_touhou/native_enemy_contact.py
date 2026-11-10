@@ -319,7 +319,7 @@ def read_enemy_contact(memory, enemy_base, data_address, *,
     dimensions = read(data_address + 0x118, '<fff')
     callback = scalar(data_address + 0x4118, '<I')
     tick_callback = scalar(data_address + 0x410c, '<I')
-    result = {'schema': SCHEMA, 'enemy_base': enemy_base, 'data_address': data_address,
+    result = {'schema': SCHEMA, 'image_base': image_base, 'enemy_base': enemy_base, 'data_address': data_address,
         'native_flags': flags, 'rectangle': None if flags is None else bool(flags & 0x1000),
         'data_update_skip_next_tick': None if flags is None else bool(flags & 0x40000),
         'local_slowdown': local, 'custom_contact_callback': callback,
@@ -375,6 +375,7 @@ def read_enemy_contact(memory, enemy_base, data_address, *,
     if shared_ecl is not None:
         from .native_enemy_ecl import CONTACT_OPS
         result['ecl_revision'] = shared_ecl['revision']
+        result['tick_callback_effects_revision'] = shared_ecl.get('tick_callback_effects_revision')
         result['ecl_forecast_horizon'] = shared_ecl['horizon']
         result['ecl_threads_complete'] = not motion_state.get('ecl_context_list_truncated', False)
         result['ecl_threads'] = [dict(thread) for thread in shared_ecl['threads']]
@@ -469,7 +470,10 @@ def predict_contact_ticks(contact, horizon=24):
                 callback = event.get('callback')
             elif opcode in (632, 639):
                 tick_callback = event.get('callback')
-        if not skip_update and (tick_callback is None or tick_callback != 0):
+        from .native_enemy_ecl import variable_only_tick_callback, CALLBACK_EFFECTS_REVISION
+        variable_only=(contact.get('tick_callback_effects_revision')==CALLBACK_EFFECTS_REVISION
+                       and variable_only_tick_callback(tick_callback,contact.get('image_base',0x400000)))
+        if not skip_update and not variable_only and (tick_callback is None or tick_callback != 0):
             persistent.append('unknown_tick_callback' if tick_callback is None
                               else 'unmodeled_tick_callback')
         unmodeled = list(dict.fromkeys(persistent))

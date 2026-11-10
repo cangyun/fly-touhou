@@ -18,7 +18,26 @@ import math
 import struct
 
 
-REVISION = 'th14-native-ecl-stack-motion-contact-polar-v3'
+REVISION = 'th14-native-ecl-callback-variable-taint-v4'
+CALLBACK_EFFECTS_REVISION = 'th14-42c8a0-variable-taint-v1'
+
+
+def variable_only_tick_callback(callback, image_base):
+    # TH14 1.00b 42c8a0..42c980: no direct movement/contact writes. It
+    # updates EnemyData+28c/+29c/+2a0, which later ECL can read as globals.
+    return callback == image_base + 0x2c8a0
+
+
+def apply_tick_callback_effects(world):
+    callback=world.state.get('tick_callback')
+    if not callback:return
+    if variable_only_tick_callback(callback,world.base):
+        # A future matching object is not known. Preserve that uncertainty in
+        # the written variables instead of invalidating unrelated geometry.
+        for variable in (-9985,-9981,-9980):world.globals[variable]=None
+    elif world.motion_unknown is None:
+        world.motion_unknown=(world.frame,'unmodeled_native_tick_callback')
+
 CONTACT_OPS = {500, 501, 502, 503, 515, 541, 563, 564, 632, 634, 639}
 MOVEMENT_SIGNATURES = {
     400: 'ff', 402: 'ff', 401: 'iiff', 403: 'iiff',
@@ -518,6 +537,16 @@ class ECLWorld:
                 value = thread.pop(kind)
                 thread.push(None if value is None else -value, kind)
                 cleanup = False
+            elif opcode == 87:
+                # 483807..483899: direction from (x1,y1) to (x2,y2).
+                # Native SSE subtraction rounds each delta to float32 before
+                # the CRT atan2 call; the target stores a float32 angle.
+                coordinates=[self.argument(thread,ins,i,'f') for i in range(1,5)]
+                angle=None
+                if all(v is not None and math.isfinite(v) for v in coordinates):
+                    x1,y1,x2,y2=coordinates
+                    angle=f32(math.atan2(f32(y2-y1),f32(x2-x1)))
+                self.target(thread,ins,0,angle,'f')
             elif opcode in (535, 536):
                 kind = 'i' if opcode == 535 else 'f'
                 rank = self.global_value(-9959, 'i')
@@ -727,6 +756,7 @@ def forecast_ecl(memory, state, horizon=24):
     answer = dict(revision=REVISION, horizon=horizon, events=[], threads=[],
                   unknown_from_tick=None, unknown_reason=None, instruction_count=0,
                   contact_unknown_from_tick=None, contact_unknown_reason=None,
+                  tick_callback_effects_revision=CALLBACK_EFFECTS_REVISION,
                   spawn_instructions=[], position_samples=[], reachable_radius_by_frame=[0.])
     try:
         world = ECLWorld(memory, work)
@@ -759,9 +789,7 @@ def forecast_ecl(memory, state, horizon=24):
                 break
             world.tick(frame)
         answer['position_samples'].append(work['final']['position'][:])
-        if work.get('tick_callback'):
-            if world.motion_unknown is None:
-                world.motion_unknown = (frame, 'unmodeled_native_tick_callback')
+        if not skip:apply_tick_callback_effects(world)
     answer.update(events=world.events, threads=[t.initial for t in world.all_threads],
                   instruction_count=world.steps, spawn_instructions=world.spawn_events,
                   unresolved_variables=sorted(world.unresolved_variables))
