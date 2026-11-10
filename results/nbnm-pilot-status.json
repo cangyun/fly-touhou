@@ -1,0 +1,118 @@
+{
+  "schema": "nbnm-training-progress-analysis-v1",
+  "observed_utc": "2026-11-10T00:14:11.574947+00:00",
+  "status": {
+    "phase": "student_full_story_collection",
+    "cycle": 3,
+    "completed_decisions": 16384,
+    "optimizer_updates": 64,
+    "rollout_decisions": 1671,
+    "budget": 32768
+  },
+  "scope": "Training attempts grouped by segment of completion; episodes can span policy updates. Not frozen evaluation.",
+  "completed_segments": [
+    {
+      "cycle": 1,
+      "sampled_decisions": 8192,
+      "completed_optimizer_updates": 32,
+      "sampling_seconds": 289.46900000000005,
+      "learning_seconds": 422.59400000000005,
+      "contacts": 2,
+      "safe_forecast_but_native_contact": 0,
+      "task_group_decisions": {
+        "card": 6144,
+        "full": 2048
+      },
+      "tasks": {
+        "attack": {
+          "completed": 10,
+          "successes": 10,
+          "failures": 0,
+          "successful_mean_native_frames": 1792.4,
+          "failed_mean_native_frames": null,
+          "completed_native_seeds": [
+            15671,
+            51610,
+            15671,
+            34112,
+            62865,
+            51610,
+            15671,
+            62865,
+            15671,
+            15671
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        },
+        "full_story": {
+          "completed": 2,
+          "successes": 0,
+          "failures": 2,
+          "successful_mean_native_frames": null,
+          "failed_mean_native_frames": 1494,
+          "completed_native_seeds": [
+            21785,
+            16680
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        }
+      }
+    },
+    {
+      "cycle": 2,
+      "sampled_decisions": 8192,
+      "completed_optimizer_updates": 64,
+      "sampling_seconds": 323.8910000000001,
+      "learning_seconds": 447.28099999999995,
+      "contacts": 3,
+      "safe_forecast_but_native_contact": 0,
+      "task_group_decisions": {
+        "card": 6144,
+        "full": 2048
+      },
+      "tasks": {
+        "attack": {
+          "completed": 12,
+          "successes": 11,
+          "failures": 1,
+          "successful_mean_native_frames": 1869.8181818181818,
+          "failed_mean_native_frames": 836,
+          "completed_native_seeds": [
+            62865,
+            15671,
+            62865,
+            15671,
+            62865,
+            34112,
+            34112,
+            51610,
+            34112,
+            62865,
+            15671,
+            62865
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        },
+        "full_story": {
+          "completed": 2,
+          "successes": 0,
+          "failures": 2,
+          "successful_mean_native_frames": null,
+          "failed_mean_native_frames": 1620,
+          "completed_native_seeds": [
+            55532,
+            9702
+          ],
+          "Bombs": 0,
+          "unfinished_attempts_excluded": true
+        }
+      }
+    }
+  ],
+  "total_finished_training_attempts": 29,
+  "pending_segment_finished_attempts": 3,
+  "comparison": "Avoidance improvement is not established by this training-only report; compare frozen checkpoints on matched development starts."
+}

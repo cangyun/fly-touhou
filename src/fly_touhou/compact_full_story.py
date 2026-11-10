@@ -238,6 +238,9 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
 
 def factory(options):
     options=dict(options);revision=options.pop('online_teacher_revision',None)
+    if options.get('nbnm'):
+        from .nbnm_env import NBNMEnv
+        return NBNMEnv(**options,teacher_revision=revision)
     return CompactFullStoryEnv(**options,teacher_revision=revision)
 
 
@@ -249,6 +252,14 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
         from .resource_teacher_v10 import REVISION
         cfg['teacher_revision']=REVISION;cfg.setdefault('movement_guidance',{})['online_teacher_coefficient']=.1
     rows=train_thrl_native.make_env_kwargs(cfg,Path(output),workers,role)
+    if config.get('nbnm'):
+        from .nbnm_sensation import SCHEMA as NBNM_SCHEMA
+        for i,r in enumerate(rows):
+            r.update(input_schema=NBNM_SCHEMA,nbnm=dict(config['nbnm'],seed=cfg['seed']+1009*i))
+            tasks=config['nbnm'].get('world_tasks')
+            if tasks:
+                if len(tasks)!=workers:raise ValueError('One NBNM task per native worker required')
+                r['nbnm']['task']=dict(tasks[i])
     if cfg.get('compact_lower_field_reward') is not None:
         for r in rows:r['lower_field_reward']=dict(cfg['compact_lower_field_reward'])
     if cfg.get('compact_capture_stage6_prefix'):

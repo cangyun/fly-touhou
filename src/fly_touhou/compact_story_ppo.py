@@ -55,6 +55,9 @@ class Collector:
             if worker_cpus:
                 p=psutil.Process();write_json(self.output/'affinity.json',spread_owned_workers(p.pid,p.create_time(),worker_cpus))
             self.obs,self.infos=self.vector.reset();self.state=model.initial_state(workers);self.starts=np.ones(workers,bool)
+            if getattr(model,'nbnm',None):
+                from .nbnm_prefix import burn_in
+                self.state=SpikingState.pack([burn_in(model,info,self.state.row(i)) for i,info in enumerate(self.infos)])
         except BaseException as error:
             try:self.close()
             except BaseException as cleanup_error:
@@ -320,6 +323,8 @@ def optimizer_for(model):
     from .compact_policy_adam import PolicyMasterAdam
     task=getattr(model.core.input_encoder,'task_progress',None)
     context=[*model.core.input_encoder.context.parameters(),*(task.parameters() if task is not None else ())]
+    extension=getattr(model.core.input_encoder,'extended_context',None)
+    if extension is not None:context.extend(extension.parameters())
     return PolicyMasterAdam([
         dict(name='brain',params=list(model.core.internal_parameters()),lr=3e-6,eps=1e-10),
         dict(name='inherited_sensory_ports',params=list(model.core.input_encoder.base.parameters()),lr=3e-5),
@@ -367,7 +372,16 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
     from .whole_brain_ppo import clip_gradients_fp64
     if target_kl is not None and (isinstance(target_kl,bool) or not np.isfinite(target_kl) or target_kl<=0):
         raise ValueError('KL early stopping requires a positive finite target or None to disable')
-    cfg=aligned_ppo_config(ppo_epochs=epochs,target_kl=target_kl);length=cfg.seq_len
+    cfg=aligned_ppo_config(ppo_epochs=epochs,target_kl=target_kl)
+    guidance_options={}
+    if getattr(model,'nbnm',None):
+        from dataclasses import replace
+        from .nbnm_objective import Objective
+        from .fly_gru_aligned_guidance import DEFAULT_CONFIG
+        objective=Objective(**model.nbnm.get('objective',{}))
+        cfg=replace(cfg,gamma=1.,objective_weights=objective.weights,target_kl=None)
+        guidance_options['config']=replace(DEFAULT_CONFIG,deathbomb_coefficient=0.)
+    length=cfg.seq_len
     behavior_temperature=rollout_sampling_temperature(rollout)
     bomb_temperature=rollout_bomb_sampling_temperature(rollout)
     # Saved acting logits are telemetry, never a loss target. When present,
@@ -459,7 +473,7 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
             # Use whole256-row term denominators even when brain memory requires
             # microbatches. Rare deathbomb labels must not be diluted by splits.
             normalizers=gru_aligned_guidance_loss(torch.zeros(length,B,19),**task,actions=batch['actions'],
-                veto_rule_on_contact=True)['denominators']
+                veto_rule_on_contact=True,**guidance_options)['denominators']
             attack_normalizer=None
             position_coefficient=getattr(model,'combat_position_guidance_coefficient',0.)
             position_normalizer=None
@@ -519,7 +533,11 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
                 stop=min(start+micro_scenes,B);count=stop-start
                 micro={k:v[:,start:stop].to(model.device) for k,v in batch.items()}
                 state=SpikingState(*(v[start:stop].to(model.device) for v in before.tensors()))
-                result=sequence(model,micro['features'],micro['episode_starts'],state,micro['actions'],checkpoint_chunks=checkpoint_chunks)
+                resets=None
+                if rollout.get('episode_initial_states'):
+                    from .nbnm_prefix import replay_resets
+                    resets=replay_resets(rollout['episode_initial_states'],chosen[start:stop],length,model.device)
+                result=sequence(model,micro['features'],micro['episode_starts'],state,micro['actions'],checkpoint_chunks=checkpoint_chunks,reset_states=resets)
                 behavior_logits=story_behavior_logits(result['logits'],behavior_temperature,bomb_temperature)
                 if recorded_batch is not None:
                     from .compact_policy_kl import action_kl_parts
@@ -543,7 +561,7 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
                 guide=gru_aligned_guidance_loss(result['logits'],**aux,actions=micro['actions'],normalizers=normalizers,
                     veto_rule_on_contact=True,
                     position_features=micro['features'] if getattr(model,'lower_field_default',False) else None,
-                    position_exceptions=micro.get('lower_field_exception'))
+                    position_exceptions=micro.get('lower_field_exception'),**guidance_options)
                 native=None if not factual_risk else dict(actions=micro['actions'],outcomes=micro['outcomes'],
                     unprotected=native_exposure_mask(micro['features'],micro['unprotected_mask']),elapsed_frames=micro['native_action_frames'],
                     weights=native_weights[:,start:stop].to(model.device),share=native_share)

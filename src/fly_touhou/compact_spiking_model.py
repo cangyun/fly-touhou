@@ -43,16 +43,25 @@ class CompactSpikingCore(SpikingConnectomeCore):
     @property
     def device(self):return self.input_encoder.residual.weight.device
     def message(self,spikes,values):return self.sparse(spikes,values)
+    def dynamic_parameters(self):
+        cache=bool(getattr(self,'cache_inference_parameters',False) and not self.training and not torch.is_grad_enabled())
+        parameters=list(self.internal_parameters())
+        version=tuple((id(p),p._version) for p in parameters) if cache else None
+        saved=getattr(self,'_dynamic_parameter_cache',None)
+        if cache and saved is not None and saved[0]==version:return saved[1]
+        result=(self.effective_edge_values(),self.alpha(),.05+.9*self.synaptic_logits.sigmoid(),
+            .05+F.softplus(self.threshold_logits),self.message_gain())
+        if cache:self._dynamic_parameter_cache=(version,result)
+        return result
     def forward(self,features,state):
         if features.shape!=(len(state.membrane),self.sensory_width):raise ValueError('Typed compact input and complete carried LIF state required')
         drive=torch.zeros_like(state.membrane).index_add(1,self.input_indices,self.input_encoder(features))
-        values=self.effective_edge_values();alpha=self.alpha()
-        syn_alpha=.05+.9*self.synaptic_logits.sigmoid();threshold=.05+F.softplus(self.threshold_logits)
+        values,alpha,syn_alpha,threshold,message_gain=self.dynamic_parameters()
         membrane,synaptic,spikes,rate=state.tensors()
         for _ in range(self.K):
             message=self.message(spikes,values)
             synaptic=(1-syn_alpha)*synaptic+syn_alpha*message
-            candidate=(1-alpha)*membrane+alpha*(drive+self.neuron_bias+self.message_gain()*synaptic)
+            candidate=(1-alpha)*membrane+alpha*(drive+self.neuron_bias+message_gain*synaptic)
             spikes=HardSpike.apply((candidate-threshold)/threshold)*(spikes.detach()==0)
             membrane=candidate-spikes.detach()*threshold;rate=.75*rate+.25*spikes
         following=SpikingState(membrane,synaptic,spikes,rate)

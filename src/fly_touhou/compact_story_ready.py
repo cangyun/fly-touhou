@@ -41,11 +41,21 @@ class ReadyCollector(Collector):
         if fixed_quota:
             if total%(self.workers*length):raise ValueError('Per-world batches need equal complete16-step quotas')
             limits.fill(total//self.workers);reserved=blocks
+        # Optional task-level quotas preserve hard-card exposure while still
+        # assigning blocks to the first ready world WITHIN each task group.
+        groups=getattr(self,'worker_groups',None)
+        remaining=None
+        if groups is not None:
+            if fixed_quota:raise ValueError('Task quotas use global ready scheduling')
+            from .nbnm_sampling import group_block_budget
+            remaining=group_block_budget(groups,self.group_weights,blocks)
+            for group in groups:remaining[group]-=1
         coverage=StoryCoverage(self.workers);last_report=0;last_reserved=None
         stats=dict(Bomb_requests=0,actual_bombs=0,contacts=0,deathbombs=0,
             normal_teacher_rows=0,normal_teacher_guided_rows=0,full_native_teacher_restored_rows=0,
             safe_forecast_but_native_contact=0)
         trusted_counts=np.zeros(3,np.int64)
+        episode_initial_states={}
         selector=None;last_label={}
         if supervision_selection is not None:
             from .compact_story_action_selection import StoryActionSelector
@@ -63,6 +73,8 @@ class ReadyCollector(Collector):
                 before=SpikingState(*(v.index_select(0,idx) for v in self.state.tensors()))
                 for j,i in enumerate(indices):
                     if counts[i]%length==0:states[i][int(counts[i])]=before.row(j).detach().to('cpu')
+                    if self.starts[i] and self.infos[i].get('policy_burn_in'):
+                        episode_initial_states[(int(counts[i]),i)]=before.row(j).detach().to('cpu')
                 features=self.obs['features'][indices].copy();infos=[self.infos[i] for i in indices]
                 labels=[x['compact_targets'] for x in infos];experts=[x['teacher_label'] for x in infos]
                 last_label=labels[0]
@@ -73,7 +85,11 @@ class ReadyCollector(Collector):
                     if selector is not None:return selector(logits,indices)
                     return torch.distributions.Categorical(logits=story_behavior_logits(logits,
                         self.movement_sampling_temperature,self.bomb_sampling_temperature),validate_args=False).sample()
-                out,following,dn=model.step(torch.as_tensor(features,device=model.device),before,action_selector=choose)
+                inference=getattr(self,'inference_graphs',None)
+                if inference is not None and selector is None:
+                    out,following,dn=inference(torch.as_tensor(features,device=model.device),before)
+                else:
+                    out,following,dn=model.step(torch.as_tensor(features,device=model.device),before,action_selector=choose)
                 behavior=story_behavior_logits(out['logits'],self.movement_sampling_temperature,self.bomb_sampling_temperature)
                 if selector is not None:
                     behavior=torch.full_like(out['logits'],-torch.inf)
@@ -91,7 +107,7 @@ class ReadyCollector(Collector):
                         old_values=network['values'][j],episode_starts=bool(self.starts[i]),
                         margins=np.asarray(label['margins'],np.float32),trusted=np.asarray(label['trusted'],bool),
                         unprotected_mask=normal,rule_probabilities=np.asarray(expert['probabilities'],np.float32),
-                        rule_weights=np.float32(weight),deathbomb_mask=bool(f[4]>0 and f[12]>0 and f[17]>.5),
+                        rule_weights=np.float32(weight),deathbomb_mask=bool(not model.bombs_disabled and f[4]>0 and f[12]>0 and f[17]>.5),
                         lower_field_exception=bool(label.get('lower_field_exception',f[111]>.99)
                             or expert.get('native_route_guidance',{}).get('applied',False)),
                         partial_point_danger=np.asarray(label.get('partial_point_danger',np.zeros((3,18),bool)),bool),
@@ -140,6 +156,10 @@ class ReadyCollector(Collector):
                 self.infos[i]=info
                 if message['operation']=='reset':
                     self.starts[i]=True
+                    if getattr(model,'nbnm',None):
+                        from .nbnm_prefix import burn_in
+                        fresh=burn_in(model,info,model.initial_state(1))
+                        for target,value in zip(self.state.tensors(),fresh.tensors()):target[i:i+1].copy_(value)
                     if counts[i]<limits[i]:next_indices.append(i)
                     continue
                 record,before,label,pooled=pending.pop(i);action=int(record['actions'])
@@ -182,8 +202,10 @@ class ReadyCollector(Collector):
                 records[i].append(record);counts[i]+=1;self.actions+=1;self.starts[i]=done
                 if fixed_quota and counts[i]==limits[i] and last_reserved is None:
                     last_reserved=time.monotonic()
-                if counts[i]%length==0 and reserved<blocks:
+                if (counts[i]%length==0 and reserved<blocks
+                        and (remaining is None or remaining[groups[i]]>0)):
                     limits[i]+=length;reserved+=1
+                    if remaining is not None:remaining[groups[i]]-=1
                     if reserved==blocks:last_reserved=time.monotonic()
                 if done:
                     self.completed+=1
@@ -223,4 +245,10 @@ class ReadyCollector(Collector):
         metadata.update(protected_exit_from_stage=getattr(model,'protected_exit_from_stage',1),
             protected_exit_preserve_long_shield=getattr(model,'protected_exit_preserve_long_shield',False))
         progress(report())
-        return pack_world_records(records,states,bootstrap['values'].cpu(),metadata)
+        result=pack_world_records(records,states,bootstrap['values'].cpu(),metadata)
+        if getattr(model,'nbnm',None):
+            result['metadata'].update(full_story=False,nbnm_tasks=True,
+                task_group_decisions={g:int(sum(counts[i] for i,k in enumerate(groups) if k==g))
+                    for g in set(groups)} if groups is not None else {})
+        if episode_initial_states:result['episode_initial_states']=episode_initial_states
+        return result

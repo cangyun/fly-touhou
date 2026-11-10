@@ -1,6 +1,7 @@
 """Finite neural-risk preference strength without changing Bomb probability."""
 import math
 import torch
+from .device_constants import constant_like
 
 
 def checked_risk_scale(value):
@@ -32,7 +33,7 @@ def protection_exposure(features, *, inclusive_expiry=False):
     """
     u=features[...,13]
     remaining=60*u/(1-u).clamp_min(1e-6)
-    horizon=features.new_tensor((4.,12.,24.))
+    horizon=constant_like(features,(4.,12.,24.))
     offset=1. if inclusive_expiry else 0.
     return ((horizon-remaining[...,None]+offset)/horizon).clamp(0,1)*(features[...,14]>.5)[...,None]
 
@@ -40,7 +41,7 @@ def protection_exposure(features, *, inclusive_expiry=False):
 def include_protection_expiry_tick(logits,probability,features,*,risk_scale=1.):
     """Restore the omitted neural-risk cost without changing Bomb probability."""
     extra=protection_exposure(features,inclusive_expiry=True)-protection_exposure(features)
-    delta=-(probability*extra[...,None,:]*probability.new_tensor((8.,4.,2.))).sum(-1)*risk_scale
+    delta=-(probability*extra[...,None,:]*constant_like(probability,(8.,4.,2.))).sum(-1)*risk_scale
     original=logits[...,:18]
     movement=original+delta
     movement=movement-movement.max(-1,keepdim=True).values

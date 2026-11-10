@@ -8,12 +8,13 @@ SEPARATED_CONTACT_INPUT = 'semantic-separated-timers-hp-independent-contact-v4'
 SEPARATED_LASER_INPUT = 'semantic-separated-observed-laser-segments-v5'
 COMPACT_SPIKING_INPUT = 'connectome-compact111-no-map-v1'
 COMPACT_STORY_INPUT = 'connectome-compact129-full-story-v1'
+NBNM_INPUT = 'connectome-nbnm-route281-v1'
 PRIORITY_INPUT_SCHEMAS = (SEPARATED_OBJECT_PRIORITY_INPUT,SEPARATED_CONTACT_INPUT,SEPARATED_LASER_INPUT)
 ORIGINAL_SCHEMAS = (ORIGINAL_INPUT, ORIGINAL_TIMERS_INPUT)
 SEPARATED_SCHEMAS = (SEPARATED_INPUT, SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
 TIMER_SCHEMAS = (ORIGINAL_TIMERS_INPUT, SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
 SEPARATED_TIMER_SCHEMAS = (SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
-VERSIONED_SCHEMAS = ORIGINAL_SCHEMAS + SEPARATED_SCHEMAS + (COMPACT_SPIKING_INPUT,COMPACT_STORY_INPUT)
+VERSIONED_SCHEMAS = ORIGINAL_SCHEMAS + SEPARATED_SCHEMAS + (COMPACT_SPIKING_INPUT,COMPACT_STORY_INPUT,NBNM_INPUT)
 
 
 def is_separated_input(schema):
@@ -25,6 +26,7 @@ def is_original_input(schema):
 
 
 def feature_dimension(schema):
+    if schema==NBNM_INPUT:return 281
     if schema==COMPACT_STORY_INPUT:return 129
     if schema==COMPACT_SPIKING_INPUT:return 111
     dimensions = {ORIGINAL_INPUT: 273, SEPARATED_INPUT: 20,
@@ -47,6 +49,7 @@ def policy_is_recurrent(config):
 
 
 def observation_shapes(schema=SEPARATED_INPUT):
+    if schema==NBNM_INPUT:return {'features':(281,)}
     if schema==COMPACT_STORY_INPUT:return {'features':(129,)}
     if schema==COMPACT_SPIKING_INPUT:return {'features':(111,)}
     if is_original_input(schema):
@@ -63,6 +66,9 @@ def object_dimension(schema):
 
 
 def make_encoder(schema=SEPARATED_INPUT):
+    if schema==NBNM_INPUT:
+        from .nbnm_sensation import NBNMEncoder
+        return NBNMEncoder()
     if schema==COMPACT_STORY_INPUT:
         from .compact_story_sensation import CompactStoryEncoder
         return CompactStoryEncoder()

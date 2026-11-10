@@ -21,6 +21,7 @@ class ContextPortDrive(nn.Module):
         self.context=nn.Linear(39,base.residual.out_features,bias=False)
         nn.init.zeros_(self.context.weight)
         self.task_progress=None
+        self.extended_context=None
         self.batch_invariant=False
     @property
     def residual(self):return self.base.residual
@@ -37,7 +38,8 @@ class ContextPortDrive(nn.Module):
             return torch.cat(rows)
         return self._drive(x)
     def _drive(self,x):
-        drive=self.base(x[:,:8])+self.context(x[:,8:])
+        drive=self.base(x[:,:8])+self.context(x[:,8:47])
+        if self.extended_context is not None:drive=drive+self.extended_context(x[:,47:])
         if self.task_progress is not None:drive=drive+self.task_progress(x)
         return F.relu(drive)
 
@@ -65,11 +67,11 @@ def prime_critical_event_ports(model,*,amplitude=.25):
 
 
 def story_candidates(features):
-    from .thrl_movement_teacher import MovementSafetyTeacher
+    from .device_constants import movement_velocities
     cue=candidates(features[...,:111]);shape=features.shape[:-1]
     context=torch.cat((features[...,:18],features[...,111:129]),-1)
     context=context.unsqueeze(-2).expand(*shape,18,36)
-    velocities=features.new_tensor(MovementSafetyTeacher().velocities)/4.5
+    velocities=movement_velocities(features)
     fast=velocities[torch.arange(18,device=features.device)%9]
     velocities=torch.where((features[...,11]<0)[...,None,None],fast,velocities)
     focus=(torch.arange(18,device=features.device)>=9).to(features.dtype)[:,None].expand(*shape,18,1)
@@ -116,6 +118,12 @@ class CompactStoryPolicy(nn.Module):
     @property
     def device(self):return self.core.device
     def initial_state(self,batch):return self.core.initial_state(batch)
+    def candidate_features(self,features):
+        base=story_candidates(features)
+        if getattr(self,'nbnm',None):
+            from .nbnm_sensation import candidate_extension
+            base=torch.cat((base,candidate_extension(features)),-1)
+        return base
     def enable_task_progress_ports(self,*,amplitude=.025):
         from .compact_story_task_drive import TaskProgressPortDrive
         encoder=self.core.input_encoder
@@ -137,7 +145,8 @@ class CompactStoryPolicy(nn.Module):
                 # that counter expires. Future Bomb-effect refresh is unknown;
                 # this is a finite conservative preference,not action legality.
                 u=features[:,13];remaining=60*u/(1-u).clamp_min(1e-6)
-                horizon=features.new_tensor((4.,12.,24.))
+                from .device_constants import constant_like
+                horizon=constant_like(features,(4.,12.,24.))
                 exposure=((horizon-remaining[:,None])/horizon).clamp(0,1)
                 exposure=exposure*(features[:,14]>.5)[:,None]
                 risk_cost=(-8*probability[...,0]*exposure[:,None,0]
@@ -197,14 +206,15 @@ class CompactStoryPolicy(nn.Module):
     def step(self,features,state,*,actions=None,checkpointed=False,sample=False,return_all_DN=False,action_selector=None):
         if action_selector is not None and (actions is not None or sample):
             raise ValueError('Choose one action source before committing the recurrent state')
-        cue=story_candidates(features).reshape(-1,47);n=len(features)
+        width=self.core.sensory_width
+        cue=self.candidate_features(features).reshape(-1,width);n=len(features)
         repeated=SpikingState(*(v.repeat_interleave(18,0) for v in state.tensors()))
         DNs=[];following=[]
         for first in range(0,len(cue),128):
             count=min(128,len(cue)-first);x=cue[first:first+count]
             before=SpikingState(*(v[first:first+count] for v in repeated.tensors()))
             if count<128 and self.pad_candidate_batch:
-                zero=self.initial_state(128-count);x=torch.cat((x,x.new_zeros(128-count,47)))
+                zero=self.initial_state(128-count);x=torch.cat((x,x.new_zeros(128-count,width)))
                 before=SpikingState(*(torch.cat((v,z)) for v,z in zip(before.tensors(),zero.tensors())))
             def call(x,*parts):
                 DN,after=self.core(x,SpikingState(*parts));return DN,*after.tensors()
@@ -227,9 +237,10 @@ class CompactStoryPolicy(nn.Module):
     def parameter_payload(self,costs):
         from .compact_protected_exit_candidate import REVISION
         from .compact_native_contact_targets import REVISION as NATIVE_REVISION
-        return dict(schema=SCHEMA,input_schema=INPUT_SCHEMA,seed=self.seed,costs=dict(costs),temperature=self.temperature,
+        return dict(schema=SCHEMA,input_schema=self.input_schema,seed=self.seed,costs=dict(costs),temperature=self.temperature,
             state_dict={k:v.detach().cpu().clone() for k,v in self.state_dict().items()},actual_binary_spikes=True,
-            one_shared_brain=True,all_source_nodes_and_signed_edges_retained=True,neural_input_per_candidate=47,
+            nbnm=getattr(self,'nbnm',None),
+            one_shared_brain=True,all_source_nodes_and_signed_edges_retained=True,neural_input_per_candidate=self.core.sensory_width,
             raw_geometry_or_teacher_action_bypass=False,map_in_policy=False,bombs_disabled=self.bombs_disabled,
             pad_candidate_batch=self.pad_candidate_batch,
             batch_invariant_sensory=self.core.input_encoder.batch_invariant,
@@ -289,6 +300,9 @@ def from_story_checkpoint(connectome,payload,*,device='cuda:0'):
     model=CompactStoryPolicy(base,temperature=payload['temperature'])
     if payload.get('task_progress_ports',False):
         model.enable_task_progress_ports(amplitude=payload['task_progress_drive']['initial_amplitude'])
+    if payload.get('nbnm'):
+        from .nbnm_model import configure_model
+        configure_model(model,payload['nbnm'],reset_critics=False)
     model.load_state_dict(payload['state_dict'],strict=True)
     model.bombs_disabled=payload.get('bombs_disabled',False)
     model.pad_candidate_batch=payload.get('pad_candidate_batch',True)
@@ -331,19 +345,22 @@ def from_story_checkpoint(connectome,payload,*,device='cuda:0'):
     return model
 
 
-def sequence(model,features,starts,state,actions,*,checkpointed=True,checkpoint_chunks=False):
+def sequence(model,features,starts,state,actions,*,checkpointed=True,checkpoint_chunks=False,reset_states=None):
     if checkpointed and checkpoint_chunks:
         from .compact_story_shared_checkpoint import sequence as shared_sequence
-        return shared_sequence(model,features,starts,state,actions)
+        return shared_sequence(model,features,starts,state,actions,reset_states=reset_states)
     return _sequence_nested(model,features,starts,state,actions,
-        checkpointed=checkpointed,checkpoint_chunks=checkpoint_chunks)
+        checkpointed=checkpointed,checkpoint_chunks=checkpoint_chunks,reset_states=reset_states)
 
 
-def _sequence_nested(model,features,starts,state,actions,*,checkpointed=True,checkpoint_chunks=False):
+def _sequence_nested(model,features,starts,state,actions,*,checkpointed=True,checkpoint_chunks=False,reset_states=None):
     """Checkpoint the whole scene so18 replicated brain states are not retained."""
     records=[]
     for t in range(len(features)):
         state=state.reset(starts[t])
+        if reset_states:
+            from .nbnm_prefix import apply_resets
+            state=apply_resets(state,reset_states.get(t))
         def call(f,a,*parts):
             out,after,_=model.step(f,SpikingState(*parts),actions=a,checkpointed=checkpoint_chunks)
             return out['logits'],out['values'],out['horizon_scores'],*after.tensors()

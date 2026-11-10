@@ -182,6 +182,7 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
     margins=np.stack([point_and_laser_clearances(f,o,starts,v,duration=h,anticipate_arming=anticipate_arming,
         growth_motion_envelope=growth_motion_envelope,native_forecasts=native_forecasts,
         unknown_laser_player_motion=unknown_laser_player_motion,max_laser_margin=64.,player_path=paths) for h in horizons])
+    unclipped_margins=margins.astype(np.float32)
     margins=np.clip(margins,-64,64).astype(np.float32)
     ends=np.clip(starts+v*4,[-184,32],[184,432])
     neighbours=np.argsort(((v[:,None]-v[None])**2).sum(-1),axis=1,kind='stable')[:,:3]
@@ -215,7 +216,8 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
         partial=partial|curve_danger
         partial_detail=dict(partial_detail,curve_danger=curve_detail)
         partial_revision='conditional-discrete-point-curve-danger-v2'
-    return x,dict(margins=margins,trusted=np.asarray(known,bool),normal=bool(normal_unprotected(f)),
+    return x,dict(margins=margins,unclipped_margins=unclipped_margins,
+        trusted=np.asarray(known,bool),normal=bool(normal_unprotected(f)),
         partial_point_danger=partial,partial_point_danger_revision=partial_revision,
         partial_point_danger_detail=partial_detail,
         full_observed_hazards=bool(complete),entities=len(o)+native_curve_segments,collision_objects=int((relevant&(o[:,13]>.5)).sum()),laser_segments=int(lasers.sum())+native_curve_segments,
