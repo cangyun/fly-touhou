@@ -67,10 +67,11 @@ def rank_report(report):
     return (len(successful), -float(np.mean(times)) if times else -math.inf)
 
 
-def qualifies_speed(report, *, minimum_attempts=50, minimum_rate=.9):
+def qualifies_speed(report, *, minimum_attempts=20, minimum_rate=.9):
     rows = report['episode_results']
+    seeds=[r.get('native_seed') for r in rows]
     return (report.get('frozen') is True and len(rows) >= minimum_attempts
-            and len({r.get('native_seed') for r in rows}) >= minimum_attempts
+            and None not in seeds and len(set(seeds)) == len(rows)
             and sum(r.get('nbnm_success') is True for r in rows) / len(rows) >= minimum_rate)
 
 

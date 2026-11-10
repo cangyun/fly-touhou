@@ -7,11 +7,16 @@ from .nbnm_objective import Objective
 from .nbnm_sensation import NBNMEncoder
 from .nbnm_task import TaskTracker
 from . import nbnm_spell_practice as practice
+from . import nbnm_stage_practice as stage_practice
 
 
 class NBNMEnv(CompactFullStoryEnv):
     def __init__(self, *args, nbnm, **kwargs):
         self.nbnm = dict(nbnm)
+        self._task_rotation=None
+        if nbnm.get('task_pool'):
+            from .nbnm_course import TaskRotation
+            self._task_rotation=TaskRotation(nbnm['task_pool'],nbnm.get('task_pool_offset',0),nbnm.get('task_pool_stride',1))
         if practice.enabled(nbnm): practice.validate_task(nbnm['task'])
         self.objective = Objective(**nbnm.get('objective', {}))
         self.task_tracker = TaskTracker(nbnm['task'])
@@ -29,15 +34,29 @@ class NBNMEnv(CompactFullStoryEnv):
 
     def _create_controller(self):
         controller = super()._create_controller()
+        if stage_practice.enabled(self.nbnm):
+            entry=getattr(self,'_selected_entry',None);frame=6
+            if entry:
+                from .nbnm_run import read
+                frame=read(entry['prefix'])['start']['stage_frame']
+            return stage_practice.bind_controller(controller,self.nbnm['task'],entry_frame=frame)
         return practice.bind_controller(controller, self.nbnm['task']) if practice.enabled(self.nbnm) else controller
 
     def _validate_initial_run(self):
+        if stage_practice.enabled(self.nbnm):
+            self._verify_native_run(self.snapshot);return
         if not practice.enabled(self.nbnm): return super()._validate_initial_run()
         self._verify_native_run(self.snapshot)
         if self.snapshot.stage != self.nbnm['task']['stage']:
             raise ValueError('Native Spell Practice started a different stage')
 
     def _verify_native_run(self, snapshot):
+        if stage_practice.enabled(self.nbnm):
+            if (snapshot.extra.get('run_mode')!=1 or snapshot.extra.get('continues')!=0
+                    or snapshot.extra.get('replay_playback')!=0 or snapshot.difficulty!=3
+                    or snapshot.character!=0 or snapshot.subshot!=0 or snapshot.stage!=self.nbnm['task']['stage']):
+                raise ValueError('Expected native Lunatic ReimuA Stage Practice')
+            return
         if not practice.enabled(self.nbnm): return super()._verify_native_run(snapshot)
         from .native import NativeError
         if (snapshot.extra.get('run_mode') != 2 or snapshot.extra.get('continues') != 0
@@ -46,6 +65,15 @@ class NBNMEnv(CompactFullStoryEnv):
             raise NativeError('Expected live Lunatic ReimuA Spell Practice')
 
     def _native_end(self, snapshot):
+        if stage_practice.enabled(self.nbnm):
+            # First contact still has priority over the native practice-clear
+            # menu; practice is never reported as a full six-stage NBNM.
+            native_loss=int(bool(snapshot.extra.get('native_gameover') or snapshot.lives<0))
+            end=self.task_tracker.terminal(snapshot,native_loss)
+            if end:return end
+            if stage_practice.result(snapshot):
+                self.task_tracker.reason='native-stage-practice-complete';return 2
+            return 0
         if practice.enabled(self.nbnm):
             # First contact/Bomb always overrides a result screen.
             end = self.task_tracker.terminal(snapshot, 0, allow_task_transition=False)
@@ -61,9 +89,12 @@ class NBNMEnv(CompactFullStoryEnv):
 
     def _info(self, elapsed=0):
         info = super()._info(elapsed)
+        rotation=getattr(self,'_task_rotation',None)
         info.update(episode_mode='NBNM-'+self.nbnm['task']['mode'],
             nbnm_actor_weights=list(self.objective.weights),
             nb_nm_task=dict(self.nbnm['task']),
+            nb_nm_task_key=self.nbnm.get('task_key'),
+            nb_nm_task_cursor=rotation.last_cursor if rotation is not None else None,
             nbnm_entry_mode=self.nbnm.get('entry_mode','story_prefix'),
             native_spell_practice=getattr(getattr(self,'controller',None),'spell_practice_entry',None))
         return info
@@ -90,6 +121,12 @@ class NBNMEnv(CompactFullStoryEnv):
     def reset(self, *, seed=None, options=None):
         from .thrl_native_env import THRLNativeEnv
         from .thrl_training_mode import draw_native_seed
+        if self._task_rotation is not None:
+            selected=self._task_rotation.next()
+            self.nbnm=dict(selected['settings'],task_key=selected['key'])
+            self.task_tracker=TaskTracker(self.nbnm['task'])
+            self.objective=Objective(**self.nbnm.get('objective',{}))
+            self.encoder.task=dict(self.nbnm['task'])
         self.task_tracker.active = False
         self.task_tracker.reason = None
         self._task_returns[:] = 0
@@ -99,22 +136,27 @@ class NBNMEnv(CompactFullStoryEnv):
         entry = None
         requested = (options or {}).get('native_seed')
         from .nbnm_task import fresh_opening
-        if not fresh_opening(self.nbnm['task']) and not practice.enabled(self.nbnm):
+        needs_prefix=(self.nbnm.get('entry_mode')==stage_practice.PREFIX_MODE or
+            (not fresh_opening(self.nbnm['task']) and not practice.enabled(self.nbnm)
+             and not stage_practice.enabled(self.nbnm)))
+        if needs_prefix:
             from .nbnm_prefix import choose_entry
             entry = choose_entry(self.nbnm['start_bank'], self.full_story_split,
                 self.nbnm['task'], self._bank_rng, native_seed=requested)
             self.native_seed = int(entry['native_seed'])
         else:
             self.native_seed = int(requested) if requested is not None else draw_native_seed(self._bank_rng, self.full_story_split)
-            if practice.enabled(self.nbnm):
+            if practice.enabled(self.nbnm) or stage_practice.enabled(self.nbnm):
                 from .thrl_training_mode import seed_split
                 if seed_split(self.native_seed) != self.full_story_split:
                     raise ValueError('Native practice seed belongs to a different data split')
         if self.controller is not None:
             self.controller.close(); self.controller = None
+        self._selected_entry=entry
         self._full_story_episode += 1
         self.private_appdata = self._full_story_userdata_root / f'episode_{self._full_story_episode:06d}'
-        if practice.enabled(self.nbnm): practice.copy_score(self.nbnm['score_template'], self.private_appdata)
+        if practice.enabled(self.nbnm) or stage_practice.enabled(self.nbnm):
+            practice.copy_score(self.nbnm['score_template'], self.private_appdata)
         observation, info = THRLNativeEnv.reset(self)
         burn = None
         if entry is not None:
@@ -136,7 +178,7 @@ class NBNMEnv(CompactFullStoryEnv):
         observation, old_reward, terminal, truncated, info = super().step(action)
         end = 2 if terminal and self.task_tracker.reason in (
             'native-six-stage-clear','native-stage-complete','native-next-attack','native-chain-complete',
-            'native-spell-capture','native-spell-survived-timeout') else 1 if terminal else 0
+            'native-spell-capture','native-spell-survived-timeout','native-stage-practice-complete') else 1 if terminal else 0
         task = self.task_tracker.report(self.snapshot, terminal=end)
         vector = self.objective.rewards(terminal=terminal, success=task['nbnm_success'],
             native_frames=task['task_native_frames'],
@@ -159,6 +201,7 @@ class NBNMEnv(CompactFullStoryEnv):
             raw_game_ended=bool(self.snapshot.extra.get('native_gameover') or self.task_tracker.reason=='native-six-stage-clear'))
         if terminal:
             info['episode_summary'].update(task, outcome='nbnm-success' if end == 2 else 'nbnm-failure',
+                task_key=self.nbnm.get('task_key'),
                 end_reason=self.task_tracker.reason, reward_vector=self._task_returns.tolist(),
                 raw_reward_vector=self._task_returns.tolist(), native_seed=self.native_seed,
                 nbnm_entry_mode=self.nbnm.get('entry_mode','story_prefix'),

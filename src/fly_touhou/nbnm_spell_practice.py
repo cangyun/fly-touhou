@@ -61,6 +61,8 @@ def bind_controller(controller, task):
 
 def enter(controller, *, task, difficulty=3):
     validate_task(task)
+    from .nbnm_practice_access import unlock,restore
+    unlock(controller)
     started = time.monotonic()
     snapshot = controller.read()
     visits = {}
@@ -70,7 +72,7 @@ def enter(controller, *, task, difficulty=3):
             # the first card-script frame, before its first policy action.
             for _ in range(600):
                 key = attack_key(current_attack(snapshot))
-                if key and key[1]:
+                if key and key[1] and (spell_state(controller) or {}).get('id')==task['spell_id']:
                     if (key != attack_key(task['attack']) or snapshot.stage != task['stage']
                             or (spell_state(controller) or {}).get('id') != task['spell_id']):
                         raise NativeError('Native Spell Practice selected a different card')
@@ -80,6 +82,7 @@ def enter(controller, *, task, difficulty=3):
                         stage_frame=snapshot.stage_frame, preceding_stages_played=False,
                         policy_history='zero recurrent state at first native card frame',
                         elapsed_seconds=time.monotonic()-started)
+                    restore(controller)
                     return snapshot
                 snapshot = controller.advance(0, 1)
             raise NativeError('Native spell prelude did not reach a card script')

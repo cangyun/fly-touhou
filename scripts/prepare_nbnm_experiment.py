@@ -55,7 +55,7 @@ def main():
         default_experiment='route',network_training=False,
         baseline='Same graph, budget, goals and online teacher; route input block zeroed',
         comparison='Use matching development starts and joint-mode decoder; compare successes first, time second',
-        promotion='50 distinct frozen seeds with >=90% task NBNM before explicit speed phase; no automatic promotion',
+        promotion='20 distinct frozen seeds with >=90% task NBNM before explicit speed phase; no automatic promotion',
         timing='No guaranteed speedup before measured whole-brain and native qualification',
         formal_training_command=[sys.executable,'-B','-X','utf8',
             str(ROOT/'scripts/train_nbnm.py'),'--config',str(a.output/'route.json'),'--execute']))

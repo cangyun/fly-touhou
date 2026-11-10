@@ -42,8 +42,15 @@ def critic_scope(task, stage, name):
 
 def current_attack(snapshot):
     roles = snapshot.extra.get('thrl_events', {}).get('ecl_roles', {})
-    rows = roles.get('main_bosses', []) + roles.get('midbosses', [])
-    return next((r['ecl_sub_name'] for r in rows if r.get('ecl_sub_name')), None)
+    for kind in ('main_bosses','midbosses'):
+        for row in roles.get(kind,[]):
+            name=row.get('ecl_sub_name')
+            if name:
+                # Seija's main BossCard3 temporarily executes MBossCard3_at.
+                # The native MainBoss role stays the same; it is not a new
+                # midboss/card or a successful task boundary.
+                return name[1:] if kind=='main_bosses' and name.startswith('MBoss') else name
+    return None
 
 
 def route_context(encoding):
@@ -72,7 +79,9 @@ def route_context(encoding):
     curves_unknown = bool((forecasts.get('curve_geometry') or {}).get('curves'))
     hidden_unknown = bool(forecasts.get('hidden_enemy_unreadable_geometry'))
     for j, horizon in enumerate((48, 96)):
-        linear = point_and_laser_clearances(f, o, starts, v, duration=horizon)
+        # Long features are explicitly conditional linear hints, not the
+        # native4/12/24 risk-label contract. Lasers use the same distinct path.
+        linear = point_and_laser_clearances(f, o, starts, v, duration=horizon,linear_hint=True)
         x[:, 1+j] = np.clip(linear, -256, 256) / (32 + np.abs(np.clip(linear, -256, 256)))
         inside = ((starts + v*horizon >= [-184, 32]) & (starts + v*horizon <= [184, 432])).all(-1)
         supported = inside & ~np.full(18, curves_unknown or hidden_unknown)

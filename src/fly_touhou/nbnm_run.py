@@ -45,9 +45,16 @@ def validate_spec(spec):
     if len(spec['world_groups'])!=workers:raise ValueError('One task group per worker required')
     group_block_budget(spec['world_groups'],spec['group_weights'],segment//16)
     for task in spec['tasks'].values():TaskTracker(task)
+    pools=spec.get('task_pools')
+    if pools:
+        if set(spec['world_groups'])!=set(pools):raise ValueError('Task pools must match worker groups')
+        for group,keys in pools.items():
+            if not keys or len(set(keys))!=len(keys) or any(k not in spec['tasks'] for k in keys):
+                raise ValueError('Each pool requires distinct declared task keys')
     for group in spec.get('evaluation_tasks',[]):
         if group not in spec['tasks']:raise ValueError('Unknown final evaluation task '+group)
     from .nbnm_spell_practice import enabled,validate_task
+    from . import nbnm_stage_practice as stage_practice
     for task in spec['tasks'].values():
         settings=task_settings(spec,task)
         task_objective=Objective(**settings['objective'])
@@ -55,19 +62,24 @@ def validate_spec(spec):
             report=read(settings.get('speed_qualification_report',spec.get('speed_qualification_report')))
             if not qualifies_speed(report) or report['task']!=task:
                 raise ValueError('Speed qualification is per task, not transferable to other cards')
-        if enabled(settings):
-            validate_task(task)
+        native_stage=stage_practice.enabled(settings)
+        if enabled(settings) or native_stage:
+            if enabled(settings):validate_task(task)
+            if native_stage and (task['mode']=='full_story' or task.get('end_stage',task['stage'])!=task['stage']):
+                raise ValueError('Stage Practice cannot substitute for a cross-stage Story chain')
             if not Path(settings['score_template']).is_file():
                 raise ValueError('Supply an existing native score record with the requested spells unlocked')
             from .thrl_training_mode import seed_split
             for split, seeds in settings['practice_evaluation_seeds'].items():
                 if not seeds or len(set(seeds)) != len(seeds) or any(seed_split(s)!=split for s in seeds):
                     raise ValueError('Use unique native evaluation seeds belonging to their data split')
-            continue
+            if settings.get('entry_mode')!=stage_practice.PREFIX_MODE:continue
         if fresh_opening(task):continue
         bank=read(settings['start_bank'])
         if bank.get('schema')!=SCHEMA:raise ValueError('Prepare the native attack-start bank first')
-        for split in ('train','development'):
+        required_splits=(('train',) if native_stage and settings.get('prepare_evaluation_prefixes')
+            else ('train','development'))
+        for split in required_splits:
             entries=[r for r in bank['entries'] if entry_matches(r['task'],task) and r['split']==split]
             if not entries:raise ValueError(f'Missing {split} task starts: {task}')
         train={r['native_seed'] for r in bank['entries'] if r['split']=='train'}
@@ -104,8 +116,10 @@ def environment(spec, *, evaluation=False):
         compact_full_native_teacher_support=spec['nbnm'].get('teacher_mode') in ('resource-movement-v1','nbnm-route-v1'),
         compact_protected_exit_forecast=False)
     if not evaluation:
-        cfg['nbnm']['world_tasks']=[spec['tasks'][group] for group in spec['world_groups']]
-        cfg['nbnm']['world_entries']=[spec.get('task_entries',{}).get(group,{}) for group in spec['world_groups']]
+        from .nbnm_course import worker_settings
+        rows=worker_settings(spec)
+        cfg['nbnm']['world_tasks']=[r[0] for r in rows]
+        cfg['nbnm']['world_entries']=[r[1] for r in rows]
     return cfg
 
 
@@ -139,9 +153,13 @@ def evaluation_seeds(spec, *, split='development', task=None):
     from .nbnm_spell_practice import enabled
     task=task or spec['nbnm']['task']
     settings=task_settings(spec,task)
-    if enabled(settings):return list(settings['practice_evaluation_seeds'][split])
+    from .nbnm_stage_practice import ENTRY_MODE,PREFIX_MODE
+    if (enabled(settings) or settings.get('entry_mode')==ENTRY_MODE or
+            (settings.get('entry_mode')==PREFIX_MODE and settings.get('prepare_evaluation_prefixes'))):
+        return list(settings['practice_evaluation_seeds'][split])
     from .nbnm_task import fresh_opening
-    if fresh_opening(task):return list(spec['full_story_evaluation_seeds'])
+    if fresh_opening(task):
+        return list(spec['full_story_evaluation_seeds'] if split=='development' else spec['full_story_heldout_seeds'])
     bank=read(settings['start_bank'])
     from .nbnm_task import entry_matches
     return sorted({r['native_seed'] for r in bank['entries'] if r['split']==split and entry_matches(r['task'],task)})
@@ -160,6 +178,10 @@ def evaluate(model,spec,output,*,task=None,split='development',progress=lambda x
     cfg=environment(spec,evaluation=True);task=dict(task or spec['nbnm']['task'])
     cfg['nbnm']=task_settings(spec,task)
     seeds=evaluation_seeds(spec,split=split,task=task)
+    if cfg['nbnm'].get('entry_mode')=='native_stage_prefix' and cfg['nbnm'].get('prepare_evaluation_prefixes'):
+        from .nbnm_start_cache import prepare_evaluation_bank
+        cfg['nbnm']['start_bank']=prepare_evaluation_bank(spec,cfg['nbnm'],task,seeds,split,output,
+            progress=progress,guard=guard)
     budget=len(seeds);workers=min(int(spec.get('evaluation_workers',4)),budget)
     if not 1<=workers<=100:raise ValueError('Evaluation needs 1..100 workers and at least one seed')
     results=[];entries={};begun=time.monotonic()

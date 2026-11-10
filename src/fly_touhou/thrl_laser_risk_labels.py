@@ -4,7 +4,7 @@ import numpy as np
 
 def segment_clearance(starts,velocities,a,b,va,vb,half_width,width_rate,
                       player_half,player_offset,player_circle,known,*,duration=4,initial_time=0,
-                      unknown_player_motion=False):
+                      unknown_player_motion=False,linear_hint=False):
     """Integer native-tick, linear endpoint/width, conservative capsule proxy.
 
     Unknown endpoint geometry is held at the observed snapshot. Optionally
@@ -17,7 +17,7 @@ def segment_clearance(starts,velocities,a,b,va,vb,half_width,width_rate,
     known=np.asarray(known,bool);n=len(starts)
     if (any(x.shape!=(n,2) for x in (starts,velocities,a,b,va,vb,player_half,player_offset))
             or any(x.shape!=(n,) for x in (half_width,width_rate,player_circle,known))
-            or not 0<=duration<=24 or not 0<=initial_time<=24):
+            or not 0<=duration<=(96 if linear_hint else 24) or not 0<=initial_time<=24):
         raise ValueError('Paired finite segment arrays and bounded native-tick horizon required')
     if not all(np.isfinite(x).all() for x in (*values,half_width,width_rate,player_circle)):
         raise ValueError('Finite segment geometry required')
@@ -50,7 +50,7 @@ def scene(features,objects):
 
 
 def route_clearances(features,objects,starts,velocities,*,duration=4,initial_time=0,unknown_player_motion=False,
-                     max_relevant_margin=None):
+                     max_relevant_margin=None,linear_hint=False):
     a,b,va,vb,width,rate,known=scene(features,objects)
     if len(a) and max_relevant_margin is not None:
         # Compact sensory margins are clipped at64px. A segment whose swept
@@ -76,5 +76,6 @@ def route_clearances(features,objects,starts,velocities,*,duration=4,initial_tim
     f=np.asarray(features)
     values=segment_clearance(routes(starts),routes(velocities),*[broadcast(x) for x in (a,b,va,vb,width,rate)],
         np.tile(f[14:16]*64,(k*n,1)),np.tile(f[16:18]*64,(k*n,1)),np.full(k*n,f[13]*64),
-        broadcast(known),duration=duration,initial_time=initial_time,unknown_player_motion=unknown_player_motion)
+        broadcast(known),duration=duration,initial_time=initial_time,unknown_player_motion=unknown_player_motion,
+        linear_hint=linear_hint)
     return values.reshape(k,n).min(-1)

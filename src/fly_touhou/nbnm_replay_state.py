@@ -27,7 +27,7 @@ def practice_variation(expected, actual, *, loading=False):
 
 def gameplay_state(state):
     result=deepcopy(state)
-    code_keys={'instruction_pointer','instruction','time_sub','hp_sub'}
+    code_keys={'instruction_pointer','stopped_instruction_pointer','instruction','time_sub','hp_sub'}
     address_keys={'enemy_base','data_address','owner_address','context','address','manager','shot_definition'}
     for enemy in result.get('enemies',[]):
         resource=enemy.get('resource',{})

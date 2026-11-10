@@ -54,7 +54,8 @@ def restore_entry(env, entry):
         applied+=4
     env.episode_frames=env.snapshot.frame-env._episode_start_frame
     env._native_input_ticks=receipt['actual_input_ticks']+applied
-    env.stage_history=list(range(1,env.snapshot.stage+1))
+    env.stage_history=([env.snapshot.stage] if entry.get('entry_protocol')=='native_stage_practice'
+        else list(range(1,env.snapshot.stage+1)))
     env.reward_model.reset(env.snapshot)
     env._reset_episode_reward_diagnostics()
     observation=env._encode(env.snapshot)

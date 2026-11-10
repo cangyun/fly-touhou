@@ -56,6 +56,7 @@ class ReadyCollector(Collector):
             safe_forecast_but_native_contact=0)
         trusted_counts=np.zeros(3,np.int64)
         route_stats=dict(teacher_seconds=0.,route_queries=0,three_leg_queries=0,unguided_rows=0)
+        task_counts={}
         episode_initial_states={}
         selector=None;last_label={}
         if supervision_selection is not None:
@@ -130,6 +131,8 @@ class ReadyCollector(Collector):
                         route_stats['route_queries']+=int(expert.get('nb_nm_route',{}).get('route_search',False))
                         route_stats['three_leg_queries']+=int(expert.get('nb_nm_route',{}).get('three_leg_paths',0)>0)
                         route_stats['unguided_rows']+=int(weight<=0)
+                        key=infos[j].get('nb_nm_task_key')
+                        if key:task_counts[key]=task_counts.get(key,0)+1
                     record['recorded_pre_action_partial_point_danger']=record['partial_point_danger'].copy()
                     stats['normal_teacher_rows']+=int(normal)
                     stats['normal_teacher_guided_rows']+=int(normal and weight>0)
@@ -149,11 +152,12 @@ class ReadyCollector(Collector):
                 max_stage=max(x['stage'] for x in self.infos),elapsed_seconds=time.monotonic()-begun,
                 scheduling='ready_first_global_blocks',behavior_policy_version=self.policy_version,
                 nbnm_route_guidance=dict(route_stats),
+                task_decisions=dict(task_counts),
                 world_decisions=counts.tolist(),policy_batch_size_histogram=dict(batch_counts),
                 worlds=[dict(world=i,stage=info['stage'],episode_frames=info['episode_frames'],
                     lives=info.get('lives'),bombs=info.get('bombs'),misses=info.get('misses'),
                     segment_decisions=int(counts[i]),inflight=i in self.vector._inflight,
-                    task=info.get('nb_nm_task'),task_group=groups[i] if groups else None)
+                    task=info.get('nb_nm_task'),task_key=info.get('nb_nm_task_key'),task_group=groups[i] if groups else None)
                     for i,info in enumerate(self.infos)])
 
         dispatch(list(range(self.workers)))
@@ -259,6 +263,7 @@ class ReadyCollector(Collector):
         result=pack_world_records(records,states,bootstrap['values'].cpu(),metadata)
         if getattr(model,'nbnm',None):
             result['metadata'].update(full_story=False,nbnm_tasks=True,
+                task_decisions=dict(task_counts),
                 nbnm_route_guidance=dict(route_stats),
                 task_group_decisions={g:int(sum(counts[i] for i,k in enumerate(groups) if k==g))
                     for g in set(groups)} if groups is not None else {})

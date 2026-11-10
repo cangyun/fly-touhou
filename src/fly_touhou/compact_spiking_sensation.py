@@ -19,7 +19,7 @@ FEATURE_NAMES=(*GLOBAL_NAMES,
 assert len(FEATURE_NAMES)==111
 
 
-def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_time=0.,anticipate_arming=False,growth_motion_envelope=False,native_forecasts=None,unknown_laser_player_motion=False,max_laser_margin=None,player_path=None):
+def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_time=0.,anticipate_arming=False,growth_motion_envelope=False,native_forecasts=None,unknown_laser_player_motion=False,max_laser_margin=None,player_path=None,linear_hint=False):
     from .thrl_movement_teacher import MovementSafetyTeacher,swept_clearances
     from .thrl_laser_risk_labels import route_clearances
     teacher=MovementSafetyTeacher()
@@ -73,7 +73,7 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
     for first in range(0,len(laser),96):
         block=np.zeros((96,29),np.float32);real=laser[first:first+96];block[:len(real)]=real
         answer=np.minimum(answer,route_clearances(f,block,starts,velocities,duration=duration,initial_time=initial_time,
-            unknown_player_motion=unknown_laser_player_motion,max_relevant_margin=max_laser_margin))
+            unknown_player_motion=unknown_laser_player_motion,max_relevant_margin=max_laser_margin,linear_hint=linear_hint))
     if native_forecasts:
         if line_geometry:
             from .native_line_laser_paths import native_line_path_clearances
@@ -197,6 +197,10 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
     escape=(np.minimum(margins[0,:,None],later)>1).mean(-1).astype(np.float32)
     wall=np.minimum(ends-[-184,32],[184,432]-ends).min(-1)
     globals=f[list(GLOBAL_INDICES)].copy()
+    # Original Stage Practice starts with nine reserves, above the Story
+    # normalization's eight. Bound inventory only; retain actual counts in
+    # native diagnostics and leave collision sizes/positions untouched.
+    globals[3:5]=np.clip(globals[3:5],-1.,1.)
     # Respawn/death animation can move the sprite outside the actionable
     # playfield. Project ONLY those non-controllable global positions; all
     # physical hazard geometry above still used the unmodified native origin.

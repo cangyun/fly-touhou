@@ -16,6 +16,8 @@ def main():
     p.add_argument('--resume',type=Path)
     p.add_argument('--evaluate-only',type=Path)
     p.add_argument('--evaluation-output',type=Path)
+    p.add_argument('--evaluation-task',help='One declared task key, such as s6_BossCard5 or full_story')
+    p.add_argument('--evaluation-split',choices=('development','test'),default='development')
     p.add_argument('--log-file',type=Path,help='Capture startup/import errors as well as training output')
     a=p.parse_args()
     if a.log_file:
@@ -32,9 +34,10 @@ def main():
         print(json.dumps(validation,ensure_ascii=False,indent=2));return
     if a.evaluate_only:
         if a.evaluation_output is None:p.error('--evaluation-output required')
+        if a.evaluation_task and a.evaluation_task not in spec['tasks']:p.error('Unknown --evaluation-task')
         runtime(a.evaluation_output)
         model,_=load_model(spec,a.evaluate_only)
-        evaluate(model,spec,a.evaluation_output)
+        evaluate(model,spec,a.evaluation_output,task=spec['tasks'].get(a.evaluation_task),split=a.evaluation_split)
         return
     output=Path(spec['output']);output.mkdir(parents=True,exist_ok=a.resume is not None)
     temporary=runtime(output)
@@ -50,7 +53,7 @@ def main():
     begun=time.monotonic();collector=None;writer=SummaryWriter(spec.get('tensorboard_directory',str(output/'tensorboard')))
     completed=0;updates=0;cycle=0;in_progress=None;model=None;optimizer=None
     last_status={};stopped=False;episode_offset=0;episode_index=0
-    status_api=None
+    status_api=None;task_cursors=None
     if spec.get('status_port') is not None:
         from fly_touhou.thrl_study_io import StatusAPI
         from summarize_nbnm_trial import summarize
@@ -65,11 +68,14 @@ def main():
         write_json(output/'progress.json',last_status)
 
     def save():
+        nonlocal task_cursors
+        if collector is not None:task_cursors=[r.get('nb_nm_task_cursor') for r in collector.infos]
         payload=model.parameter_payload(dict(NBNM_decisions=completed,PPO_updates=updates))
         atomic_torch_save(payload,output/'latest-parameters.pt')
         atomic_torch_save(dict(model_payload=payload,optimizer=optimizer.state_dict(),
             completed_decisions=completed,optimizer_updates=updates,cycle=cycle,in_progress=in_progress,
             torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state_all(),spec=spec,
+            worker_task_cursors=task_cursors,
             restart_note='Learner cursor preserved; live native worlds restart only after process restart'),
             output/'latest-training.pt')
 
@@ -99,6 +105,7 @@ def main():
             optimizer.load_state_dict(state['optimizer'])
             completed=state['completed_decisions'];updates=state['optimizer_updates'];cycle=state['cycle']
             in_progress=state['in_progress'];torch.set_rng_state(state['torch_rng'])
+            task_cursors=state.get('worker_task_cursors')
             torch.cuda.set_rng_state_all(state['cuda_rng']);del state
         write_json(output/'configuration.json',spec)
         write_json(output/'launch.json',dict(validation,PID=proc.pid,create_time=proc.create_time(),
@@ -118,7 +125,11 @@ def main():
                 if collector is None:
                     folder=output/f'native-training-{int(time.time())}'
                     progress(dict(phase='initializing_native_workers'))
-                    collector=ReadyCollector(model,environment(spec),folder,workers=spec['workers'],
+                    native_configuration=environment(spec)
+                    if task_cursors:
+                        for entry,cursor in zip(native_configuration['nbnm']['world_entries'],task_cursors):
+                            if cursor is not None:entry['task_pool_offset']=cursor
+                    collector=ReadyCollector(model,native_configuration,folder,workers=spec['workers'],
                         worker_cpus=cpus,ready_batch_size=7,ready_wait_ms=1.,per_world_quota=False,
                         movement_sampling_temperature=spec.get('movement_sampling_temperature',1.))
                     collector.worker_groups=spec['world_groups'];collector.group_weights=spec['group_weights']
@@ -189,6 +200,8 @@ def main():
             writer.add_scalar('sampling/decisions_per_second',spec['segment_decisions']/row['sample_seconds'],completed)
             for key,value in row['collection'].get('task_group_decisions',{}).items():
                 writer.add_scalar('sampling/task_'+key,value,completed)
+            for key,value in row['collection'].get('task_decisions',{}).items():
+                writer.add_scalar('exposure/'+key,value,completed)
             in_progress=None;save()
             atomic_torch_save(model.parameter_payload(dict(NBNM_decisions=completed,PPO_updates=updates)),
                 output/f'cycle{cycle:03}-parameters.pt')

@@ -45,6 +45,7 @@ def summarize(output):
             sampling_seconds=record['sample_seconds'],learning_seconds=record['learn_seconds'],
             contacts=collected['contacts'],safe_forecast_but_native_contact=collected['safe_forecast_but_native_contact'],
             task_group_decisions=collected['task_group_decisions'],
+            task_decisions=collected.get('task_decisions',{}),
             route_guidance=collected.get('nbnm_route_guidance'),
             tasks={kind:attempts([r for r in part if r['task']['mode']==kind]) for kind in ('attack','chain','stage','full_story')},
             by_task={name:attempts([r for r in part if task_name(r)==name]) for name in sorted({task_name(r) for r in part})}))
@@ -63,6 +64,9 @@ def summarize(output):
         data=read_shared_json(path)
         report['frozen_by_task'][path.parent.name]={k:data[k] for k in ('task','attempts','successes','successful_mean_native_frames')}
     report['current_workers']=progress.get('worlds',[])
+    report['current_task_decisions']=progress.get('task_decisions',{})
+    report['training_by_task']={name:attempts([r for r in episodes if task_name(r)==name])
+        for name in sorted({task_name(r) for r in episodes})}
     report['current_route_guidance']=progress.get('nbnm_route_guidance')
     return report
 
