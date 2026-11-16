@@ -14,7 +14,7 @@
   ],
   "original_cycle": 87,
   "source": "cycle087 warm start with the NBNM experiment code",
-  "result": "Warm-start asset only; this branch does not claim full-game NBNM",
+  "result": "Cycle087 warm-start assets for the historical training setup. See experiments/seed60036 for the cycle073 full-story NBNM release.",
   "training_started_by_release_setup": false,
   "nbnm_training_entrypoint": "scripts/prepare_nbnm_experiment.py"
 }

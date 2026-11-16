@@ -1,0 +1,249 @@
+{
+  "game": "Touhou 14 / Double Dealing Character",
+  "version": "1.00b",
+  "shot": "Reimu A",
+  "difficulty": "Lunatic",
+  "opening_seed": 60036,
+  "evaluation_split": "development",
+  "task": "full_story",
+  "checkpoint_cycle": 73,
+  "updates_during_evaluation": 0,
+  "teacher_actions": 0,
+  "action_selection": "joint_mode",
+  "observation_columns": 407,
+  "decision_hold_native_frames": 4,
+  "legal_movement_actions": 18,
+  "bomb_enabled": false,
+  "neuron_count": 138639,
+  "visual_input_ports": 8053,
+  "descending_output_ports": 1299,
+  "rolling_corridor": {
+    "revision": "student-reachable-corridors-v1",
+    "beam": 1,
+    "loss_weight": 0.3,
+    "actor_weight": 4.0,
+    "witness_weight": 8.0,
+    "refinement_phases": "boss_spells",
+    "corner_reserve_stages": [
+      6
+    ],
+    "reactive_retry_stages": [
+      6
+    ],
+    "refinement_first_boss_spell": 2
+  },
+  "runs": [
+    {
+      "id": "baseline",
+      "checkpoint": "cycle073-frozen.pt",
+      "safe_idle_bonus": 0.0,
+      "keep_heading_bonus": 0.0,
+      "full_game_NBNM": true,
+      "stage_history": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "ending": "native-six-stage-clear",
+      "score": 402494300,
+      "misses": 0,
+      "bombs": 0,
+      "collision": false,
+      "decision_count": 30435,
+      "native_input_ticks": 122361,
+      "video_frames": 122360,
+      "native_ending_stage_frame": 33273,
+      "sixth_stage_brain_tensors_match": true,
+      "video_stage_frames": {
+        "1": 14598,
+        "2": 15548,
+        "3": 16683,
+        "4": 20429,
+        "5": 21529,
+        "6": 33573
+      },
+      "measurements": {
+        "decisions": 30435,
+        "safe_decisions": 1295,
+        "safe_idle": 188,
+        "moving_pairs": 21170,
+        "turns": 16446,
+        "per_stage": [
+          {
+            "stage": 1,
+            "decisions": 3650,
+            "safe_decisions": 83,
+            "safe_idle": 20,
+            "moving_pairs": 2665,
+            "turns": 1965
+          },
+          {
+            "stage": 2,
+            "decisions": 3856,
+            "safe_decisions": 169,
+            "safe_idle": 27,
+            "moving_pairs": 2291,
+            "turns": 1853
+          },
+          {
+            "stage": 3,
+            "decisions": 4140,
+            "safe_decisions": 192,
+            "safe_idle": 10,
+            "moving_pairs": 2976,
+            "turns": 2309
+          },
+          {
+            "stage": 4,
+            "decisions": 5076,
+            "safe_decisions": 186,
+            "safe_idle": 27,
+            "moving_pairs": 3250,
+            "turns": 2491
+          },
+          {
+            "stage": 5,
+            "decisions": 5351,
+            "safe_decisions": 243,
+            "safe_idle": 43,
+            "moving_pairs": 3917,
+            "turns": 3086
+          },
+          {
+            "stage": 6,
+            "decisions": 8362,
+            "safe_decisions": 422,
+            "safe_idle": 61,
+            "moving_pairs": 6071,
+            "turns": 4742
+          }
+        ]
+      }
+    },
+    {
+      "id": "idle025",
+      "checkpoint": "cycle073-frozen.pt",
+      "safe_idle_bonus": 0.25,
+      "keep_heading_bonus": 0.0,
+      "full_game_NBNM": true,
+      "stage_history": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "ending": "native-six-stage-clear",
+      "score": 431515330,
+      "misses": 0,
+      "bombs": 0,
+      "collision": false,
+      "decision_count": 30110,
+      "native_input_ticks": 121053,
+      "video_frames": 121053,
+      "native_ending_stage_frame": 32306,
+      "sixth_stage_brain_tensors_match": true,
+      "video_stage_frames": {
+        "1": 14029,
+        "2": 14530,
+        "3": 17970,
+        "4": 20055,
+        "5": 21863,
+        "6": 32606
+      },
+      "measurements": {
+        "decisions": 30110,
+        "safe_decisions": 1579,
+        "safe_idle": 791,
+        "moving_pairs": 20427,
+        "turns": 15678,
+        "per_stage": [
+          {
+            "stage": 1,
+            "decisions": 3508,
+            "safe_decisions": 79,
+            "safe_idle": 44,
+            "moving_pairs": 2498,
+            "turns": 1861
+          },
+          {
+            "stage": 2,
+            "decisions": 3601,
+            "safe_decisions": 211,
+            "safe_idle": 121,
+            "moving_pairs": 2116,
+            "turns": 1698
+          },
+          {
+            "stage": 3,
+            "decisions": 4462,
+            "safe_decisions": 258,
+            "safe_idle": 116,
+            "moving_pairs": 3141,
+            "turns": 2390
+          },
+          {
+            "stage": 4,
+            "decisions": 4984,
+            "safe_decisions": 200,
+            "safe_idle": 92,
+            "moving_pairs": 3121,
+            "turns": 2345
+          },
+          {
+            "stage": 5,
+            "decisions": 5435,
+            "safe_decisions": 314,
+            "safe_idle": 174,
+            "moving_pairs": 3806,
+            "turns": 2932
+          },
+          {
+            "stage": 6,
+            "decisions": 8120,
+            "safe_decisions": 517,
+            "safe_idle": 244,
+            "moving_pairs": 5745,
+            "turns": 4452
+          }
+        ]
+      }
+    }
+  ],
+  "first_action_difference": {
+    "decision_index": 643,
+    "stage": 1,
+    "stage_frame": 2578,
+    "episode_frame": 2572,
+    "position": [
+      -18.656253814697266,
+      302.84375
+    ],
+    "baseline_action": 2,
+    "idle025_action": 0
+  },
+  "other_same_seed_evaluations": [
+    {
+      "experiment": "bonus050",
+      "safe_idle_bonus": 0.5,
+      "keep_heading_bonus": 0,
+      "full_game_NBNM": false,
+      "stage": 4,
+      "native_stage_frame": 10288,
+      "reason": "first-native-contact"
+    },
+    {
+      "experiment": "heading025",
+      "safe_idle_bonus": 0.5,
+      "keep_heading_bonus": 0.25,
+      "full_game_NBNM": false,
+      "stage": 4,
+      "native_stage_frame": 4516,
+      "reason": "first-native-contact"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "baseline-60036.rpy",
+    "bytes": 832379,
+    "sha256": "9c978bacd4822757e6e2b28b4ffa88a1fdbb6ea39f470820a7683541e4d8fd22"
+  },
+  {
+    "name": "idle025-60036.rpy",
+    "bytes": 823500,
+    "sha256": "48d816a66c4f1e85af3a362a1237b364c677dfb266aae4702e39070d73d45ca5"
+  },
+  {
+    "name": "seed60036-traces.zip",
+    "bytes": 38413201,
+    "sha256": "22388284a41cda6df576d049e30a1384b71001ff9adff2e061b52cc0c2c4aa9c"
+  },
+  {
+    "name": "cycle073-frozen.pt",
+    "bytes": 88289771,
+    "sha256": "4687fdd84537c91afe94fcd01efe9f2959fd7ad203c30c2ad2d1a9b44f42bd01"
+  },
+  {
+    "name": "first-decision-comparison.mp4",
+    "bytes": 22015164,
+    "sha256": "3aad39bd164c943e8f34f0358b55413dda8bdce5438a41de35b62e87bdb0c906"
+  },
+  {
+    "name": "idle025-60036-1080p60.mp4",
+    "bytes": 629985869,
+    "sha256": "9f23c2bb79743075ca252c0c837ed4e0e52313316a27eeaba13121ad23cb99e9"
+  },
+  {
+    "name": "baseline-60036-1080p60.mp4",
+    "bytes": 638957430,
+    "sha256": "057fb27d4ce758543fbacb5f753c3a9f6f72ecc78ac93849093bd81a48e63168"
+  }
+]

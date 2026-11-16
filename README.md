@@ -2,9 +2,9 @@
 
 使用完整 FlyWire 连接组约束的可训练脉冲神经网络，控制原作《东方辉针城》TH14 1.00b。Windows 原作接口、无渲染运行、教师辅助 PPO、神经风险读出与冻结评估的研究工程。
 
-**本分支是 NBNM（不放 Bomb、不碰撞）专项训练实验。** 继承第 87 批的脑与移动参数，先提高无伤完成率，再缩短成功局用时。当前没有六面 NBNM 通关证明。已通关的有限残机版本仍在 [`main`](https://github.com/cangyun/fly-touhou/tree/main)。
+**第 73 批冻结模型已在开发种子 60036 上从第一面到第六面完成 NBNM（0 Miss、0 Bomb）。** 原通关版和静止加分 0.25 版都已在原作确认。两局的决策数据、权重和可播放 RPY 均已归档。[实验与复算方法](experiments/seed60036/README.md) · [完整视频和下载](https://github.com/cangyun/fly-touhou/releases/tag/v0.3.0-nbnm-seed60036)
 
-English: NBNM training with a shared, full-connectome spiking controller. Bombs are disabled and the first native contact ends an attempt. The cycle087 policy supplies the warm start; successful spell-card practice is not evidence of a full-game NBNM clear. No new trained weights are released with this code branch.
+Two frozen runs of the same spiking controller cleared all six stages on development seed 60036 without a miss or a bomb. This paired result is specific to one seed. The release includes both game replays, recorded observations, frozen weights, videos and an offline inference check.
 
 ## 三个版本
 
@@ -12,11 +12,11 @@ English: NBNM training with a shared, full-connectome spiking controller. Bombs 
 |---|---|---|
 | **[`main`](https://github.com/cangyun/fly-touhou/tree/main)** | 首次通关时归档的源码 + 第 87 批参数 + v6 推理解码 | [v0.1.0-clear](https://github.com/cangyun/fly-touhou/releases/tag/v0.1.0-clear)，一个固定种子通关 |
 | [`experimental/latest`](https://github.com/cangyun/fly-touhou/tree/experimental/latest) | 第 101 批最新实验：下半场位置奖励、移动指导和后续工程修订 | [实验预发布](https://github.com/cangyun/fly-touhou/releases/tag/v0.2.0-experimental-cycle101)，冻结 20 局 0 通关 |
-| **[`experimental/nbnm`](https://github.com/cangyun/fly-touhou/tree/experimental/nbnm)** | 本分支：NBNM 奖励、281 维输入、单符卡与开局混合训练、CUDA Graph | 使用第 87 批作初始参数；NBNM 效果待冻结对照 |
+| **[`experimental/nbnm`](https://github.com/cangyun/fly-touhou/tree/experimental/nbnm)** | 第 73 批的 407 维冻结推理对照与历史 281 维专项训练 | [种子 60036 六面 NBNM](https://github.com/cangyun/fly-touhou/releases/tag/v0.3.0-nbnm-seed60036) |
 
 实验版保留负面结果以供研究，**不推荐用来替换通关基线**。请让源码分支、Release 权重和配置保持配套。
 
-## 本轮训练方案与证据边界
+## 历史 281 维专项训练方案
 
 - 同一模型，默认 16 实例：12 个第三面 `BossCard1` 专项、4 个完整开局。每段 8,192 次决策，首轮 32,768 次决策、128 次 Adam。
 - 成功 +1、首次碰撞/Miss/Bomb/Game Over −1；取消位置与生存驻留收入。不强制下半场，第一阶段不让速度奖励牺牲成功率。
@@ -26,7 +26,7 @@ English: NBNM training with a shared, full-connectome spiking controller. Bombs 
 
 详见 [NBNM 方法与运行](docs/NBNM.md)、[试训进度分析](results/nbnm-pilot-status.json)。历史 [第 87 批通关](results/clear-v6.json) 和 [第 101 批负面结果](docs/EXPERIMENT-CYCLE101.md) 保留作来源记录，不属于本分支的新成绩。
 
-## 模型究竟是什么
+## 历史 281 维训练模型
 
 - **138,639 个神经元、15,091,983 条有向连接**，采用固定版本的数据预处理结果，保留全图拓扑与连接符号。这里的节点数不是完整公开图谱的 139,255。
 - 使用带代理梯度的 LIF 风格脉冲单元，脑内连接增益与神经元参数可学习。每个候选动作内部更新 16 次，不宣称这些更新对应真实生物毫秒。
@@ -37,7 +37,7 @@ English: NBNM training with a shared, full-connectome spiking controller. Bombs 
 
 这是**连接组约束的人工脉冲控制器**。它使用工程化的危险预测输入，不是原始像素端到端，也不等于真实果蝇神经活动的精确模拟。[方法说明](docs/METHOD.md)
 
-## 安装与运行
+## 启动历史训练方案
 
 支持路径：**Windows x64、Python 3.11、NVIDIA CUDA**。已使用 PyTorch 2.8.0 + CUDA 12.8 / RTX 5090；其他硬件尚未逐一验证。首次运行会编译小型 CUDA 内核。原作需要用户自行提供 **TH14 日文 1.00b**，不要用重制版或不同 EXE 偏移的汉化程序替换。
 

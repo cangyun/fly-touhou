@@ -35,7 +35,7 @@ Relevant original research:
 
 ## Touhou Project
 
-Touhou 14 / Double Dealing Character is a game by Team Shanghai Alice. This repository is an independent research controller, not an official game distribution. No game executable, BGM, graphics or other game assets are included; users must provide their own compatible game installation.
+Touhou 14 / Double Dealing Character is a game by Team Shanghai Alice. This is an independent fan work. Install a compatible copy of the game to view native replay files. The seed 60036 release includes finished, noncommercial gameplay videos with in-game music and effects. Game imagery, characters and audio remain the applicable rights holders' material. The repository license covers project-authored code. See the [official video guidelines](https://touhou-project.news/guideline_videoposting/).
 
 ## Other dependencies and historical tools
 
