@@ -6,12 +6,13 @@
 
 English: A full-connectome-constrained spiking controller for the original Touhou 14. This branch preserves one verified fixed-seed Lunatic 1CC, not a claim of robust or multi-seed clearing. Code, weights, native backend source and evaluation evidence are released separately from the copyrighted game.
 
-## 两个版本
+## 版本与实验
 
 | 分支 | 内容 | 权重与结果 |
 |---|---|---|
 | **[`main`](https://github.com/cangyun/fly-touhou/tree/main)** | 首次通关时归档的源码 + 第 87 批参数 + v6 推理解码 | [v0.1.0-clear](https://github.com/cangyun/fly-touhou/releases/tag/v0.1.0-clear)，一个固定种子通关 |
 | [`experimental/latest`](https://github.com/cangyun/fly-touhou/tree/experimental/latest) | 第 101 批最新实验：下半场位置奖励、移动指导和后续工程修订 | [实验预发布](https://github.com/cangyun/fly-touhou/releases/tag/v0.2.0-experimental-cycle101)，冻结 20 局 0 通关 |
+| [`experimental/nbnm`](https://github.com/cangyun/fly-touhou/tree/experimental/nbnm) | 第 73 批，种子 60036 的两局 Lunatic 六面 0 Miss、0 Bomb 通关 | [完整视频、RPY、权重与复算数据](https://github.com/cangyun/fly-touhou/releases/tag/v0.3.0-nbnm-seed60036) |
 
 实验版保留负面结果以供研究，**不推荐用来替换通关基线**。请让源码分支、Release 权重和配置保持配套。
 
