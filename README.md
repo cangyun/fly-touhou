@@ -1,6 +1,6 @@
 # 果蝇东方 / Fly Touhou
 
-[中文](#中文) · [English](#english)
+[中文](#中文) · [English](#english) · [工作原理](#工作原理) · [浏览器控制台](#浏览器控制台)
 
 ## 中文
 
@@ -42,7 +42,43 @@ fly-touhou train --game th08 --difficulty lunatic --objective nbnm --train-scope
 fly-touhou console
 ```
 
-`--dry-run` 打印启动计划。Windows 控制台可启动作业、查看进度、打开输出目录及请求边界停训。命令行管理用 `fly-touhou status --active` 和 `fly-touhou stop <job>`。
+`--dry-run` 打印启动计划。
+
+### 工作原理
+
+```mermaid
+flowchart LR
+    Console["本地浏览器控制台 / CLI"] --> Runner["后台作业"]
+    Runner --> Game["Windows 原作 EXE"]
+    Runner --> Policy
+    Game --> State["原作快照与事件"]
+    State --> Geometry["弹幕预测与可行走廊"]
+    State --> Encoder["感觉编码"]
+    Geometry --> Encoder
+    subgraph Policy["果蝇策略"]
+        Encoder --> Brain["FlyWire 全脑脉冲计算"]
+        Brain --> Readouts["下行活动 → 动作与风险读出"]
+        Readouts --> Action["网络选择动作"]
+    end
+    Action -->|原作内输入与步进| Game
+    State -->|仅训练| PPO["采样与 PPO 更新"]
+    Action -->|动作轨迹| PPO
+    Guide["原作验证的符卡轨迹"] --> Fit["符卡专项读出微调"]
+    PPO --> Checkpoint["模型权重"]
+    Fit --> Checkpoint
+    Checkpoint --> Policy
+    Runner -. 状态与进度 .-> Console
+```
+
+原作适配器读取自机、敌机、弹幕、激光和原作事件。几何预测提供各候选的碰撞余量与路线特征，模型通过感觉编码刺激连接组，由下行神经元的活动读出动作分数。冻结评估载入权重后执行这个闭环。符卡微调可使用原作已验证的轨迹单独更新指定读出。 [代码地图](docs/code-map.md) · [原作接口](docs/original-game-interfaces.md)
+
+### 浏览器控制台
+
+运行 `fly-touhou console`，或双击虚拟环境中的 `Scripts\fly-touhou-console.exe`，即可打开本机浏览器控制台。选择训练、冻结评估或 TH08 符卡微调，填写所需的原作或轨迹路径，再预览计划或启动作业。
+
+![本地 Web 控制台实拍，显示作业设置与归档的评估、微调进度](docs/assets/console.png)
+
+默认只显示活跃作业。勾选 **显示已结束作业** 查看历史。选中作业可查看决策数、参数更新、原作结果和日志，打开输出目录或请求边界停训。关闭页面后，后台作业继续运行。服务监听 `127.0.0.1:18768`，可用 `--port` 和 `--jobs` 指定端口与作业目录。命令行管理用 `fly-touhou status --active` 和 `fly-touhou stop <job>`。
 
 ### 两种通关目标
 
@@ -110,7 +146,43 @@ fly-touhou train --game th08 --difficulty lunatic --objective nbnm --train-scope
 fly-touhou console
 ```
 
-`--dry-run` prints the launch plan. The Windows console starts background jobs, shows their progress, opens outputs, and requests a stop at a backend boundary. The command line also provides `fly-touhou status --active` and `fly-touhou stop <job>`.
+`--dry-run` prints the launch plan.
+
+### How it works
+
+```mermaid
+flowchart LR
+    Console["Local web console / CLI"] --> Runner["Background job"]
+    Runner --> Game["Original Windows EXE"]
+    Runner --> Policy
+    Game --> State["Native snapshot and events"]
+    State --> Geometry["Hazard forecasts and corridors"]
+    State --> Encoder["Sensory encoder"]
+    Geometry --> Encoder
+    subgraph Policy["Fly policy"]
+        Encoder --> Brain["Full FlyWire spiking network"]
+        Brain --> Readouts["Descending activity → action and risk readouts"]
+        Readouts --> Action["Network action selection"]
+    end
+    Action -->|In-process input and stepping| Game
+    State -->|Training only| PPO["Rollouts and PPO updates"]
+    Action -->|Action traces| PPO
+    Guide["Original-verified attack trace"] --> Fit["Attack-local readout fitting"]
+    PPO --> Checkpoint["Model weights"]
+    Fit --> Checkpoint
+    Checkpoint --> Policy
+    Runner -. Status and progress .-> Console
+```
+
+The adapter reads the player, enemies, bullets, lasers, and original-game events. Geometric forecasts provide collision margins and route features for each candidate. The sensory encoder feeds these observations into the connectome, and descending activity supplies action scores. Frozen evaluation loads weights and runs the same inference loop. Attack-local fitting can update selected readouts from an original-verified trajectory. [Code map](docs/code-map.md) · [Original-game interfaces](docs/original-game-interfaces.md)
+
+### Browser console
+
+Run `fly-touhou console` or double-click `Scripts\fly-touhou-console.exe` in the virtual environment to open the local dashboard. Choose training, frozen evaluation, or TH08 attack-local fitting, then provide the original-game or verified guide path to preview the plan or start the job.
+
+![Local web console showing launch settings and archived evaluation and fitting jobs](docs/assets/console.png)
+
+The default queue shows active jobs. Enable **Show completed jobs** to inspect history. Select a job for decision and optimizer counts, original-game results, logs, the output folder, and boundary stop controls. Jobs continue when the browser tab closes. The console listens on `127.0.0.1:18768`. Use `--port` and `--jobs` to set the port and job directory. The CLI also provides `fly-touhou status --active` and `fly-touhou stop <job>`.
 
 ### Clear objectives
 

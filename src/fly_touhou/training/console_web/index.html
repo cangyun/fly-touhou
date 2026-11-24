@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Fly Touhou</title>
+  <link rel="stylesheet" href="/console.css">
+  <script src="/console.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Fly Touhou</div>
+      <div class="toolbar">
+        <span id="connection" class="connection" role="status"><i aria-hidden="true"></i><span>正在连接</span></span>
+        <button id="language" class="quiet language" type="button" aria-label="Switch language">English</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <header class="mast">
+      <div><h1 data-i18n="title">训练控制台</h1><p data-i18n="lead">启动原作作业，查看采样进度、参数更新和评估结果。</p></div>
+      <time id="refreshed"></time>
+    </header>
+
+    <section class="metrics" aria-label="Job totals">
+      <article class="metric"><span data-i18n="activeJobs">活跃作业</span><strong id="active-count">—</strong></article>
+      <article class="metric"><span id="decision-label" data-i18n="activeDecisions">活跃作业决策</span><strong id="decision-count">—</strong></article>
+      <article class="metric"><span id="updates-label" data-i18n="activeUpdates">活跃作业参数更新</span><strong id="update-count">—</strong></article>
+    </section>
+
+    <div class="workspace">
+      <section class="panel launch-panel" aria-labelledby="launcher-title">
+        <header class="panel-header"><h2 id="launcher-title" data-i18n="newJob">新建作业</h2></header>
+        <form id="job-form">
+          <fieldset class="modes">
+            <legend class="sr-only" data-i18n="operation">作业类型</legend>
+            <label><input type="radio" name="operation" value="train" checked><span data-i18n="train">训练</span></label>
+            <label><input type="radio" name="operation" value="evaluate"><span data-i18n="evaluate">冻结评估</span></label>
+            <label><input type="radio" name="operation" value="fit-attack"><span data-i18n="fit-attack">符卡微调</span></label>
+          </fieldset>
+
+          <div class="fields">
+            <label><span data-i18n="game">原作</span><select name="game"><option value="th14" data-i18n="gameTh14">TH14 · 辉针城</option><option value="th08" data-i18n="gameTh08">TH08 · 永夜抄</option></select></label>
+            <label><span data-i18n="objective">通关目标</span><select name="objective"><option value="nbnm">NBNM</option><option value="clear">1CC · Clear</option></select></label>
+            <label><span data-i18n="difficulty">难度</span><select name="difficulty"><option value="lunatic">Lunatic</option></select></label>
+            <label data-modes="train"><span data-i18n="scope">训练范围</span><select name="train_scope"><option value="joint" data-i18n="joint">全网络</option><option value="encoder-heads" data-i18n="encoderHeads">冻结脑内参数</option></select></label>
+            <label class="wide" data-modes="train evaluate"><span data-i18n="exe">原作 EXE 路径</span><input name="executable" type="text" autocomplete="off" spellcheck="false" placeholder="D:\Games\TH14\th14.exe" required></label>
+            <label class="wide" data-modes="fit-attack"><span data-i18n="guide">已验证的符卡轨迹目录</span><input name="guide" type="text" autocomplete="off" spellcheck="false" required></label>
+            <label data-modes="train"><span data-i18n="workers">并行实例</span><input name="workers" type="number" min="1" max="100" step="1" value="8"></label>
+            <label data-modes="train"><span data-i18n="decisions">决策预算</span><input name="decisions" type="number" min="1" step="1" data-placeholder="preset" placeholder="使用作业配置"></label>
+            <label data-modes="fit-attack"><span data-i18n="fitSteps">Adam 更新次数</span><input name="fit_steps" type="number" min="1" max="1000000" value="640"></label>
+            <label data-modes="train evaluate"><span data-i18n="seed">种子</span><input name="seed" type="number" min="0" step="1" data-placeholder="preset" placeholder="使用作业配置"></label>
+            <label data-modes="evaluate" class="check observe"><input name="record_observations" type="checkbox"><span data-i18n="record">记录输入特征</span></label>
+          </div>
+
+          <details class="settings">
+            <summary data-i18n="advanced">权重、输出与续训</summary>
+            <div class="fields">
+              <label class="wide"><span data-i18n="checkpoint">模型权重</span><input name="checkpoint" spellcheck="false" data-placeholder="published" placeholder="使用发布权重"></label>
+              <label class="wide" data-modes="train"><span data-i18n="resume">续训 Checkpoint</span><input name="resume" spellcheck="false" placeholder="latest-training.pt"></label>
+              <label class="wide"><span data-i18n="output">输出目录</span><input name="output" spellcheck="false" data-placeholder="autoOutput" placeholder="自动分配"></label>
+              <label class="wide"><span data-i18n="connectome">连接组目录</span><input name="connectome" spellcheck="false" placeholder="data/connectome"></label>
+              <label class="wide"><span data-i18n="spec">策略配置</span><input name="spec" spellcheck="false" data-placeholder="preset" placeholder="使用作业配置"></label>
+              <label class="wide" data-modes="train"><span data-i18n="course">TH08 课程清单</span><input name="course" spellcheck="false" data-placeholder="preset" placeholder="使用作业配置"></label>
+              <label data-modes="train"><span data-i18n="segment">每次采样决策</span><input name="segment" type="number" min="1" step="1" data-placeholder="preset" placeholder="使用作业配置"></label>
+            </div>
+          </details>
+
+          <div class="form-actions">
+            <button id="preview" type="button" class="quiet" data-i18n="preview" disabled>预览计划</button>
+            <button id="start" type="submit" class="primary" data-i18n="start" disabled>启动作业</button>
+          </div>
+          <output id="form-note" role="status"></output>
+        </form>
+      </section>
+
+      <div class="monitor">
+        <section class="panel queue" aria-labelledby="queue-title">
+          <header class="panel-header"><h2 id="queue-title" data-i18n="queue">作业队列</h2><label class="check history"><input id="history" type="checkbox"><span data-i18n="history">显示已结束作业</span></label></header>
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th data-i18n="job">作业</th><th data-i18n="status">状态</th><th data-i18n="stage">关卡</th>
+                <th class="numeric" data-i18n="decisionsShort">决策</th><th class="numeric" data-i18n="updates">更新</th>
+              </tr></thead>
+              <tbody id="jobs"></tbody>
+            </table>
+          </div>
+          <p id="empty" class="empty" data-i18n="loading">正在读取作业</p>
+        </section>
+
+        <section class="panel inspector" aria-labelledby="detail-title">
+          <header class="panel-header"><h2 id="detail-title" data-i18n="details">作业详情</h2><span id="detail-job" class="fine"></span></header>
+          <p id="no-selection" class="empty" data-i18n="choose">选择一项作业查看运行详情。</p>
+          <div id="job-detail" hidden>
+            <dl id="job-facts" class="facts"></dl>
+            <progress id="progress" max="1" value="0" hidden></progress>
+            <p id="output-path" class="path"></p>
+            <p id="job-error" class="error" hidden></p>
+            <div class="detail-actions">
+              <button id="open-output" type="button" class="quiet" data-i18n="open">打开输出目录</button>
+              <button id="stop" type="button" class="danger" data-i18n="stop">边界停训</button>
+            </div>
+            <details id="logs">
+              <summary data-i18n="logs">最近日志</summary>
+              <div class="log-bar">
+                <label><span class="sr-only" data-i18n="logs">最近日志</span><select id="log-channel"><option value="stdout">stdout</option><option value="stderr">stderr</option></select></label>
+                <button id="refresh-log" type="button" class="quiet" data-i18n="refreshLog">刷新日志</button>
+              </div>
+              <pre id="log-text"></pre>
+            </details>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="plan-dialog">
+    <header class="panel-header"><h2 data-i18n="preview">预览计划</h2><form method="dialog"><button class="quiet" data-i18n="close">关闭</button></form></header>
+    <pre id="plan-text"></pre>
+  </dialog>
+  <dialog id="stop-dialog">
+    <header class="panel-header"><h2 data-i18n="stop">边界停训</h2></header>
+    <p data-i18n="stopQuestion">为所选作业提交停止请求，在后端可保存的边界结束？</p>
+    <form method="dialog" class="detail-actions">
+      <button class="quiet" value="cancel" data-i18n="cancel">取消</button>
+      <button class="danger" value="confirm" data-i18n="confirmStop">请求停止</button>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -24,7 +24,7 @@ native-rules = ["numba>=0.61,<1"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-fly_touhou = ["hooks/*.js", "hooks/*.c", "csrc/*.cu", "csrc/*.cpp", "csrc/**/*.cu", "csrc/**/*.cpp"]
+fly_touhou = ["hooks/*.js", "hooks/*.c", "csrc/*.cu", "csrc/*.cpp", "csrc/**/*.cu", "csrc/**/*.cpp", "training/console_web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

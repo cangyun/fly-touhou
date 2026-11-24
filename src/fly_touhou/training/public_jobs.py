@@ -22,13 +22,19 @@ def job_summary(record):
     status = _read_when_present(control / "status.json")
     progress = _read_when_present(output / "progress.json")
     failure = _read_when_present(output / "failure.json")
-    result = _read_when_present(output / "report.json")
+    report_path = output / "report.json"
+    result = _read_when_present(report_path)
+    if not result and plan["operation"] != "evaluate":
+        report_path = output / "result.json"
+        result = _read_when_present(report_path)
     info = progress.get("info") or {}
     if result.get("episodes") and isinstance(result["episodes"], list):
         if isinstance(result["episodes"][0], dict):
             info = result["episodes"][0]
+    if isinstance(result.get("end"), dict):
+        info = result["end"]
     status_name = status.get("status", "starting")
-    if failure.get("operator_requested_stop") or result.get("operator_requested_stop"):
+    if failure.get("operator_requested_stop") or result.get("operator_requested_stop") or progress.get("phase") == "stopped":
         status_name = "stopped"
     elif failure:
         status_name = "failed"
@@ -44,13 +50,19 @@ def job_summary(record):
         if not owned and not (result or failure):
             status_name = "exited"
     decisions = progress.get("completed_decisions", progress.get("new_student_actions", progress.get("decisions")))
+    if decisions is None:
+        decisions = info.get("policy_decisions", result.get("sampled_decisions",
+                                                               result.get("autonomous_local_decisions")))
+    updates = progress.get("optimizer_updates", progress.get("PPO_updates", progress.get("updates")))
     return dict(job=str(record), operation=plan["operation"], **plan["identity"],
                 status=status_name, phase=progress.get("phase"), elapsed_seconds=progress.get("elapsed_seconds"),
-                stage=info.get("stage", progress.get("stage")), frame=info.get("stage_frame"),
-                decisions=decisions, budget=progress.get("budget"), updates=progress.get("optimizer_updates"),
+                stage=info.get("stage", progress.get("stage")), frame=info.get("stage_frame", progress.get("stage_frame")),
+                decisions=decisions, budget=progress.get("budget"), updates=updates,
+                matched=progress.get("matched"), route_decisions=progress.get("route_decisions"),
                 miss=info.get("misses"), bomb=info.get("Bombs"), contact=info.get("contact"),
+                outcome=info.get("outcome"),
                 error=failure.get("error") or status.get("error"), output=str(output),
-                report=str(output / "report.json") if result else None)
+                report=str(report_path) if result else None)
 
 
 def list_jobs(directory, *, active_only=False):

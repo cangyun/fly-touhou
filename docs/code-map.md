@@ -5,7 +5,7 @@
 | 任务 / Task | 入口 / Entry |
 | --- | --- |
 | 启动作业 / Dispatch | [public_app.py](../src/fly_touhou/public_app.py) → [public_runs.py](../src/fly_touhou/training/public_runs.py) |
-| 管理作业 / Manage jobs | [console.py](../src/fly_touhou/training/console.py) → [public_jobs.py](../src/fly_touhou/training/public_jobs.py) → [Windows launcher](../scripts/background_job.py) |
+| 管理作业 / Manage jobs | [console.py](../src/fly_touhou/training/console.py)  · [浏览器界面 / Browser UI](../src/fly_touhou/training/console_web) → [public_jobs.py](../src/fly_touhou/training/public_jobs.py) → [Windows launcher](../scripts/background_job.py) |
 | 连接组、脉冲与脑状态 / Connectome and spiking state | [brain](../src/fly_touhou/brain) |
 | 共享感觉编码与读出 / Shared encoders and readouts | [policy](../src/fly_touhou/policy) |
 | PPO、采样、存档与评估 / PPO, rollouts, checkpoints, and evaluation | [training](../src/fly_touhou/training) |

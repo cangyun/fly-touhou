@@ -241,6 +241,7 @@ def launch(plan):
     plan.controls.mkdir(parents=True)
     for path, data in plan.settings.items():
         if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
             write_json(path, data)
     if plan.resume:
         (plan.output / "STOP").unlink(missing_ok=True)

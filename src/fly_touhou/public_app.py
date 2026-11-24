@@ -60,7 +60,10 @@ def parser_for_app():
         ("fit-attack", "Fit the TH08 readout for a single verified original attack"),
     ):
         add_engine_options(sub.add_parser(command, help=description), command)
-    add_job_options(sub.add_parser("console", help="Open the local Windows job console"))
+    console = sub.add_parser("console", help="Open the local browser job console")
+    add_job_options(console)
+    console.add_argument("--port", type=int, default=18768)
+    console.add_argument("--no-browser", action="store_true", help="Serve without opening a browser tab")
     status = sub.add_parser("status", help="Read background jobs and their latest progress")
     add_job_options(status)
     status.add_argument("--active", action="store_true")
@@ -90,7 +93,10 @@ def main(argv=None):
                            train_scopes=["joint", "encoder-heads"]) for (game, goal), observation in SUPPORT.items()]
         elif args.operation == "console":
             from .training.console import open_console
-            return open_console((ROOT / (args.jobs or "outputs/control/jobs")).resolve())
+            if not 0 <= args.port <= 65535:
+                raise ValueError("Choose a local port between 0 and 65535")
+            return open_console((ROOT / (args.jobs or "outputs/control/jobs")).resolve(),
+                                port=args.port, launch_browser=not args.no_browser)
         elif args.operation == "status":
             from .training.public_jobs import list_jobs
             result = list_jobs((ROOT / (args.jobs or "outputs/control/jobs")).resolve(), active_only=args.active)
@@ -107,7 +113,7 @@ def main(argv=None):
 
 
 def console_main():
-    return main(["console"])
+    return main(["console", *sys.argv[1:]])
 
 
 if __name__ == "__main__":
