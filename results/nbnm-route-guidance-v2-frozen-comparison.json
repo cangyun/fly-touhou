@@ -1,0 +1,513 @@
+{
+  "schema": "nbnm-route-guidance-v2-frozen-comparison-v1",
+  "source_commit": "412839b33f20fd334488857be68e38ba795a209c",
+  "reference_checkpoint": "cycle087-parameters.pt",
+  "trained_checkpoint": "hard-cards-route-guidance-v2/cycle001-parameters.pt",
+  "training": {
+    "completed": true,
+    "decisions": 8192,
+    "Adam_updates": 32,
+    "cumulative_NBNM_decisions": 57344,
+    "cumulative_NBNM_Adam_updates": 224,
+    "sample_seconds": 809.3430000000008,
+    "learn_seconds": 431.5149999999994,
+    "workers": 16,
+    "all_collected_rows_optimized": true,
+    "unique_optimized_rows": 8192,
+    "rejected_updates": 0,
+    "rule_guidance_coefficient": 0.3,
+    "task_decisions": {
+      "s3_failures": 1024,
+      "s4_hard": 3072,
+      "s3_hard": 4096
+    },
+    "completed_attempts": {
+      "stage4_BossCard2": {
+        "attempts": 4,
+        "successes": 1,
+        "captures": 1,
+        "timeouts": 0,
+        "contacts": 3
+      },
+      "stage3_BossCard1": {
+        "attempts": 2,
+        "successes": 1,
+        "captures": 0,
+        "timeouts": 0,
+        "contacts": 1
+      },
+      "stage3_BossCard2": {
+        "attempts": 4,
+        "successes": 4,
+        "captures": 4,
+        "timeouts": 0,
+        "contacts": 0
+      }
+    },
+    "scope": "Stochastic pre-update collection; not post-update performance"
+  },
+  "comparisons": [
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 3,
+        "attack": "BossCard2",
+        "spell_index": 2,
+        "spell_id": 35
+      },
+      "entry_mode": "native_spell_practice",
+      "evaluation_split": "development",
+      "action_selection": "joint_mode",
+      "attempts": 4,
+      "initial_successes": 3,
+      "trained_successes": 4,
+      "improved_pairs": 1,
+      "regressed_pairs": 0,
+      "exact_paired_success_p": 1.0,
+      "all_entry_observations_identical": true,
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 2288,
+          "trained_frames": 2444,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2376,
+          "trained_frames": 2236,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2392,
+          "trained_frames": 2188,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2164,
+          "trained_frames": 2580,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        }
+      ],
+      "group": "s3_hard",
+      "initial": {
+        "attempts": 4,
+        "successes": 3,
+        "spell_captures": 3,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 2310.6666666666665
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 4,
+        "spell_captures": 4,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 2362.0
+      }
+    },
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "entry_mode": "native_spell_practice",
+      "evaluation_split": "development",
+      "action_selection": "joint_mode",
+      "attempts": 4,
+      "initial_successes": 2,
+      "trained_successes": 1,
+      "improved_pairs": 0,
+      "regressed_pairs": 1,
+      "exact_paired_success_p": 1.0,
+      "all_entry_observations_identical": true,
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": false,
+          "trained_success": false,
+          "initial_frames": 1384,
+          "trained_frames": 2088,
+          "initial_end": "first-native-contact",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": false,
+          "trained_success": false,
+          "initial_frames": 2076,
+          "trained_frames": 1248,
+          "initial_end": "first-native-contact",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2400,
+          "trained_frames": 2408,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2632,
+          "trained_frames": 1232,
+          "initial_end": "native-spell-capture",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        }
+      ],
+      "group": "s4_hard",
+      "initial": {
+        "attempts": 4,
+        "successes": 2,
+        "spell_captures": 2,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 2516.0
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 1,
+        "spell_captures": 1,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 2408.0
+      }
+    },
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 3,
+        "attack": "BossCard1"
+      },
+      "entry_mode": "story_prefix",
+      "evaluation_split": "development",
+      "action_selection": "joint_mode",
+      "attempts": 4,
+      "initial_successes": 4,
+      "trained_successes": 4,
+      "improved_pairs": 0,
+      "regressed_pairs": 0,
+      "exact_paired_success_p": 1.0,
+      "all_entry_observations_identical": true,
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2356,
+          "trained_frames": 1604,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2400,
+          "trained_frames": 1876,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 1856,
+          "trained_frames": 1708,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2356,
+          "trained_frames": 1680,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        }
+      ],
+      "group": "s3_failures",
+      "initial": {
+        "attempts": 4,
+        "successes": 4,
+        "spell_captures": 0,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 2242.0
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 4,
+        "spell_captures": 0,
+        "spell_survived_timeouts": 0,
+        "successful_mean_native_frames": 1717.0
+      }
+    }
+  ],
+  "full_scene_training": false,
+  "new_heldout_test_run": false,
+  "six_stage_NBNM_proven": false,
+  "goal_pause_requested_after_evaluation": true,
+  "crash_recovery": {
+    "training_checkpoint_complete": true,
+    "repeated_training_updates": 0,
+    "interrupted_frozen_episodes_counted": false,
+    "partial_evaluation_retained": true
+  },
+  "pre_update_rollout_diagnosis": {
+    "scope": "Pre-update stochastic student rollout; not frozen performance or post-update learning evidence",
+    "decisions": 8192,
+    "native_observed_contacts": 4,
+    "geometric_calibration": [
+      {
+        "horizon_frames": 4,
+        "trusted_rows": 4165,
+        "labelled_danger_pairs": 2378,
+        "predicted_danger_pairs": 2613,
+        "dangerous_direction_recall": 0.9928511354079058,
+        "precision": 0.9035591274397244,
+        "note": "Directions within a state are correlated; geometry labels are not independent native counterfactuals"
+      },
+      {
+        "horizon_frames": 12,
+        "trusted_rows": 3471,
+        "labelled_danger_pairs": 7938,
+        "predicted_danger_pairs": 8186,
+        "dangerous_direction_recall": 0.9732930209120685,
+        "precision": 0.9438064989005619,
+        "note": "Directions within a state are correlated; geometry labels are not independent native counterfactuals"
+      },
+      {
+        "horizon_frames": 24,
+        "trusted_rows": 2849,
+        "labelled_danger_pairs": 11000,
+        "predicted_danger_pairs": 11079,
+        "dangerous_direction_recall": 0.9567272727272728,
+        "precision": 0.949905226103439,
+        "note": "Directions within a state are correlated; geometry labels are not independent native counterfactuals"
+      }
+    ],
+    "teacher_alignment": {
+      "guided_rows": 4163,
+      "policy_modal_agreement": 0.18928657472133636,
+      "sampled_action_agreement": 0.09776603430509567,
+      "note": "Disagreement is not by itself evidence that the student action was wrong"
+    },
+    "contact_decisions": [
+      {
+        "world": 9,
+        "stage": 4,
+        "recorded_episode_frames": 916,
+        "action": 1,
+        "modal_action": 14,
+        "teacher_modal_action": 8,
+        "rule_weight": 0.0,
+        "trusted_4_12_24": [
+          true,
+          true,
+          true
+        ],
+        "selected_predicted_risk_4_12_24": [
+          0.9722108840942383,
+          0.9885849356651306,
+          0.9812316298484802
+        ],
+        "modal_predicted_risk_4_12_24": [
+          0.8799784183502197,
+          0.9834102988243103,
+          0.9879550933837891
+        ],
+        "minimum_predicted_risk_4_12_24": [
+          0.8799784183502197,
+          0.9823300838470459,
+          0.971589982509613
+        ],
+        "selected_action_probability": 0.03457299619913101,
+        "modal_action_probability": 0.31004589796066284,
+        "selected_margin_4_12_24": [
+          -3.0692543983459473,
+          -6.237969398498535,
+          -6.237969398498535
+        ],
+        "best_margin_4_12_24": [
+          -0.5757228136062622,
+          -4.819018840789795,
+          -4.819018840789795
+        ]
+      },
+      {
+        "world": 15,
+        "stage": 3,
+        "recorded_episode_frames": 34744,
+        "action": 9,
+        "modal_action": 7,
+        "teacher_modal_action": 3,
+        "rule_weight": 0.0,
+        "trusted_4_12_24": [
+          true,
+          false,
+          false
+        ],
+        "selected_predicted_risk_4_12_24": [
+          0.9446535706520081,
+          0.9724867939949036,
+          0.9683433175086975
+        ],
+        "modal_predicted_risk_4_12_24": [
+          0.7883068323135376,
+          0.922971785068512,
+          0.9744977355003357
+        ],
+        "minimum_predicted_risk_4_12_24": [
+          0.7883068323135376,
+          0.9018258452415466,
+          0.9476281404495239
+        ],
+        "selected_action_probability": 0.03158793970942497,
+        "modal_action_probability": 0.13382825255393982,
+        "selected_margin_4_12_24": [
+          -1.7530405521392822,
+          -1.831650733947754,
+          -1.831650733947754
+        ],
+        "best_margin_4_12_24": [
+          -0.437227725982666,
+          -0.437227725982666,
+          -0.5600599050521851
+        ]
+      },
+      {
+        "world": 13,
+        "stage": 4,
+        "recorded_episode_frames": 1816,
+        "action": 4,
+        "modal_action": 12,
+        "teacher_modal_action": 14,
+        "rule_weight": 0.0,
+        "trusted_4_12_24": [
+          false,
+          false,
+          false
+        ],
+        "selected_predicted_risk_4_12_24": [
+          0.9930705428123474,
+          0.9927545189857483,
+          0.9597069025039673
+        ],
+        "modal_predicted_risk_4_12_24": [
+          0.5595229268074036,
+          0.6618677377700806,
+          0.78031325340271
+        ],
+        "minimum_predicted_risk_4_12_24": [
+          0.5595229268074036,
+          0.6618677377700806,
+          0.6896314024925232
+        ],
+        "selected_action_probability": 0.0027674096636474133,
+        "modal_action_probability": 0.35573068261146545,
+        "selected_margin_4_12_24": [
+          -7.999960422515869,
+          -7.999960422515869,
+          -7.999960422515869
+        ],
+        "best_margin_4_12_24": [
+          1.8551033735275269,
+          1.8551033735275269,
+          1.8551033735275269
+        ]
+      },
+      {
+        "world": 9,
+        "stage": 4,
+        "recorded_episode_frames": 1240,
+        "action": 8,
+        "modal_action": 16,
+        "teacher_modal_action": 16,
+        "rule_weight": 0.0,
+        "trusted_4_12_24": [
+          false,
+          false,
+          false
+        ],
+        "selected_predicted_risk_4_12_24": [
+          0.9925962090492249,
+          0.9832289814949036,
+          0.9343380928039551
+        ],
+        "modal_predicted_risk_4_12_24": [
+          0.6616335511207581,
+          0.7245928645133972,
+          0.8375048637390137
+        ],
+        "minimum_predicted_risk_4_12_24": [
+          0.6616335511207581,
+          0.7245928645133972,
+          0.81796795129776
+        ],
+        "selected_action_probability": 0.02345564030110836,
+        "modal_action_probability": 0.3069784343242645,
+        "selected_margin_4_12_24": [
+          -7.8121466636657715,
+          -7.8121466636657715,
+          -7.979787826538086
+        ],
+        "best_margin_4_12_24": [
+          1.8809895515441895,
+          1.8284516334533691,
+          1.6921900510787964
+        ]
+      }
+    ],
+    "collection_metadata": {
+      "safe_forecast_but_native_contact": 0,
+      "full_native_teacher_restored_rows": 4163,
+      "task_group_decisions": {
+        "s3_failures": 1024,
+        "s4_hard": 3072,
+        "s3_hard": 4096
+      },
+      "trusted_normal_rows_4_12_24": [
+        4166,
+        3471,
+        2849
+      ]
+    }
+  },
+  "interpretation_limits": [
+    "Four development seeds per task; these are screening results, not independent generalization proof.",
+    "Both frozen arms use the same updated sensory code and decoder; older predictor versions are not reused as the current baseline.",
+    "Pre-update calibration against trusted geometric labels does not measure recall over unknown forecasts or six-stage survival.",
+    "The next fresh heldout seed set remains unused; no additional trial or full-scene training is queued."
+  ]
+}

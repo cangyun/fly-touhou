@@ -10,6 +10,7 @@ class NativeHazardPlanner(DynamicCollisionPlanner):
     def reset(self):
         super().reset()
         self._raw_prepared_snapshot = None
+        self._validated_bullet_metadata = None
         self._growth_envelopes = []
 
     def specification(self):
@@ -32,6 +33,7 @@ class NativeHazardPlanner(DynamicCollisionPlanner):
         # Validate every raw/shared field using the same measured sensor contract.
         validator = HazardObservationEncoder()
         bullet_metadata, laser_metadata = validator._metadata(snapshot)
+        self._validated_bullet_metadata = bullet_metadata
         if snapshot.player is not None:
             for b in snapshot.bullets:
                 validator._bullet(b, bullet_metadata[b.id])
@@ -121,10 +123,10 @@ class GeometryNativeHazardPlanner(NativeHazardPlanner):
     def _prepare(self, snapshot):
         if snapshot is self._geometry_snapshot:
             return
-        from .native_geometry import collision_geometry
+        from .thrl_geometry_observation import shared_collision_geometry
         super()._prepare(snapshot)
-        rows, _ = HazardObservationEncoder()._metadata(snapshot)
-        shapes, player = collision_geometry(snapshot,rows)
+        rows = self._validated_bullet_metadata
+        shapes, player = shared_collision_geometry(snapshot,rows)
         self._native_shapes = []
         for bullet in snapshot.bullets:
             raw = rows[bullet.id]

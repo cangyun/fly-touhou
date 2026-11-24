@@ -3,3 +3,4 @@
 *.pt binary
 *.dll binary
 release-data/selected_ports_1024_v783.json binary
+weights/published/*.pt filter=lfs diff=lfs merge=lfs -text

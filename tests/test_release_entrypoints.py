@@ -52,12 +52,13 @@ class ReleaseTests(unittest.TestCase):
 
     def test_release_assets_agree_with_report(self):
         release = json.loads((ROOT/'configs/release.json').read_text())
-        if release['branch'] == 'main':
+        if release['original_cycle'] == 87:
             report = json.loads((ROOT/'results/clear-v6.json').read_text(encoding='utf-8'))
             self.assertEqual(report['clears'], 1)
             self.assertEqual(release['opening_seeds'], [report['episode_results'][0]['evaluation_seed']])
             self.assertEqual(release['original_cycle'], 87)
         else:
+            self.assertEqual(release['original_cycle'],101)
             report = json.loads((ROOT/'results/cycle101-frozen20.json').read_text(encoding='utf-8'))
             self.assertEqual(release['opening_seeds'], [e['evaluation_seed'] for e in report['episode_results']])
             self.assertEqual(report['clears'], 0)

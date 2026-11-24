@@ -1,0 +1,528 @@
+{
+  "schema": "nbnm-hard-card-fixed-model-comparisons-v1",
+  "source_commit": "be9babc5dde40e37542cdf4442bfca410a002e90",
+  "initial_checkpoint": "cycle087-parameters.pt",
+  "candidate_checkpoint": "hard-cards-physical-routes-v1/cycle002-parameters.pt",
+  "training": {
+    "additional_decisions": 16384,
+    "additional_Adam_updates": 64,
+    "cumulative_NBNM_decisions": 49152,
+    "cumulative_NBNM_Adam_updates": 192,
+    "workers": 16,
+    "full_scene_training": false,
+    "completed": true
+  },
+  "comparisons": [
+    {
+      "group": "s4_hard",
+      "status": "complete",
+      "task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "entry_mode": "native_spell_practice",
+      "split": "development",
+      "action_selection": "joint_mode",
+      "initial": {
+        "attempts": 4,
+        "successes": 1,
+        "success_rate": 0.25,
+        "wilson95": [
+          0.04558726080970055,
+          0.6993581574175981
+        ],
+        "captures": 0,
+        "survived_timeouts": 1,
+        "successful_mean_native_frames": 2584.0,
+        "Bombs": 0
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 4,
+        "success_rate": 1.0,
+        "wilson95": [
+          0.5101091635454027,
+          1.0
+        ],
+        "captures": 4,
+        "survived_timeouts": 0,
+        "successful_mean_native_frames": 2208.0,
+        "Bombs": 0
+      },
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1576,
+          "trained_frames": 1948,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2584,
+          "trained_frames": 2108,
+          "initial_end": "native-spell-survived-timeout",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1236,
+          "trained_frames": 2292,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 576,
+          "trained_frames": 2484,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        }
+      ],
+      "improved_pairs": 3,
+      "regressed_pairs": 0,
+      "exact_paired_success_p": 0.25,
+      "all_entry_observations_identical": true,
+      "improvement_supported": false
+    },
+    {
+      "group": "s3_failures",
+      "status": "complete",
+      "task": {
+        "mode": "attack",
+        "stage": 3,
+        "attack": "BossCard1"
+      },
+      "entry_mode": "story_prefix",
+      "split": "development",
+      "action_selection": "joint_mode",
+      "initial": {
+        "attempts": 4,
+        "successes": 4,
+        "success_rate": 1.0,
+        "wilson95": [
+          0.5101091635454027,
+          1.0
+        ],
+        "captures": null,
+        "survived_timeouts": null,
+        "successful_mean_native_frames": 2242.0,
+        "Bombs": 0
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 4,
+        "success_rate": 1.0,
+        "wilson95": [
+          0.5101091635454027,
+          1.0
+        ],
+        "captures": null,
+        "survived_timeouts": null,
+        "successful_mean_native_frames": 1490.0,
+        "Bombs": 0
+      },
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2356,
+          "trained_frames": 1568,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2400,
+          "trained_frames": 1644,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 1856,
+          "trained_frames": 1484,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2356,
+          "trained_frames": 1264,
+          "initial_end": "native-next-attack",
+          "trained_end": "native-next-attack",
+          "identical_entry_observations": true
+        }
+      ],
+      "improved_pairs": 0,
+      "regressed_pairs": 0,
+      "exact_paired_success_p": 1.0,
+      "all_entry_observations_identical": true,
+      "improvement_supported": false
+    },
+    {
+      "group": "s3_hard",
+      "status": "complete",
+      "task": {
+        "mode": "attack",
+        "stage": 3,
+        "attack": "BossCard2",
+        "spell_index": 2,
+        "spell_id": 35
+      },
+      "entry_mode": "native_spell_practice",
+      "split": "development",
+      "action_selection": "joint_mode",
+      "initial": {
+        "attempts": 4,
+        "successes": 3,
+        "success_rate": 0.75,
+        "wilson95": [
+          0.30064184258240184,
+          0.9544127391902995
+        ],
+        "captures": 3,
+        "survived_timeouts": 0,
+        "successful_mean_native_frames": 2310.6666666666665,
+        "Bombs": 0
+      },
+      "trained": {
+        "attempts": 4,
+        "successes": 3,
+        "success_rate": 0.75,
+        "wilson95": [
+          0.30064184258240184,
+          0.9544127391902995
+        ],
+        "captures": 3,
+        "survived_timeouts": 0,
+        "successful_mean_native_frames": 2037.3333333333333,
+        "Bombs": 0
+      },
+      "pairs": [
+        {
+          "native_seed": 4747,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 2288,
+          "trained_frames": 1528,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 22687,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2376,
+          "trained_frames": 2432,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35537,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2392,
+          "trained_frames": 2152,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 35846,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2164,
+          "trained_frames": 292,
+          "initial_end": "native-spell-capture",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        }
+      ],
+      "improved_pairs": 1,
+      "regressed_pairs": 1,
+      "exact_paired_success_p": 1.0,
+      "all_entry_observations_identical": true,
+      "improvement_supported": false
+    },
+    {
+      "group": "s4-heldout20",
+      "status": "complete",
+      "task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "entry_mode": "native_spell_practice",
+      "split": "test",
+      "action_selection": "joint_mode",
+      "initial": {
+        "attempts": 20,
+        "successes": 11,
+        "success_rate": 0.55,
+        "wilson95": [
+          0.34208534245034233,
+          0.7418021417443759
+        ],
+        "captures": 10,
+        "survived_timeouts": 1,
+        "successful_mean_native_frames": 2336.7272727272725,
+        "Bombs": 0
+      },
+      "trained": {
+        "attempts": 20,
+        "successes": 14,
+        "success_rate": 0.7,
+        "wilson95": [
+          0.4810271816464765,
+          0.8545227551323956
+        ],
+        "captures": 13,
+        "survived_timeouts": 1,
+        "successful_mean_native_frames": 2240.0,
+        "Bombs": 0
+      },
+      "pairs": [
+        {
+          "native_seed": 50008,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2584,
+          "trained_frames": 1720,
+          "initial_end": "native-spell-survived-timeout",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50009,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 2104,
+          "trained_frames": 2204,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50018,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1776,
+          "trained_frames": 2320,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50019,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2456,
+          "trained_frames": 2228,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50028,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2208,
+          "trained_frames": 2396,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50029,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2168,
+          "trained_frames": 2548,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50038,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2308,
+          "trained_frames": 1732,
+          "initial_end": "native-spell-capture",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50039,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1376,
+          "trained_frames": 2584,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-survived-timeout",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50048,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2388,
+          "trained_frames": 1764,
+          "initial_end": "native-spell-capture",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50049,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 892,
+          "trained_frames": 2236,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50058,
+          "initial_success": false,
+          "trained_success": false,
+          "initial_frames": 568,
+          "trained_frames": 960,
+          "initial_end": "first-native-contact",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50059,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2136,
+          "trained_frames": 2220,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50068,
+          "initial_success": true,
+          "trained_success": false,
+          "initial_frames": 2392,
+          "trained_frames": 1736,
+          "initial_end": "native-spell-capture",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50069,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1208,
+          "trained_frames": 1996,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50078,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1296,
+          "trained_frames": 2492,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50079,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2116,
+          "trained_frames": 2176,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50088,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2480,
+          "trained_frames": 2084,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50089,
+          "initial_success": false,
+          "trained_success": false,
+          "initial_frames": 584,
+          "trained_frames": 1060,
+          "initial_end": "first-native-contact",
+          "trained_end": "first-native-contact",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50098,
+          "initial_success": true,
+          "trained_success": true,
+          "initial_frames": 2468,
+          "trained_frames": 1856,
+          "initial_end": "native-spell-capture",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        },
+        {
+          "native_seed": 50099,
+          "initial_success": false,
+          "trained_success": true,
+          "initial_frames": 1096,
+          "trained_frames": 2020,
+          "initial_end": "first-native-contact",
+          "trained_end": "native-spell-capture",
+          "identical_entry_observations": true
+        }
+      ],
+      "improved_pairs": 7,
+      "regressed_pairs": 4,
+      "exact_paired_success_p": 0.548828125,
+      "all_entry_observations_identical": true,
+      "improvement_supported": false
+    }
+  ],
+  "scope": "Single-spell NBNM, not full-game NBNM. Native Spell Practice and Story-prefix protocols remain separate. Frozen actors use their own neural policy and no teacher action takeover.",
+  "selection": "Candidate fixed by four-seed development results before twenty-seed test. No updates during evaluations.",
+  "topology": "Original 138639-neuron,15091983-edge LIF connectome retained;8053VP inputs and1299DN readout.",
+  "interface_candidate": "Separate callback/ECL candidate is not applied to either comparison arm.",
+  "conclusion": "Stage4 heldout success rises11/20to14/20, but7wins and4regressions give paired p=.5488. Reliable improvement is not established. Stage3 Card1 recovered; stage3 Card2 has one win and one regression."
+}

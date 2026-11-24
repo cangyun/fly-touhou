@@ -35,6 +35,15 @@ def apply_requested_cpu_affinity(spec):
         applies_before_child_start=True)
 
 
+def windowless_python(executable):
+    path = Path(executable)
+    if os.name == 'nt' and path.name.lower() == 'python.exe':
+        gui = path.with_name('pythonw.exe')
+        if gui.is_file():
+            return str(gui)
+    return str(path)
+
+
 def load_spec(path):
     spec = json.loads(path.read_text(encoding='utf-8-sig'))
     desktop=spec.get('environment',{}).get('FLY_TOUHOU_DESKTOP_NAME')
@@ -48,6 +57,7 @@ def load_spec(path):
         spec[key] = str(Path(spec[key]).resolve())
     if not Path(spec['python']).is_file() or not Path(spec['script']).is_file() or not Path(spec['cwd']).is_dir():
         raise ValueError('Background interpreter/script/workspace does not exist')
+    spec['python'] = windowless_python(spec['python'])
     return spec
 
 
@@ -106,7 +116,7 @@ def main():
     startup.wShowWindow=0
     flags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.CREATE_BREAKAWAY_FROM_JOB
     with (control/'worker_stderr.log').open('xb') as err:
-        process=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--worker','--spec',str(spec_path)],
+        process=subprocess.Popen([windowless_python(sys.executable),str(Path(__file__).resolve()),'--worker','--spec',str(spec_path)],
             cwd=spec['cwd'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=err,
             close_fds=True,startupinfo=startup,creationflags=flags)
     record={'schema':'fly-touhou-background-launch-v1','launched_unix':time.time(),

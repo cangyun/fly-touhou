@@ -1,0 +1,101 @@
+{
+  "created_at": 1793785022.2267685,
+  "training_stopped": true,
+  "model_and_reward_changed_during_analysis": false,
+  "evidence": {
+    "previous_completed_first_games": 16,
+    "previous_reach6": 12,
+    "previous_clears": 1,
+    "current_started_first_games": 16,
+    "current_completed_first_games": 15,
+    "current_native_gameovers": 15,
+    "current_reach5": 1,
+    "current_reach6": 0,
+    "current_clears": 0,
+    "current_operator_interrupted_games": 1,
+    "previous_Bomb": {
+      "total": 278,
+      "confirmed_deathbomb": 225,
+      "ordinary_or_unconfirmed": 53,
+      "ordinary_share": 0.1906474820143885
+    },
+    "current_completed_Bomb": {
+      "total": 167,
+      "confirmed_deathbomb": 25,
+      "ordinary_or_unconfirmed": 142,
+      "ordinary_share": 0.8502994011976048
+    },
+    "stage3_contacts": {
+      "previous": 30,
+      "current": 24
+    },
+    "stage3_misses": {
+      "previous": 7,
+      "current": 17
+    },
+    "current_stage3_stage4_misses": 49,
+    "current_stage3_stage4_zero_Bomb_misses": 49,
+    "current_stage3_stage4_side160_misses": 38,
+    "current_stage3_stage4_bottom400_misses": 29,
+    "current_stage3_stage4_trusted_safe_predictions_followed_by_contact": 0,
+    "new_position_reward_sum_completed15": -1.6020371669224296,
+    "current_Adam_updates": 320,
+    "current_PPO_rows": 81920,
+    "PPO_rows_by_stage": {
+      "1": 18001,
+      "2": 30591,
+      "3": 18013,
+      "4": 14228,
+      "5": 1087,
+      "6": 0
+    },
+    "unrequested_second_game_sampling_rows": 59283,
+    "unrequested_second_game_sampling_share": 0.1809173583984375,
+    "unrequested_second_game_PPO_rows": 10872,
+    "unrequested_second_game_PPO_share": 0.13271484375,
+    "final_batch_second_game_PPO_rows": 7616,
+    "final_batch_second_game_PPO_share": 0.46484375,
+    "target_rewrite": {
+      "rows": 16384,
+      "eligible_rows": 6877,
+      "old_method_eligible_on_same_rows": 1225,
+      "original_teacher_top_changed": 4029,
+      "mean_original_probability_of_preferred_directions": 0.37835097312927246,
+      "mean_retargeted_probability_of_preferred_directions": 0.9410454630851746,
+      "Bomb_reference_max_absolute_change": 0.0
+    },
+    "stochastic_vs_frozen_on_recorded_stage4": {
+      "normal_stocked_rows": 4120,
+      "sampled_Bomb_requests": 21,
+      "sampled_requests_where_frozen_family_would_move": 19,
+      "mean_training_Bomb_probability": 0.004914864897727966,
+      "summed_training_Bomb_probability": 20.249242782592773,
+      "family_mode_Bomb_on_same_rows": 4,
+      "trusted_some_safe_24f_route_requests": 0,
+      "trusted_no_safe_4f_direction_requests": 2,
+      "trusted_some_safe_4f_direction_requests": 5,
+      "trusted_no_safe_12f_direction_requests": 4,
+      "untrusted_4f_request_rows": 14,
+      "request_mean_training_Bomb_probability": 0.18449531495571136,
+      "side160_requests": 7,
+      "bottom400_requests": 6,
+      "first_episode_rows": 4120
+    }
+  },
+  "judgments": [
+    "The current changing-policy training trajectories show substantial progression regression; the previous clear was real, but used evolving parameters across the run and does not identify one frozen checkpoint.",
+    "Early Bomb consumption is the strongest observed difference. Ordinary-or-unconfirmed does not automatically mean every Bomb was unnecessary.",
+    "Lower-field occupancy improved as a descriptive training metric, but bottom-edge and side trapping remain. No causal claim follows solely from occupancy.",
+    "The new movement-target rewrite is a substantial intervention in addition to small positional reward. It deserves separate evaluation; current data does not isolate its causal effect.",
+    "Stored stage4 decisions show stochastic Bomb requests often differ from the frozen family decoder on the same states. This is a credible contributor to train/eval mismatch, not a counterfactual full-game guarantee.",
+    "No catastrophic numerical failure or unexecuted updates explains this run. Sample availability in stages5/6 is limited; extending training alone is not an established remedy.",
+    "The per-world reset bug consumed18.1% of sampling in unwanted second games and13.3% of PPO rows. A future one-round run must retire completed worlds and handle partial tails instead of resetting to fill batches."
+  ],
+  "evaluation_plan": "Let the existing20-game frozen development evaluation finish with the same opening seeds and decoder as cycle96; compare clears, reach, Miss, Bomb and positions. Keep training paused and do not adjust configurations mid-evaluation.",
+  "sources": [
+    "comparison.json",
+    "tape-audit.json",
+    "../boundary-analysis.json"
+  ],
+  "limits": "Different seeds and evolving policies in training; previous16 completed versus current15 completed+1operator stop; stage3/4 event totals include that unfinished first game; alternative geometry is a forecast, not a replayed native outcome."
+}

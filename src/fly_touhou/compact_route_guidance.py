@@ -9,7 +9,20 @@ import numpy as np
 REVISION='compact-native-all-direction4-plus20-route-preference-v1'
 
 
-def turning_routes(encoding, *, margin=1.):
+def turning_routes(encoding, *, margin=1., horizon=24):
+    """Share identical teacher queries on this one immutable observation."""
+    cache = encoding.setdefault('_teacher_turns', {})
+    key = (margin, horizon)
+    if key not in cache:
+        cache[key] = _turning_routes(encoding, margin=margin, horizon=horizon)
+    # Route refinement modifies the arrays in place. Give each caller its
+    # own choices without solving the same candidate paths again.
+    return {name: value.copy() if isinstance(value, np.ndarray) else value
+            for name, value in cache[key].items()}
+
+
+def _turning_routes(encoding, *, margin, horizon):
+    if horizon not in (12,24):raise ValueError('Use a covered12 or24-frame turn horizon')
     from .thrl_movement_teacher import MovementSafetyTeacher
     from .compact_spiking_sensation import point_and_laser_clearances
     from .native_wall_geometry import player_paths
@@ -32,7 +45,7 @@ def turning_routes(encoding, *, margin=1.):
     starts=prefix[first_ids,4];v=velocities[second_ids]
     paths=player_paths(starts,v,prefix=prefix[first_ids],turn_tick=4)
     u=d.get('uncertainty',{})
-    gap=point_and_laser_clearances(f,objects,starts,v,duration=20,initial_time=4,
+    gap=point_and_laser_clearances(f,objects,starts,v,duration=horizon-4,initial_time=4,
         anticipate_arming=bool(u.get('pending_native_arming_forecast')),
         growth_motion_envelope=bool(u.get('growth_motion_modeled')),
         native_forecasts=forecasts,
@@ -44,10 +57,10 @@ def turning_routes(encoding, *, margin=1.):
         if len(good):
             # Spatially distinct endpoints, not action count: keep room to
             # change the following decision, including a large turn/reversal.
-            counts[action]=len(np.unique(np.rint(paths[good,24]/8).astype(int),axis=0))
+            counts[action]=len(np.unique(np.rint(paths[good,horizon]/8).astype(int),axis=0))
             index=good[np.argmax(gap[good])]
             best[action]=float(np.clip(gap[index],-64,64));second[action]=int(second_ids[index])
-    return dict(exits=counts,best_margin=best,best_second=second,candidates=len(gap))
+    return dict(exits=counts,best_margin=best,best_second=second,candidates=len(gap),horizon=horizon)
 
 
 def improve_route_reference(label, encoding, *, support_mix=.1):

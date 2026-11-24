@@ -11,6 +11,7 @@ import torch
 
 SOURCE=Path(__file__).parent/'csrc/fused_edge_gradient.cu'
 _modules={}
+_masked_modules={}
 
 
 def _checked(code,name):
@@ -71,22 +72,47 @@ class _Kernel:
         _checked(self.load(C.byref(self.module),data),'cuModuleLoadData')
         self.handle=C.c_void_p();_checked(self.function(C.byref(self.handle),self.module,entrypoint),'cuModuleGetFunction')
         self.driver=driver
-    def __call__(self,a,g,pre,post,out):
-        B=a.shape[1];E=len(pre)
-        values=[C.c_void_p(t.data_ptr()) for t in (a,g,pre,post,out)]+[C.c_int(B),C.c_longlong(E)]
-        args=(C.c_void_p*len(values))(*(C.cast(C.pointer(v),C.c_void_p) for v in values))
-        stream=C.c_void_p(torch.cuda.current_stream(a.device).cuda_stream)
-        _checked(self.launch(self.handle,(E+7)//8,1,1,256,1,1,0,stream,args,None),'cuLaunchKernel')
+
+    def launch_tensors(self, blocks, tensors, *scalars):
+        values = [C.c_void_p(value.data_ptr()) for value in tensors] + list(scalars)
+        args = (C.c_void_p * len(values))(*(C.cast(C.pointer(value), C.c_void_p) for value in values))
+        stream = C.c_void_p(torch.cuda.current_stream(tensors[0].device).cuda_stream)
+        _checked(self.launch(self.handle, blocks, 1, 1, 256, 1, 1, 0, stream, args, None),
+                 'cuLaunchKernel edge gradient')
 
 
-def edge_gradient(activity,gradient,pre,post):
-    if not activity.is_cuda or activity.dtype!=torch.float32 or gradient.shape!=activity.shape:
+def _cache_directory():
+    return Path(os.environ.get('FLY_TOUHOU_EDGE_GRAD_CACHE',
+        str(SOURCE.parents[3] / 'artifacts/runtime-kernels/fused-edge-gradient')))
+
+
+def edge_gradient(activity, gradient, pre, post, *, prune_zero_tiles=False, gradient_by_neuron=None):
+    if (not activity.is_cuda or activity.dtype != torch.float32 or gradient.dtype != torch.float32
+            or gradient.shape != activity.shape or gradient.device != activity.device):
         raise ValueError('CUDA FP32 activity/gradient[B,N] required')
+    batch, rows = activity.shape
+    edges = len(pre)
     with torch.cuda.device(activity.device):
-        device=activity.device.index
-        if device not in _modules:
-            directory=Path(os.environ.get('FLY_TOUHOU_EDGE_GRAD_CACHE',str(SOURCE.parents[3]/'artifacts/runtime-kernels/fused-edge-gradient')))
-            _modules[device]=_Kernel(compile_ptx(directory))
-        a=activity.T.contiguous();g=gradient.T.contiguous();out=activity.new_empty(len(pre))
-        _modules[device](a,g,pre,post,out)
+        device = activity.device.index
+        a = activity.T.contiguous()
+        g = gradient.T.contiguous() if gradient_by_neuron is None else gradient_by_neuron
+        out = activity.new_empty(edges)
+        if prune_zero_tiles and batch in (32, 128):
+            if device not in _masked_modules:
+                ptx = compile_ptx(_cache_directory())
+                _masked_modules[device] = (
+                    _Kernel(ptx, b'edge_tile_flags'), _Kernel(ptx, b'masked_edge_gradient'))
+            flags, gradient_kernel = _masked_modules[device]
+            activity_flags = torch.empty(rows, dtype=torch.int32, device=activity.device)
+            gradient_flags = torch.empty_like(activity_flags)
+            flags.launch_tensors((rows + 7) // 8, (a, g, activity_flags, gradient_flags),
+                                 C.c_int(batch), C.c_int(rows))
+            edges_per_block = 8 * 16
+            gradient_kernel.launch_tensors((edges + edges_per_block - 1) // edges_per_block,
+                (a, g, pre, post, activity_flags, gradient_flags, out), C.c_int(batch), C.c_longlong(edges))
+        else:
+            if device not in _modules:
+                _modules[device] = _Kernel(compile_ptx(_cache_directory()))
+            _modules[device].launch_tensors((edges + 7) // 8, (a, g, pre, post, out),
+                                            C.c_int(batch), C.c_longlong(edges))
         return out

@@ -5,7 +5,7 @@ import struct
 SCHEMA='th14-native-line-laser-motion-v1'
 
 
-def read_native_line_lasers(memory,snapshot,*,offsets,player_address=None):
+def read_native_line_lasers(memory,snapshot,*,offsets,player_address=None,live_program=False):
     """Read the state consumed by 43be20, rather than infer it from scalar speed.
 
     At 43bf78 a line grows to max_length with a stationary origin. Only on a
@@ -27,6 +27,9 @@ def read_native_line_lasers(memory,snapshot,*,offsets,player_address=None):
             travel_limit=struct.unpack_from('<f',tail,0x5d8-0x594)[0],
             native_state=laser.native_state,native_iframes=laser.native_iframes,age=laser.age,
             ex_index=ex_index,ex_active_flags=ex_flags,next_ex_type=next_ex))
+        if live_program:
+            from .native_line_ex import read_line_program
+            lines[-1].update(read_line_program(memory,laser.id))
     speed=memory.floating(memory.base+offsets['statics']['game_speed']) if lines else 1.
     result=dict(schema=SCHEMA,frame=snapshot.frame,game_speed=speed,lines=lines)
     if player_address is not None:

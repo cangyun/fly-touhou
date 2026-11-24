@@ -80,12 +80,25 @@ class VersionedHazardReader(ResourceNativeReader):
                 if self.o.get(group, {}).get(key) != expected:
                     raise NativeError(f'Unsupported raw hazard layout: {group}.{key}')
 
-    def _bullet_metadata(self, bullet):
+    def _bullet_metadata(self, bullet, frame_fields=None):
         address, memory = bullet.id, self.mem
         flags, counter = struct.unpack('<II', memory.read(address + 0x20, 8))
-        geometry = struct.unpack('<9f', memory.read(address + 0xbc0, 36))
         state = struct.unpack('<H', memory.read(address + 0xc0e, 2))[0]
-        clock = memory.read(address + 0x13bc, 12)
+        from .native_bullet_program import BASE,SIZE,REVISION,read_program_metadata,read_snapshot_field
+        hooks=self.profile.hooks or {}
+        live_program=state in (1,2) and hooks.get('native_ex_program')==REVISION
+        data=memory.read(address+BASE,SIZE) if live_program else None
+
+        def bullet_read(offset, size):
+            if data is not None and BASE<=offset and offset+size<=BASE+SIZE:
+                first=offset-BASE
+                return data[first:first+size]
+            return memory.read(address+offset,size)
+
+        if data is not None:
+            _same(struct.unpack('<H',bullet_read(0xc0e,2))[0],state,'bullet state within EX span')
+        geometry = struct.unpack('<9f',bullet_read(0xbc0,36))
+        clock = bullet_read(0x13bc,12)
         scale = struct.unpack_from('<f', clock)[0]
         timer = struct.unpack_from('<i', clock, 8)[0]
         animation_gate = struct.unpack('<i', memory.read(address + 0x4d4, 4))[0]
@@ -109,11 +122,11 @@ class VersionedHazardReader(ResourceNativeReader):
             # The current EX record may change speed/angle on that release.
             # Preserve its bytes without assigning unverified command meaning
             # or converting arbitrary integer/sentinel slots to floats.
-            active_flags = struct.unpack('<I', memory.read(address + 0xc04, 4))[0]
+            active_flags = struct.unpack('<I',bullet_read(0xc04,4))[0]
             result['native_ex_active_flags'] = active_flags
         if state == 2 or (state == 1 and active_flags):
-            index = struct.unpack('<i', memory.read(address + 0xc20, 4))[0]
-            record = memory.read(address + 0xc28 + index * 0x2c, 0x2c) if 0 <= index < 18 else None
+            index = struct.unpack('<i',bullet_read(0xc20,4))[0]
+            record = bullet_read(0xc28+index*0x2c,0x2c) if 0<=index<18 else None
             result.update(native_ex_index=index,
                           native_ex_current_record_hex=record.hex() if record is not None else None)
             if active_flags & 0x400000:
@@ -124,16 +137,16 @@ class VersionedHazardReader(ResourceNativeReader):
                 from .native_bullet_wrap import read_wrap_metadata
                 result.update(read_wrap_metadata(memory,address))
             if active_flags & 1:
-                tick, elapsed = struct.unpack('<if', memory.read(address + 0xf44, 8))
+                tick, elapsed = struct.unpack('<if',bullet_read(0xf44,8))
                 _finite((elapsed,), 'bullet EX speed-boost timer')
                 result.update(native_ex_speed_boost_tick=tick, native_ex_speed_boost_time=elapsed)
             if active_flags & (4|0x200000):
                 source=0x200000 if active_flags&0x200000 else 4
                 timer_offset,vector_offset,scalar_offset=((0x1214,0x1238,0x1224) if source==0x200000
                     else (0xf8c,0xfb0,0xf9c))
-                tick, elapsed = struct.unpack('<if', memory.read(address + timer_offset, 8))
-                ax, ay, _, duration = struct.unpack('<3fi', memory.read(address + vector_offset, 16))
-                speed_delta = struct.unpack('<f', memory.read(address + scalar_offset, 4))[0]
+                tick, elapsed = struct.unpack('<if',bullet_read(timer_offset,8))
+                ax, ay, _, duration = struct.unpack('<3fi',bullet_read(vector_offset,16))
+                speed_delta = struct.unpack('<f',bullet_read(scalar_offset,4))[0]
                 _finite((elapsed,ax,ay,speed_delta), 'bullet EX linear acceleration')
                 result.update(native_ex_acceleration_tick=tick,native_ex_acceleration_time=elapsed,
                     native_ex_acceleration=[ax,ay],native_ex_acceleration_duration=duration,
@@ -141,12 +154,12 @@ class VersionedHazardReader(ResourceNativeReader):
             if active_flags & 8:
                 # 419970 updates polar speed/angle from this separate timer.
                 # Record the native fields; prediction is not yet certified.
-                tick, elapsed, rate_pointer = struct.unpack('<ifI', memory.read(address + 0xfd4, 12))
-                rate=(struct.unpack('<f',memory.read(rate_pointer,4))[0] if rate_pointer else 1.)
+                tick, elapsed, rate_pointer = struct.unpack('<ifI',bullet_read(0xfd4,12))
+                rate=(struct.unpack('<f',read_snapshot_field(memory,rate_pointer,4,frame_fields))[0] if rate_pointer else 1.)
                 motion_rate=(rate if rate_pointer==memory.base+0xd8f58 else
-                    struct.unpack('<f',memory.read(memory.base+0xd8f58,4))[0])
-                speed_delta, angle_delta = struct.unpack('<ff', memory.read(address + 0xfe4, 8))
-                duration = struct.unpack('<i', memory.read(address + 0x1004, 4))[0]
+                    struct.unpack('<f',read_snapshot_field(memory,memory.base+0xd8f58,4,frame_fields))[0])
+                speed_delta, angle_delta = struct.unpack('<ff',bullet_read(0xfe4,8))
+                duration = struct.unpack('<i',bullet_read(0x1004,4))[0]
                 _finite((elapsed,speed_delta,angle_delta,rate,motion_rate), 'bullet EX polar motion')
                 result.update(native_ex8_tick=tick,native_ex8_time=elapsed,
                     native_ex8_speed_delta=speed_delta,native_ex8_angle_delta=angle_delta,
@@ -160,8 +173,8 @@ class VersionedHazardReader(ResourceNativeReader):
                 from .native_bullet_turn import read_turn_metadata
                 result.update(read_turn_metadata(memory,address))
             if active_flags & 0x80000000:
-                remaining,clock,rate_pointer = struct.unpack('<ifI',memory.read(address+0x10ac,12))
-                rate=(struct.unpack('<f',memory.read(rate_pointer,4))[0] if rate_pointer else 1.)
+                remaining,clock,rate_pointer = struct.unpack('<ifI',bullet_read(0x10ac,12))
+                rate=(struct.unpack('<f',read_snapshot_field(memory,rate_pointer,4,frame_fields))[0] if rate_pointer else 1.)
                 _finite((clock,rate), 'bullet EX wait countdown')
                 result.update(native_ex_wait_remaining=remaining,native_ex_wait_time=clock,native_ex_wait_rate=rate)
                 if active_flags==0x80000000 and state==1 and 0<=remaining<=24:
@@ -172,8 +185,8 @@ class VersionedHazardReader(ResourceNativeReader):
                 # 4169ed..416a74 controls a different EX timer: position is
                 # held while it counts down. Preserve the timer and its speed
                 # source, without treating the following EX command as known.
-                remaining,clock,rate_pointer=struct.unpack('<ifI',memory.read(address+0x12ec,12))
-                rate=(struct.unpack('<f',memory.read(rate_pointer,4))[0] if rate_pointer else 1.)
+                remaining,clock,rate_pointer=struct.unpack('<ifI',bullet_read(0x12ec,12))
+                rate=(struct.unpack('<f',read_snapshot_field(memory,rate_pointer,4,frame_fields))[0] if rate_pointer else 1.)
                 _finite((clock,rate), 'bullet EX position-hold countdown')
                 result.update(native_ex_hold_remaining=remaining,native_ex_hold_time=clock,
                               native_ex_hold_rate=rate,native_ex_hold_forecast_enabled=True)
@@ -182,6 +195,11 @@ class VersionedHazardReader(ResourceNativeReader):
                     and state==1 and flags&0x10 and vx==vy==speed==0.):
                 from .native_bullet_pending import read_pending_metadata
                 result.update(read_pending_metadata(memory,address,index))
+        if live_program:
+            legacy_keys=list(result)
+            result.update(read_program_metadata(memory,address,data=data,shared=frame_fields))
+            result['native_ex_program_legacy_keys']=legacy_keys
+            result['native_ex_program_horizon']=int((self.profile.hooks or {}).get('native_ex_program_horizon',24))
         return result
 
     def _laser_metadata(self, laser):
@@ -238,7 +256,8 @@ class VersionedHazardReader(ResourceNativeReader):
                 if observed:
                     _entity_ids(snapshot.bullets, 8192, 'bullet')
                     _entity_ids(snapshot.lasers, 2048, 'laser')
-                    bullets = [self._bullet_metadata(bullet) for bullet in snapshot.bullets]
+                    frame_fields={}
+                    bullets = [self._bullet_metadata(bullet,frame_fields) for bullet in snapshot.bullets]
                     lasers = [self._laser_metadata(laser) for laser in snapshot.lasers]
                 else:
                     bullets, lasers = [], []
@@ -251,6 +270,10 @@ class VersionedHazardReader(ResourceNativeReader):
                     'consistency': 'global-frame-guard-and-shared-field-checks',
                     'bullets': bullets, 'lasers': lasers,
                 }
+                hooks=self.profile.hooks or {}
+                if hooks.get('native_ex_program')=='th14-live-ex-program-v1':
+                    metadata['native_rule_geometry']=dict(revision=hooks['native_ex_program'],
+                        horizon=int(hooks.get('native_ex_program_horizon',24)))
                 if not observed:
                     metadata['unobserved_reason'] = 'no-initialized-player'
                 return replace(snapshot, extra={**snapshot.extra, 'hazard_metadata': metadata,
@@ -326,7 +349,9 @@ class GeometryHazardReader(VersionedHazardReader):
             extra['native_focus_gate']=read_native_focus_gate(memory)
         if (self.profile.hooks or {}).get('native_curve_laser_geometry')=='th14-native-curve-v1':
             from .native_curve_laser_reader import read_native_curve_lasers
-            extra['native_curve_lasers']=read_native_curve_lasers(memory,snapshot,player_address=address,offsets=self.o)
+            extra['native_curve_lasers']=read_native_curve_lasers(memory,snapshot,player_address=address,offsets=self.o,
+                live_program=(self.profile.hooks or {}).get('native_ex_program')=='th14-live-ex-program-v1')
             from .native_line_laser_reader import read_native_line_lasers
-            extra['native_line_lasers']=read_native_line_lasers(memory,snapshot,offsets=self.o,player_address=address)
+            extra['native_line_lasers']=read_native_line_lasers(memory,snapshot,offsets=self.o,player_address=address,
+                live_program=(self.profile.hooks or {}).get('native_ex_program')=='th14-live-ex-program-v1')
         return extra

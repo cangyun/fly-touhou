@@ -1,0 +1,2 @@
+# Optional TH14 .rpy decoder. The original-game capture uses existing runtime dependencies.
+tsadecode==0.6

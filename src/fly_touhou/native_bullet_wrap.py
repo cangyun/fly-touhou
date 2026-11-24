@@ -34,8 +34,9 @@ def predict_wrap_prefix(raw,horizon,answer):
     # An active0x1000 blocks a condition0 EX command until the wrap limit.
     # Before the first possible wrap, no command is consumed and the native
     # stored velocity stays constant. Reuse the exact half/full growth envelope.
-    base=predict_bullet_release(dict(raw,native_ex_active_flags=0,native_ex_index=18,
-        native_ex_current_record_hex=None),horizon)
+    reduced=dict(raw,native_ex_active_flags=0,native_ex_index=18,native_ex_current_record_hex=None)
+    reduced.pop('native_ex_program_revision',None)
+    base=predict_bullet_release(reduced,horizon)
     bounds=np.asarray(base['bounds'],float)
     inside=((bounds>np.array([-192.,0.]))&(bounds<np.array([192.,448.]))).all(axis=(1,2))
     known=np.asarray(base['known_by_frame'],bool)&np.logical_and.accumulate(inside)

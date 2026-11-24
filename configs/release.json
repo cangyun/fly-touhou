@@ -3,7 +3,7 @@
   "tag": "v0.1.0-clear",
   "branch": "main",
   "checkpoint": "cycle087-parameters.pt",
-  "checkpoint_path": "models/cycle087-parameters.pt",
+  "checkpoint_path": "weights/published/th14-clear-cycle087.pt",
   "native_asset": "native-windows-x86.zip",
   "environment": "configs/environment.json",
   "evaluation_seed": 2027432926,
@@ -13,7 +13,8 @@
     3574003864
   ],
   "original_cycle": 87,
-  "source": "archived cycle087-v6-first-clear-20261102/source-snapshot.zip",
-  "result": "one verified fixed-seed six-stage Lunatic clear",
-  "training_started_by_release_setup": false
+  "source": "Cycle087 finite-life clear baseline",
+  "result": "Original Lunatic 1CC at the published opening seed",
+  "training_started_by_release_setup": false,
+  "nbnm_training_entrypoint": "scripts/prepare_nbnm_experiment.py"
 }

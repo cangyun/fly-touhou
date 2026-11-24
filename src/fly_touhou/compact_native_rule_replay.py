@@ -252,6 +252,10 @@ class NativeRuleTeacherReplay:
         exposed=native_exposure_mask(d['features'],d['unprotected_mask'])
         teacher_weights,contact_rows=mask_rule_guidance_on_contact(d['teacher_guidance_weight'],
             d['actions'],d['outcome'],exposed,d['native_action_frames'])
+        if getattr(model,'lower_field_default',False):
+            from .compact_lower_field import movement_reference
+            d['targets'],_=movement_reference(d['features'],d['margins'],d['trusted'],
+                d['unprotected_mask'],d['targets'],teacher_weights)
         movement, eligible = movement_distribution_loss(result['logits'], d['targets'],
             teacher_weights, d['actions'], controllable)
         # A teacher may abstain from certifying a distribution yet still have
@@ -284,7 +288,16 @@ class NativeRuleTeacherReplay:
             chosen=result['logits'][...,:18].argmax(-1)
             chosen_danger=danger.gather(-1,chosen[...,None])[...,0]&mixed
         stage_counts={stage:sum(row['stage']==stage for row in rows) for stage in sorted({row['stage'] for row in rows})}
-        return .1*(movement+behavior+family) + risk_loss_scale*risk, dict(
+        position_coefficient=getattr(model,'combat_position_guidance_coefficient',0.)
+        position=movement.new_zeros(());position_rows=0
+        if position_coefficient:
+            from .compact_combat_position import combat_position_loss
+            if getattr(model,'lower_field_default',False):
+                from .compact_lower_field import combat_position_loss
+            position,position_rows=combat_position_loss(result['logits'],d['features'],d['margins'],
+                d['trusted'],d['unprotected_mask'],d['targets'],teacher_weights)
+        return .1*(movement+behavior+family) + risk_loss_scale*risk + position_coefficient*position, dict(
+            native_rule_position_loss=float(position.detach()),native_rule_position_rows=int(position_rows),
             native_rule_stage=rows[0]['stage'] if len(stage_counts)==1 else 0,
             native_rule_windows=len(rows),native_rule_stage_windows=stage_counts,
             native_rule_movement_rows=int(eligible.sum()), native_rule_native_clears=int(counts[0]),

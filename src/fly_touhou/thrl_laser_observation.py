@@ -76,11 +76,11 @@ def segment_candidates(snapshot,measurement,*,exclude_curve_ids=()):
     return rows
 
 
-def object_candidates(snapshot,prepared,motion):
+def object_candidates(snapshot,prepared,motion,*,clip=True):
     candidates=[]
     for rank,tie,token,group,identity in prepared['candidates']:
         if group=='laser':continue
-        token=[*np.clip(token,-1,1),*([0.]*8)]
+        token=[*(np.clip(token,-1,1) if clip else token),*([0.]*8)]
         candidates.append((rank,(*tie,*([0.]*8)),token,group,identity))
     candidates.extend(segment_candidates(snapshot,motion))
     return candidates
@@ -126,7 +126,7 @@ class THRLLaserObservationEncoder:
         return spec
 
     def encode(self,snapshot):
-        prepared=shared_object_candidates(snapshot,hp_independent_contacts=True)
+        prepared=shared_object_candidates(snapshot,hp_independent_contacts=True,legacy_laser_samples=False)
         raw=snapshot.extra['hazard_metadata'].get('lasers')
         if not isinstance(raw,list) or len(raw)!=len(snapshot.lasers) or any(not isinstance(row,dict) or 'id' not in row for row in raw):
             raise ValueError('Same-frame full native laser metadata required')
@@ -152,9 +152,14 @@ class THRLLaserObservationEncoder:
             base[16],*base[32:36],g['circle_component']/64,*g['bounds_half_extents']/64,
             *g['bounds_offset']/64,float(p.focused),values[1],values[0],*values[2:]],np.float32)
         features=np.clip(features,-1,1)
-        candidates=object_candidates(snapshot,prepared,motion)
+        candidates=object_candidates(snapshot,prepared,motion,clip=False)
         objects=np.zeros(self.object_shape,np.float32)
-        for i,row in enumerate(select_nonitem_fill_candidates(candidates)):objects[i]=row[2]
+        selected=select_nonitem_fill_candidates(candidates)
+        if selected:
+            rows=np.asarray([row[2] for row in selected])
+            points=np.asarray([row[3]!='laser' for row in selected])
+            rows[points]=np.clip(rows[points],-1,1)
+            objects[:len(selected)]=rows
         result=dict(features=features,objects=objects,maps=observation['maps'])
         if any(not np.isfinite(v).all() or np.abs(v).max()>1 for v in result.values()):
             raise ValueError('V5 finite/range contract failed')

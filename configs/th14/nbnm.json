@@ -1,0 +1,99 @@
+{
+  "schema": "shared-whole-connectome-NBNM-experiment-v1",
+  "seed": 2026111019,
+  "movement_sampling_temperature": 1.0,
+  "cuda_graph_inference": true,
+  "packed_binary_messages": true,
+  "frozen_cuda_batch": 1,
+  "initial_checkpoint": "weights/published/th14-nbnm-cycle073.pt",
+  "connectome": "data/connectome",
+  "environment_config": "configs/th14/nbnm-environment.json",
+  "nbnm": {
+    "task": {
+      "mode": "full_story"
+    },
+    "risk_mode": "route",
+    "objective": {
+      "phase": "completion",
+      "speed_weight": 0.01,
+      "time_scale_frames": 3600,
+      "progress_revision": "native-events-v1",
+      "progress_weight": 0.2
+    },
+    "teacher_mode": "nbnm-route-v1",
+    "rule_guidance_coefficient": 0.3,
+    "task_context": "critic-only-v1",
+    "history_cuda_graph": true,
+    "route_preference_revision": "supported-route-space-v2",
+    "future_guidance_coefficient": 0.25,
+    "future_reference": "teacher-route-v1",
+    "live_route_planner": {
+      "enabled": true,
+      "revision": "nbnm-linked-prefix-and-corridor-v2",
+      "beam": 8,
+      "interval": 4,
+      "stages": [
+        1
+      ],
+      "supervise_student": true,
+      "road_stage_windows": {
+        "4": [
+          0,
+          5074
+        ]
+      }
+    },
+    "movement_risk_horizon_weights": [
+      8.0,
+      4.0,
+      2.0
+    ],
+    "risk_target_revision": "student-native-continuation-risk-v2",
+    "native_rule_geometry": {
+      "revision": "th14-live-ex-program-v1",
+      "horizon": 24
+    },
+    "event_confirmation_revision": "th14-native-attack-interrupt-v1",
+    "teacher_outcome_revision": "native-outcome-qualified-teacher-v2",
+    "corridor_risk": {
+      "revision": "student-reachable-corridors-v1",
+      "beam": 1,
+      "loss_weight": 0.3,
+      "actor_weight": 4.0,
+      "witness_weight": 8.0,
+      "refinement_phases": "boss_spells",
+      "corner_reserve_stages": [
+        6
+      ],
+      "reactive_retry_stages": [
+        6
+      ],
+      "refinement_first_boss_spell": 2
+    }
+  },
+  "tasks": {
+    "full_story": {
+      "mode": "full_story"
+    }
+  },
+  "workers": 8,
+  "world_groups": [
+    "full_story",
+    "full_story",
+    "full_story",
+    "full_story",
+    "full_story",
+    "full_story",
+    "full_story",
+    "full_story"
+  ],
+  "group_weights": {
+    "full_story": 1.0
+  },
+  "segment_decisions": 8192,
+  "decision_budget": 32768,
+  "evaluate_at_end": false,
+  "evaluation_workers": 1,
+  "full_story_evaluation_seeds": 60036,
+  "output": "outputs/workbench"
+}

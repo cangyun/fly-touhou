@@ -7,12 +7,15 @@ The old resource teacher remains separately versioned.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import math
 import numpy as np
 
 from .thrl_inputs import SEPARATED_OBJECT_PRIORITY_INPUT,PRIORITY_INPUT_SCHEMAS
 
 SCHEMA = 'th14-observable-multiroute-movement-teacher-v3'
+_GRID_X = (np.arange(96) + .5) * 4 - 192
+_GRID_Y = (np.arange(92) + .5) * 448 / 92
 
 
 @dataclass(frozen=True)
@@ -66,6 +69,11 @@ def specification(input_schema=SEPARATED_OBJECT_PRIORITY_INPUT):
 
 
 def action_velocities():
+    return _action_velocities().copy()
+
+
+@lru_cache(maxsize=1)
+def _action_velocities():
     # One authoritative mapping; importing this function never starts a game.
     from .thrl_native_env import SOURCE19_TO_NATIVE36
     from .state import decode_action
@@ -83,7 +91,31 @@ def normal_unprotected(features):
 
 
 def swept_clearances(starts, velocities, positions, motions, circle, radii, extents,
-                     player_offsets, *, initial_time=0., duration=4., per_object=False):
+                     player_offsets, *, initial_time=0., duration=4., per_object=False,
+                     bounds=None):
+    """Minimum signed clearance for each legal route, or each route/object pair."""
+    if bounds is None and not per_object and len(starts)*len(positions) >= 64:
+        try:
+            from .swept_clearance_kernel import minimum_clearances
+        except ImportError:
+            minimum_clearances=None
+        if minimum_clearances is not None:
+            arrays=tuple(np.asarray(a,np.float64) for a in
+                (starts,velocities,positions,motions,radii,extents,player_offsets))
+            n,k=len(positions),len(starts)
+            shapes=((k,2),(k,2),(n,2),(n,2),(n,),(n,2),(2,))
+            if (np.shape(circle)==(n,) and all(a.shape==s for a,s in zip(arrays,shapes))
+                    and duration>=0 and np.isfinite(initial_time) and np.isfinite(duration)
+                    and all(np.isfinite(a).all() for a in arrays)):
+                return minimum_clearances(*arrays[:4],np.asarray(circle,bool),*arrays[4:],
+                    float(initial_time),float(duration))
+    return _numpy_swept_clearances(starts,velocities,positions,motions,circle,radii,extents,
+        player_offsets,initial_time=initial_time,duration=duration,per_object=per_object,bounds=bounds)
+
+
+def _numpy_swept_clearances(starts, velocities, positions, motions, circle, radii, extents,
+                            player_offsets, *, initial_time=0., duration=4., per_object=False,
+                            bounds=None):
     """Continuous moving circles/AABBs, including separate x/y wall contacts.
 
     Starts[K,2], hazards[O,2], returns minimum signed clearance per route[K].
@@ -93,7 +125,7 @@ def swept_clearances(starts, velocities, positions, motions, circle, radii, exte
     starts,velocities=np.asarray(starts,float),np.asarray(velocities,float)
     shape=(len(starts),len(positions)) if per_object else (len(starts),)
     if len(positions)==0:return np.full(shape,np.inf)
-    lo,hi=np.array([-184.,32.]),np.array([184.,432.])
+    lo,hi=(np.asarray(value,float) for value in (bounds if bounds is not None else ((-184.,32.),(184.,432.))))
     wall=np.where(velocities>0,hi,lo)
     times=np.divide(wall-starts,velocities,out=np.full_like(starts,np.inf),where=np.abs(velocities)>1e-12)
     times=np.sort(np.clip(times,0,duration),axis=1)
@@ -153,7 +185,8 @@ class MovementSafetyTeacher:
                 duration=duration,initial_time=initial_time))
         return result
 
-    def _scene(self,features,objects):
+    @staticmethod
+    def _scene(features,objects):
         f=np.asarray(features,float);o=np.asarray(objects,float)
         origin=np.array([f[0]*368-184,f[1]*400+32])
         present=o[:,0]>.5
@@ -193,7 +226,6 @@ class MovementSafetyTeacher:
             # All source entities fit when a padding slot remains. At capacity,
             # check both hazard maps for footprints missing from selected tokens.
             px,py=f[0]*368-184,f[1]*400+32
-            yy,xx=np.mgrid[:92,:96];x=(xx+.5)*4-192;y=(yy+.5)*448/92
             for kind,channel in ((1,0),(2,5)):
                 represented=np.zeros((92,96),bool)
                 for token in o[present&(o[:,kind]>.5)&(o[:,13]>.5)]:
@@ -201,10 +233,14 @@ class MovementSafetyTeacher:
                     hx,hy=token[10]*128,token[11]*128
                     if token[12]>.5:hy=hx
                     # Generous cell rectangles tolerate FP32 splat boundaries.
-                    represented|=(np.abs(x-cx)<=hx+4)&(np.abs(y-cy)<=hy+448/92)
+                    cols=np.flatnonzero(np.abs(_GRID_X-cx)<=hx+4)
+                    rows=np.flatnonzero(np.abs(_GRID_Y-cy)<=hy+448/92)
+                    if len(cols) and len(rows):
+                        represented[rows[0]:rows[-1]+1,cols[0]:cols[-1]+1]=True
                 unknown=(maps[channel]>0)&~represented
                 if not np.any(unknown):continue
-                dx,dy=(x-px)[unknown],(y-py)[unknown]
+                row,col=np.nonzero(unknown)
+                dx,dy=_GRID_X[col]-px,_GRID_Y[row]-py
                 # Full-field maps encode v/64; object tokens separately use
                 # v/12. Mixing the scales misses fast unrepresented hazards.
                 vx,vy=maps[channel+1][unknown]*64,maps[channel+2][unknown]*64
@@ -215,15 +251,16 @@ class MovementSafetyTeacher:
             if o.shape[-1]==29 and np.any(maps[10]>0):
                 from .thrl_laser_risk_labels import scene as laser_scene
                 aa,bb,va,vb,width,rate,known=laser_scene(f,o)
-                represented=np.zeros((92,96),bool)
+                row,col=np.nonzero(maps[10]>0)
+                x,y=_GRID_X[col],_GRID_Y[row]
+                represented=np.zeros(len(row),bool)
                 for a,b,w in zip(aa,bb,width):
                     d=b-a;fraction=np.clip(((x-a[0])*d[0]+(y-a[1])*d[1])/max(float(d@d),1e-12),0,1)
                     distance=np.hypot(x-a[0]-fraction*d[0],y-a[1]-fraction*d[1])
                     represented|=distance<=w+2*math.hypot(4,448/92)
-                hidden=(maps[10]>0)&~represented
                 # The raster has no motion-known bit for omitted segments.
                 # At token capacity, nearby omitted laser geometry is unknown.
-                if np.any(hidden):
+                if not represented.all():
                     return 'unrepresented_laser_map_motion_unknown'
         return None
 

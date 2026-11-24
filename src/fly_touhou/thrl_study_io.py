@@ -15,11 +15,11 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def read_shared_json(path):
+def read_shared_text(path):
     """Never deny a concurrent status writer its replace/delete sharing rights."""
     path = Path(path)
     if os.name != 'nt':
-        return json.loads(path.read_text('utf-8'))
+        return path.read_text('utf-8-sig')
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.CreateFileW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
                                   ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE)
@@ -44,7 +44,11 @@ def read_shared_json(path):
             chunks.append(buffer.raw[:count.value])
     finally:
         kernel.CloseHandle(handle)
-    return json.loads(b''.join(chunks).decode('utf-8-sig'))
+    return b''.join(chunks).decode('utf-8-sig')
+
+
+def read_shared_json(path):
+    return json.loads(read_shared_text(path))
 
 
 def status_snapshot(output):

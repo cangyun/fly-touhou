@@ -19,10 +19,24 @@ FEATURE_NAMES=(*GLOBAL_NAMES,
 assert len(FEATURE_NAMES)==111
 
 
-def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_time=0.,anticipate_arming=False,growth_motion_envelope=False,native_forecasts=None,unknown_laser_player_motion=False,max_laser_margin=None,player_path=None):
+def pack_movement_observation(f, margins, known, escape, wall):
+    """Pack native-derived movement measurements in the shared 111-column order."""
+    globals = f[list(GLOBAL_INDICES)].copy()
+    globals[3:5] = np.clip(globals[3:5], -1., 1.)
+    if f[21] < .5 and f[24] < .5:
+        globals[:2] = np.clip(globals[:2], 0., 1.)
+    globals[6:11] = globals[6:11] / (1 + np.abs(globals[6:11]))
+    x = np.concatenate((globals, np.tanh((1. - margins.reshape(-1)) / 8.),
+                        np.asarray(known, np.float32), escape, np.clip(wall / 64, 0, 1))).astype(np.float32)
+    if x.shape != (111,) or not np.isfinite(x).all() or np.abs(x).max() > 1:
+        bad = np.flatnonzero(~np.isfinite(x) | (np.abs(x) > 1))
+        raise ValueError('Compact111 finite bounded contract: ' + str([(FEATURE_NAMES[i], float(x[i])) for i in bad]))
+    return x
+
+
+def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_time=0.,anticipate_arming=False,growth_motion_envelope=False,native_forecasts=None,unknown_laser_player_motion=False,max_laser_margin=None,player_path=None,linear_hint=False):
     from .thrl_movement_teacher import MovementSafetyTeacher,swept_clearances
     from .thrl_laser_risk_labels import route_clearances
-    teacher=MovementSafetyTeacher()
     rigid=objects
     native_rows = {row['object_index'] for kind in ('enemies','bullets','reactive_bullets') for row in (native_forecasts or {}).get(kind, ())}
     if native_rows:
@@ -30,7 +44,7 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
     if growth_motion_envelope:
         growth=(rigid[:,0]>.5)&(rigid[:,1]>.5)&(rigid[:,20]>.5)
         rigid=rigid[~growth]
-    _,*scene=teacher._scene(f,rigid)
+    _,*scene=MovementSafetyTeacher._scene(f,rigid)
     answer=swept_clearances(starts,velocities,*scene,duration=duration,initial_time=initial_time)
     if growth_motion_envelope:
         from .compact_growth_forecast import growth_clearances
@@ -50,7 +64,7 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
             begins=max(float(delay),initial_time);ends=initial_time+duration
             if begins>ends:continue
             o=objects[pending&(delays==delay)].copy();o[:,13]=1
-            _,positions,motions,circle,radii,extents,offset=teacher._scene(f,o)
+            _,positions,motions,circle,radii,extents,offset=MovementSafetyTeacher._scene(f,o)
             late_starts=np.clip(starts+velocities*(begins-initial_time),[-184,32],[184,432])
             if ends-begins>1e-10:
                 value=swept_clearances(late_starts,velocities,positions,motions,circle,radii,extents,offset,
@@ -73,7 +87,7 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
     for first in range(0,len(laser),96):
         block=np.zeros((96,29),np.float32);real=laser[first:first+96];block[:len(real)]=real
         answer=np.minimum(answer,route_clearances(f,block,starts,velocities,duration=duration,initial_time=initial_time,
-            unknown_player_motion=unknown_laser_player_motion,max_relevant_margin=max_laser_margin))
+            unknown_player_motion=unknown_laser_player_motion,max_relevant_margin=max_laser_margin,linear_hint=linear_hint))
     if native_forecasts:
         if line_geometry:
             from .native_line_laser_paths import native_line_path_clearances
@@ -88,8 +102,14 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
                 duration=duration,move_player=unknown_laser_player_motion,max_relevant_margin=max_laser_margin,initial_time=initial_time))
         if native_forecasts.get('bullets'):
             from .native_bullet_release import bullet_release_clearances
-            answer=np.minimum(answer,bullet_release_clearances(f,objects,native_forecasts['bullets'],starts,velocities,
+            independent=[r for r in native_forecasts['bullets'] if not r.get('candidate_dependent')]
+            answer=np.minimum(answer,bullet_release_clearances(f,objects,independent,starts,velocities,
                 duration=duration,initial_time=initial_time,anticipate_arming=anticipate_arming))
+            conditional=[r for r in native_forecasts['bullets'] if r.get('candidate_dependent')]
+            if conditional:
+                from .native_ex_conditional import conditional_clearances
+                answer=np.minimum(answer,conditional_clearances(f,objects,conditional,starts,velocities,
+                    duration=duration,initial_time=initial_time,player_path=player_path))
         if native_forecasts.get('reactive_bullets'):
             from .native_wall_geometry import player_paths,reactive_clearances
             if player_path is None:
@@ -98,13 +118,80 @@ def point_and_laser_clearances(f,objects,starts,velocities,*,duration,initial_ti
                 player_path=player_paths(starts,velocities)
             answer=np.minimum(answer,reactive_clearances(f,objects,native_forecasts,player_path,
                 duration=duration,initial_time=initial_time))
+    if (native_forecasts or {}).get('pending_line_births') and player_path is not None:
+        from .native_pending_lines import line_clearances
+        answer=np.minimum(answer,line_clearances(native_forecasts['pending_line_births'],player_path,
+            int(initial_time),int(initial_time+duration),native_forecasts['pending_line_half_extents']))
+    if (native_forecasts or {}).get('pending_point_birth_bounds') and player_path is not None:
+        from .native_pending_lines import point_birth_clearances
+        extent = max(abs(f[13]) * 64., np.linalg.norm((abs(f[14:16]) + abs(f[16:18])) * 64.))
+        answer = np.minimum(answer, point_birth_clearances(native_forecasts['pending_point_birth_bounds'],
+            player_path, int(initial_time), int(initial_time+duration), extent))
+    volleys=(native_forecasts or {}).get('pending_stationary_volleys')
+    if volleys is not None and player_path is not None:
+        from .native_pending_volleys import volley_clearances
+        answer=np.minimum(answer,volley_clearances(volleys,player_path,int(initial_time),
+            int(initial_time+duration),f[13]*64.))
+    rings=(native_forecasts or {}).get('pending_rotating_rings')
+    if rings is not None and player_path is not None:
+        from .native_pending_rings import ring_clearances
+        answer=np.minimum(answer,ring_clearances(rings,player_path,int(initial_time),int(initial_time+duration)))
+    invalid=np.isnan(answer)|np.isneginf(answer)
+    if invalid.any():
+        if native_forecasts is None:
+            raise ValueError('Non-finite clearance from current measured geometry')
+        # A failed future program is unknown, not an observed hit or a safe
+        # direction. Keep current measured hazards as conditional hints only.
+        fallback=point_and_laser_clearances(f,objects,starts,velocities,
+            duration=duration,initial_time=initial_time,anticipate_arming=anticipate_arming,
+            growth_motion_envelope=growth_motion_envelope,
+            unknown_laser_player_motion=unknown_laser_player_motion,
+            max_laser_margin=max_laser_margin,player_path=player_path,linear_hint=linear_hint)
+        curves=native_forecasts.get('curve_geometry')
+        if curves:
+            # These measured rectangles may have been omitted from objects.
+            from .native_curve_laser_paths import native_curve_path_clearances
+            current=dict(curves,motion_forecast_enabled=False)
+            fallback=np.minimum(fallback,native_curve_path_clearances(current,starts,velocities,
+                duration=duration,initial_time=initial_time,move_player=unknown_laser_player_motion,
+                max_relevant_margin=max_laser_margin))
+        if (np.isnan(fallback)|np.isneginf(fallback)).any():
+            raise ValueError('Non-finite current-geometry fallback')
+        faults=native_forecasts.setdefault('nonfinite_clearance_fallbacks',[])
+        record=dict(initial_time=float(initial_time),duration=float(duration),
+            affected_candidates=int(invalid.sum()),safe_supervision=False,
+            fallback='conditional_current_geometry')
+        if record not in faults:faults.append(record)
+        _capture_nonfinite_forecast(f,objects,native_forecasts,record)
+        answer=np.where(invalid,fallback,answer)
     return answer
+
+
+def _capture_nonfinite_forecast(features,objects,forecasts,record):
+    """Keep the first failed future scene per worker when diagnostics is set."""
+    import os
+    directory=os.environ.get('FLY_NBNM_FORECAST_DIAGNOSTICS')
+    if not directory:return
+    import json
+    from pathlib import Path
+    target=Path(directory)/('nonfinite-forecast-'+str(os.getpid())+'.json')
+    if target.exists():return
+    target.parent.mkdir(parents=True,exist_ok=True)
+    def serializable(value):
+        if isinstance(value,np.ndarray):return value.tolist()
+        if isinstance(value,np.generic):return value.item()
+        return repr(value)
+    with target.open('x',encoding='utf-8') as stream:
+        json.dump(dict(record=record,features=np.asarray(features),objects=np.asarray(objects),
+            forecasts=forecasts),stream,default=serializable,allow_nan=True)
 
 
 def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_envelope=False,native_forecasts=None,unknown_laser_player_motion=False):
     from .thrl_movement_teacher import MovementSafetyTeacher,normal_unprotected
     f=np.asarray(f,np.float32);o=np.asarray(objects,np.float32)
     if f.shape!=(25,) or o.ndim!=2 or o.shape[1]!=29:raise ValueError('Current globals25 and observed entitiesNx29 required')
+    if not np.isfinite(f).all() or not np.isfinite(o).all():
+        raise ValueError('Non-finite current measured geometry; no future fallback can repair it')
     if growth_motion_envelope and (not complete or not anticipate_arming):
         raise ValueError('Growth envelope needs full native flags and the native arming forecast')
     teacher=MovementSafetyTeacher();v=teacher.velocities.copy()
@@ -114,11 +201,20 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
     origin=np.asarray((f[0]*368-184,f[1]*400+32));starts=np.broadcast_to(origin,(18,2)).copy()
     horizons=(4,12,24)
     reactive=(native_forecasts or {}).get('reactive_bullets',())
+    conditional=[r for r in (native_forecasts or {}).get('bullets',()) if r.get('candidate_dependent')]
     paths=None
-    if reactive:
+    pending = (native_forecasts or {})
+    first_birth = min((event['tick'] for key in ('pending_line_births', 'pending_point_birth_bounds')
+                       for event in pending.get(key, ())), default=np.inf)
+    if reactive or conditional or first_birth <= horizons[-1]:
         from .native_wall_geometry import player_paths
-        starts[:]=native_forecasts['reactive_context']['player']
+        if reactive:starts[:]=native_forecasts['reactive_context']['player']
         paths=player_paths(starts,v)
+    conditional_coverage={}
+    if conditional:
+        from .native_ex_conditional import forecast_path
+        conditional_coverage={r['object_index']:np.all([forecast_path(r['program_raw'],p)['known_by_frame'] for p in paths],axis=0)
+                              for r in conditional}
     # Full native coordinates/dimensions below were not clipped to token bounds.
     # For old V5 rows retain the old clipping/coverage uncertainty abstention.
     known=[];growth_counts=[];release_unknown_counts=[];enemy_unknown_counts=[];focus_transition_unknown=[]
@@ -150,7 +246,7 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
             unresolved=unresolved_growth_release_mask(o,anticipate_arming=anticipate_arming)
             for row in (native_forecasts or {}).get('bullets', ()):
                 i=row['object_index'];release=row['release']
-                coverage=release['known_by_frame']
+                coverage=conditional_coverage.get(i,release['known_by_frame'])
                 unresolved[i]=len(coverage)<=h or not all(coverage[1:h+1])
                 bounds=np.asarray(release['bounds'],float)[:h+1]
                 travel=float(np.linalg.norm(bounds-bounds[0,0],axis=-1).max())
@@ -176,12 +272,15 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
             # With a nearby hazard the fixed-fast path is only a hint, not a
             # certified safe label. Empty/far scenes stay usable.
             focus_unknown=bool(np.any(near&((relevant&(o[:,13]>.5))|lasers)))
-        if focus_unknown:usable=False
+        emitter_boundary = pending.get('pending_emitter_unknown_from_tick')
+        if focus_unknown or (emitter_boundary is not None and emitter_boundary <= h):
+            usable=False
         focus_transition_unknown.append(focus_unknown)
         known.append(usable)
     margins=np.stack([point_and_laser_clearances(f,o,starts,v,duration=h,anticipate_arming=anticipate_arming,
         growth_motion_envelope=growth_motion_envelope,native_forecasts=native_forecasts,
         unknown_laser_player_motion=unknown_laser_player_motion,max_laser_margin=64.,player_path=paths) for h in horizons])
+    unclipped_margins=margins.astype(np.float32)
     margins=np.clip(margins,-64,64).astype(np.float32)
     ends=np.clip(starts+v*4,[-184,32],[184,432])
     neighbours=np.argsort(((v[:,None]-v[None])**2).sum(-1),axis=1,kind='stable')[:,:3]
@@ -193,19 +292,14 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
     later=point_and_laser_clearances(f,o,np.repeat(ends,3,axis=0),v[neighbours].reshape(-1,2),duration=12,initial_time=4,
         anticipate_arming=anticipate_arming,growth_motion_envelope=growth_motion_envelope,native_forecasts=native_forecasts,
         unknown_laser_player_motion=unknown_laser_player_motion,max_laser_margin=64.,player_path=later_paths).reshape(18,3)
+    forecast_faults=(native_forecasts.setdefault('nonfinite_clearance_fallbacks',[])
+        if native_forecasts is not None else [])
+    for index,horizon in enumerate(horizons):
+        if any(row['initial_time']+row['duration']<=horizon for row in forecast_faults):
+            known[index]=False
     escape=(np.minimum(margins[0,:,None],later)>1).mean(-1).astype(np.float32)
     wall=np.minimum(ends-[-184,32],[184,432]-ends).min(-1)
-    globals=f[list(GLOBAL_INDICES)].copy()
-    # Respawn/death animation can move the sprite outside the actionable
-    # playfield. Project ONLY those non-controllable global positions; all
-    # physical hazard geometry above still used the unmodified native origin.
-    if f[21]<.5 and f[24]<.5:globals[:2]=np.clip(globals[:2],0.,1.)
-    # Invertibly bound the five real collision components; no large-player cap.
-    globals[6:11]=globals[6:11]/(1+np.abs(globals[6:11]))
-    x=np.concatenate((globals,np.tanh((1.-margins.reshape(-1))/8.),np.asarray(known,np.float32),escape,np.clip(wall/64,0,1))).astype(np.float32)
-    if x.shape!=(111,) or not np.isfinite(x).all() or np.abs(x).max()>1:
-        bad=np.flatnonzero(~np.isfinite(x)|(np.abs(x)>1))
-        raise ValueError('Compact111 finite bounded contract: '+str([(FEATURE_NAMES[i],float(x[i])) for i in bad]))
+    x=pack_movement_observation(f,margins,known,escape,wall)
     from .compact_partial_risk import partial_point_danger,REVISION as partial_revision
     partial,partial_detail=(partial_point_danger(f,o,native_forecasts) if complete else
         (np.zeros((3,18),bool),dict(conditional_prediction=True,safe_labels=0,reason='partial_source_geometry')))
@@ -215,16 +309,27 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
         partial=partial|curve_danger
         partial_detail=dict(partial_detail,curve_danger=curve_detail)
         partial_revision='conditional-discrete-point-curve-danger-v2'
-    return x,dict(margins=margins,trusted=np.asarray(known,bool),normal=bool(normal_unprotected(f)),
+    return x,dict(margins=margins,unclipped_margins=unclipped_margins,
+        enclosing_ex_forecast_present=any(row['release'].get('revision')=='th14-live-ex-program-v1' and
+            (not row['release'].get('exact_center_trajectory',False) or row['release'].get('virtual_children'))
+            for row in (native_forecasts or {}).get('bullets',())) or
+            any(row.get('allocation_order_envelope',False) for row in line_geometry.get('lines',())) or
+            first_birth <= horizons[-1],
+        conditional_emitter_birth_4=first_birth <= horizons[0],
+        trusted=np.asarray(known,bool),normal=bool(normal_unprotected(f)),
         partial_point_danger=partial,partial_point_danger_revision=partial_revision,
         partial_point_danger_detail=partial_detail,
         full_observed_hazards=bool(complete),entities=len(o)+native_curve_segments,collision_objects=int((relevant&(o[:,13]>.5)).sum()),laser_segments=int(lasers.sum())+native_curve_segments,
         uncertainty=dict(unknown_laser_segments=unknown_lasers-native_curve_segments+curve_unknown_counts[0],
+            # Route/teacher queries can append faults after base encoding.
+            # Keep that list visible to the same observation's diagnostics.
+            nonfinite_clearance_fallbacks=forecast_faults,
             unknown_laser_segments_scope='Uncertified existing laser motion over the next4 native ticks',
             native_curve_segments=native_curve_segments,
             unresolved_curve_segments_4_12_24=curve_unknown_counts,
             native_curve_motion_forecast=bool(curves.get('motion_forecast_enabled')),
             native_line_forecasts=len(line_indices),near_growth_points_4_12_24=growth_counts if complete else None,
+            pending_emitter_unknown_from_tick=pending.get('pending_emitter_unknown_from_tick'),
             unresolved_release_points_4_12_24=release_unknown_counts if complete else None,
             unresolved_enemy_forecasts_4_12_24=enemy_unknown_counts if complete else None,
             hidden_enemy_unreadable_geometry=int((native_forecasts or {}).get('hidden_enemy_unreadable_geometry',0)),
@@ -238,6 +343,7 @@ def encode_geometry(f,objects,*,complete,anticipate_arming=False,growth_motion_e
 
 class CompactObservationEncoder:
     schema=SCHEMA;feature_shape=(111,);map_shape=None;feature_names=FEATURE_NAMES
+    native_emitter_projection = None
     def __init__(self):
         from .thrl_line_laser_motion import ObservedLineLaserTracker
         self.tracker=ObservedLineLaserTracker();self.native_episode=0;self.last_result=None
@@ -273,7 +379,8 @@ class CompactObservationEncoder:
         from .thrl_timer_observation import timer_features
         key=(self.native_episode,id(snapshot))
         if key==self._cache:return {'features':self.last_result['features'].copy()}
-        prepared=shared_object_candidates(snapshot,hp_independent_contacts=True);p=snapshot.player;g=prepared['player_geometry']
+        prepared=shared_object_candidates(snapshot,hp_independent_contacts=True,legacy_laser_samples=False)
+        p=snapshot.player;g=prepared['player_geometry']
         timing=timer_features(p);f=np.zeros(25,np.float32)
         f[:6]=[(p.x+184)/368,(p.y-32)/400,snapshot.power/400,snapshot.lives/8,snapshot.bombs/8,float(p.invulnerable_frames>0)]
         f[6:9]=[snapshot.character/2,snapshot.stage/6,snapshot.difficulty/3]
@@ -281,6 +388,11 @@ class CompactObservationEncoder:
         f[19:]=[timing[1],timing[0],*timing[2:]]
         motion=self.tracker.observe(snapshot,native_episode=self.native_episode)
         rows=[];native_forecasts={'enemies':[],'bullets':[]};bullet_indices={}
+        contract=(snapshot.extra.get('hazard_metadata',{}).get('native_rule_geometry') or {})
+        program_horizon=contract.get('horizon',max((raw.get('native_ex_program_horizon',24) for raw in prepared['raw_bullets'].values()),default=24))
+        if program_horizon not in (24,96):raise ValueError('Native EX horizon must be24 or96')
+        if contract or any(raw.get('native_ex_program_revision') for raw in prepared['raw_bullets'].values()):
+            native_forecasts.update(rule_program_revision='th14-live-ex-program-v1',rule_program_horizon=program_horizon)
         if self.native_focus_gate:
             from .native_focus_gate import effective_focus_available
             available=effective_focus_available(snapshot)
@@ -300,12 +412,22 @@ class CompactObservationEncoder:
                     e=resource_enemies[row[4][1]]
                     native_forecasts['enemies'].append(dict(object_index=len(rows),
                         motion=e['native_motion_forecast'],contact=e['native_contact'],
+                        native_id=e['id'],
                         source='hidden' if e['id'] in hidden_enemy_ids else 'visible'))
                 elif row[3]=='bullet':
                     raw=prepared['raw_bullets'][row[4][1]]
-                    if raw['native_state']==2 or raw.get('native_ex_active_flags',0):
+                    pending_program = (raw.get('native_ex_program_revision') and raw.get('native_ex_current_record_hex')
+                        and int.from_bytes(bytes.fromhex(raw['native_ex_current_record_hex'])[32:36],'little'))
+                    if raw['native_state']==2 or raw.get('native_ex_active_flags',0) or pending_program:
                         from .native_bullet_release import predict_bullet_release
-                        native_forecasts['bullets'].append(dict(object_index=len(rows),release=predict_bullet_release(raw)))
+                        native_forecasts['bullets'].append(dict(object_index=len(rows),release=predict_bullet_release(raw,program_horizon),
+                            **({'program_raw':raw} if raw.get('native_ex_program_revision') else {})))
+                        if raw.get('native_ex_program_revision'):
+                            from .native_ex_conditional import needs_player_path
+                            prediction=native_forecasts['bullets'][-1]
+                            # An aim opcode after this horizon cannot affect
+                            # any candidate yet. Reuse its one exact prefix.
+                            prediction['candidate_dependent']=(not all(prediction['release']['known_by_frame']) and needs_player_path(raw))
             rows.append(values)
         if self.native_motion_forecast and snapshot.extra.get('native_reactive_orbs'):
             from .native_wall_geometry import attach_reactive_forecasts
@@ -327,9 +449,16 @@ class CompactObservationEncoder:
         if self.native_motion_forecast and snapshot.extra.get('native_line_lasers'):
             from .native_line_laser_paths import native_line_geometry
             line_indices={row[4][1]:len(rows)+i for i,row in enumerate(segments) if row[2][3]>.5}
-            native_forecasts['line_geometry']=native_line_geometry(snapshot.extra['native_line_lasers'],line_indices)
+            native_forecasts['line_geometry']=native_line_geometry(snapshot.extra['native_line_lasers'],line_indices,horizon=program_horizon)
+            native_forecasts['line_program_source']=(snapshot.extra['native_line_lasers'],line_indices)
         rows.extend(row[2] for row in segments)
         o=np.asarray(rows,np.float32).reshape(-1,29)
+        if self.native_motion_forecast and self.native_emitter_projection is not None:
+            from .thrl_movement_teacher import normal_unprotected
+            if normal_unprotected(f):
+                projected = self.native_emitter_projection(native_forecasts, snapshot)
+                if projected is not None:
+                    native_forecasts = projected
         settings=dict(complete=True,anticipate_arming=self.anticipate_arming,
             growth_motion_envelope=self.growth_motion_envelope,
             native_forecasts=native_forecasts if self.native_motion_forecast else None,

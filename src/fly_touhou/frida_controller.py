@@ -193,7 +193,7 @@ class OriginalGameController:
             'native_milestones': list(self._milestones),
             'game_rng_seed_applied': False})
 
-    def advance(self, mask: int, ticks: int) -> Snapshot:
+    def advance(self, mask: int, ticks: int, *, capture_geometry=False) -> Snapshot:
         if self._script is None or self._checkpoint is None:
             raise NativeError('Background game has not started')
         if not 1 <= int(ticks) <= 36000 or not 0 <= int(mask) <= 0xffffff:
@@ -201,7 +201,10 @@ class OriginalGameController:
         self._checkpoint = None
         if hasattr(self._memory, 'invalidate_prefetch'):
             self._memory.invalidate_prefetch()
-        self._script.post({'type': 'control', 'payload': {'mask': int(mask), 'ticks': int(ticks)}})
+        control = {'mask': int(mask), 'ticks': int(ticks)}
+        if capture_geometry:
+            control['capture_geometry'] = True
+        self._script.post({'type': 'control', 'payload': control})
         self._checkpoint = self._wait('checkpoint')
         if getattr(self, '_record_input_tape', False):
             self._input_tape.append((int(mask),int(ticks)))
@@ -223,12 +226,15 @@ class OriginalGameController:
             raise NativeError('Native tape requires an owned checkpoint')
         if (self._hook_ready or {}).get('native_tape',{}).get('schema')!=1:
             raise NativeError('This input backend does not implement native tapes')
-        if getattr(self, '_record_input_tape', False):
-            raise NativeError('Cannot record while replaying a prefix tape')
         self._checkpoint=None
         if hasattr(self._memory,'invalidate_prefetch'):self._memory.invalidate_prefetch()
         self._script.post({'type':'control','payload':{'tape':segments}})
         self._checkpoint=self._wait('checkpoint')
+        # A replay can be the prefix of a new, longer recording. Append the
+        # commands only after the native checkpoint acknowledges completion;
+        # adaptive loading continues to be recorded by advance().
+        if getattr(self, '_record_input_tape', False):
+            self._input_tape.extend((int(mask),int(ticks)) for mask,ticks in segments)
         return self.read()
 
     def tap(self, mask: int, ticks: int = 4) -> Snapshot:

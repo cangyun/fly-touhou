@@ -6,6 +6,7 @@ These functions consume the separately measured collision-geometry extension.
 from __future__ import annotations
 
 import math
+import struct
 
 import numpy as np
 
@@ -104,6 +105,22 @@ def collision_geometry(snapshot, bullet_metadata):
                 'player_bounds_offset':offset,'scale_applies':bool(row['native_flags'] & 0x40)}
     return result, {'circle_component':component,'bounds_half_extents':half,
                     'bounds_offset':offset,'large_player_flag':bool(flags & 0x10)}
+
+
+def initial_native_circle_radius(memory, style):
+    """Read the circular definition used by the original projectile constructor."""
+    # 417e98..417f50 chooses the collision flag from the 10c mode field.
+    # 417f90..417f9d copies the 104 size into both native dimensions.
+    from .native import NativeError
+
+    if type(style) is not int or style < 0:
+        return None
+    address = memory.base + 0xd1e90 + style * 0x114 + 0x104
+    try:
+        size, _, mode = struct.unpack('<f2I', memory.read(address, 12))
+    except (NativeError, OSError, struct.error):
+        return None
+    return size if mode in (2, 6, 7, 8, 9, 10) and math.isfinite(size) and size > 0. else None
 
 
 def swept_rectangle_clearance(position, velocity, half_extents, start, end):

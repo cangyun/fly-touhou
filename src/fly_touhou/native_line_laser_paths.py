@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 import numpy as np
 
+from .native_projection_cache import projection_cache
+
 REVISION='th14-native-line-motion-contact-v1'
 
 
@@ -13,6 +15,9 @@ def predict_native_line(raw,*,game_speed=1.,horizon=24):
     counterfactual or a guarantee against an external ECL change. In particular,
     EX-controlled lines are not silently interpreted as ordinary lines.
     """
+    if raw.get('ex_program_revision') and game_speed==1.:
+        from .native_line_ex import predict_line_program
+        return predict_line_program(raw,horizon)
     reason=None
     if raw.get('ex_active_flags',0):reason='active_line_ex'
     elif raw.get('next_ex_type',0):reason='pending_line_ex'
@@ -44,15 +49,35 @@ def predict_native_line(raw,*,game_speed=1.,horizon=24):
         unknown_reason=reason,conditional_prediction=True,measured_native_counterfactual=False)
 
 
-def native_line_geometry(raw_geometry,object_indices):
+def native_line_geometry(raw_geometry,object_indices,*,horizon=24):
     """Only replace the old segment extrapolator when the native program is covered."""
     rows=[]
     for raw in raw_geometry.get('lines',()):
         if raw['id'] not in object_indices:continue
-        forecast=predict_native_line(raw,game_speed=raw_geometry['game_speed'])
+        forecast=predict_native_line(raw,game_speed=raw_geometry['game_speed'],horizon=horizon)
         if forecast['unknown_reason'] is not None:continue
         rows.append(dict(object_index=object_indices[raw['id']],forecast=forecast))
-    return dict(revision=REVISION,frame=raw_geometry['frame'],lines=rows,
+        pending=[dict(child,generation=1) for child in forecast.get('virtual_lines',())]
+        while pending:
+            child=pending.pop();birth=child['birth_tick'];cf=child['forecast'];generation=child['generation']
+            for descendant in cf.get('virtual_lines',()):
+                pending.append(dict(descendant,birth_tick=descendant['birth_tick']+birth,generation=generation+1))
+            # New list slots may run on the birth tick or the next tick.
+            # Each ancestor can therefore advance a descendant by one tick.
+            # Keep a linear number of distinct age offsets, not 2**generation
+            # paths, and never activate one before its earliest possible birth.
+            first_birth=max(1,birth-generation+1)
+            for offset in range(max(0,birth-generation),birth+1):
+                if first_birth>horizon:continue
+                padded=dict(cf)
+                for key in ('origin','endpoint','length','angle_by_frame'):
+                    padded[key]=([cf[key][0]]*offset+cf[key])[:horizon+1]
+                padded['active']=([False]*offset+cf['active'])[:horizon+1]
+                padded['active'][:first_birth]=[False]*first_birth
+                padded['known_by_frame']=([True]*offset+cf['known_by_frame'])[:horizon+1]
+                rows.append(dict(object_index=object_indices[raw['id']],forecast=padded,virtual_reflection=True,
+                    allocation_order_envelope=True,birth_tick_min=first_birth,birth_tick_max=birth))
+    return dict(revision=REVISION,frame=raw_geometry['frame'],lines=rows,horizon=horizon,
         player_half_extents=raw_geometry.get('player_half_extents'))
 
 
@@ -66,12 +91,14 @@ def native_line_contact_clearances(origins,lengths,width,angle,points,player_hal
     """
     origin=np.asarray(origins,np.float32);length=np.asarray(lengths,np.float32)
     point=np.asarray(points,np.float32);half=np.asarray(player_half_extents,np.float32)
-    width=np.float32(width);angle=np.float32(angle)
-    direction=np.asarray([math.cos(float(angle)),math.sin(float(angle))],np.float64)
-    offset=(direction[None,:]*(length/np.float32(10))[:,None]).astype(np.float32)
+    width=np.float32(width);angle=np.asarray(angle,np.float32)
+    angles=np.broadcast_to(angle,length.shape)
+    direction=np.asarray([(math.cos(float(a)),math.sin(float(a))) for a in angles],np.float64)
+    offset=(direction*(length/np.float32(10))[:,None]).astype(np.float32)
     anchor=(origin+offset).astype(np.float32)
     delta=(point-anchor[:,None,:]).astype(np.float32)
-    c=np.float32(math.cos(-float(angle)));s=np.float32(math.sin(-float(angle)))
+    c=np.asarray([math.cos(-float(a)) for a in angles],np.float32)[:,None]
+    s=np.asarray([math.sin(-float(a)) for a in angles],np.float32)[:,None]
     local_x=(delta[:,:,0]*c-delta[:,:,1]*s).astype(np.float32)
     local_y=(delta[:,:,1]*c+delta[:,:,0]*s).astype(np.float32)
     contact_length=((length*np.float32(4))/np.float32(5)).astype(np.float32)
@@ -117,6 +144,83 @@ def _batched_line_contacts(origins,lengths,widths,angles,points,player_half_exte
     return margin
 
 
+
+def _line_projection(forecast):
+    """Keep both the exact native collision rectangle and the coarse AABB."""
+    origins = np.asarray(forecast["origin"], float)
+    endpoints = np.asarray(forecast.get("endpoint", ()), float)
+    active = np.asarray(forecast["active"], bool)
+    length = np.asarray(forecast["length"], np.float32)
+    width = np.float32(forecast["width"])
+    angle = np.asarray(forecast["angle_by_frame"] if "angle_by_frame" in forecast else forecast["angle"], np.float32)
+    if not len(length) or not np.isfinite(angle).all():
+        return None
+    # The native angle is often constant through many ticks. Preserve the
+    # scalar trig and float32 anchor stores used by the reference helper.
+    angles, inverse = np.unique(np.broadcast_to(angle, length.shape).view(np.uint32), return_inverse=True)
+    unit = np.asarray([(math.cos(float(a)), math.sin(float(a))) for a in angles.view(np.float32)])
+    direction = unit[inverse]
+    anchor = (origins.astype(np.float32) + (direction * (length / np.float32(10))[:, None]).astype(np.float32))
+    negative = np.asarray([(math.cos(-float(a)), math.sin(-float(a))) for a in angles.view(np.float32)], np.float32)
+    rotation = negative[inverse]
+    contact_length = (length * np.float32(4)) / np.float32(5)
+    contact_width = (width * np.float32(.5) if width < 32 else
+                     np.float32(width - np.float32(np.float32(width + np.float32(16)) * np.float32(.5))))
+    half_width = np.float32(contact_width * np.float32(.5))
+    return origins, endpoints, active, anchor, rotation, contact_length, half_width, active & ~((length <= 16) | (width <= 3))
+
+
+def _prepared_line_clearances(geometry, indices, centers, points, radius, margin, cache):
+    answer = np.full(centers.shape[1], np.inf)
+    if margin is not None:
+        pmin, pmax = points.min(axis=(0, 1)), points.max(axis=(0, 1))
+    half = np.asarray(geometry["player_half_extents"], np.float32)
+    centers = centers.astype(np.float32)
+    pending = []
+    chunk_size = max(1, min(64, 8192 // max(1, len(indices) * centers.shape[1])))
+
+    def flush():
+        anchor, rotation, lengths, half_width, eligible = map(np.asarray, zip(*pending))
+        delta = centers[None] - anchor[:, :, None]
+        c, s = rotation[:, :, 0, None], rotation[:, :, 1, None]
+        x = delta[..., 0] * c - delta[..., 1] * s
+        y = delta[..., 1] * c + delta[..., 0] * s
+        half_width = half_width.astype(float)[:, None, None]
+        sx = np.maximum((x - half[0]).astype(float) - lengths[:, :, None], -(x + half[0]).astype(float))
+        sy = np.maximum((y - half[1]).astype(float) - half_width, -half_width - (y + half[1]).astype(float))
+        values = np.hypot(np.maximum(sx, 0.), np.maximum(sy, 0.)) + np.minimum(np.maximum(sx, sy), 0.)
+        values[~eligible] = np.inf
+        return values.min(axis=(0, 1))
+
+    for row in geometry["lines"]:
+        forecast = row["forecast"]
+        key = id(forecast)
+        entry = cache.get(key)
+        if entry is None:
+            entry = cache[key] = (forecast, _line_projection(forecast))
+        if entry[1] is None:
+            return None
+        _, (origins, endpoints, active, anchor, rotation, lengths, half_width, eligible) = entry
+        if not eligible[indices].any():
+            continue
+        if margin is not None:
+            # Match the original active-only cull even for rectangles below
+            # the native width/length threshold on some of these ticks.
+            frames = indices[active[indices]]
+            a, b = origins[frames], endpoints[frames]
+            lo, hi = np.minimum(a, b).min(0), np.maximum(a, b).max(0)
+            gap = np.maximum(np.maximum(lo - pmax, pmin - hi), 0.)
+            if np.linalg.norm(gap) > margin + forecast["width"] / 2 + radius:
+                continue
+        pending.append((anchor[indices], rotation[indices], lengths[indices], half_width, eligible[indices]))
+        if len(pending) == chunk_size:
+            answer = np.minimum(answer, flush())
+            pending.clear()
+    if pending:
+        answer = np.minimum(answer, flush())
+    return answer
+
+
 def native_line_path_clearances(features,geometry,starts,velocities,*,duration=4,initial_time=0.,
                                 max_relevant_margin=None):
     """Native rotated-rectangle hints on the piecewise endpoint trajectory.
@@ -135,14 +239,20 @@ def native_line_path_clearances(features,geometry,starts,velocities,*,duration=4
     # not veto a future escape whose first actual collision update is tick1.
     future=times>0;ticks=ticks[future];times=times[future]
     if not len(times):return np.full(len(starts),np.inf)
-    if np.any(np.abs(times-np.rint(times))>1e-6) or times.min()<0 or times.max()>24:
-        raise ValueError('Native line paths require integer ticks within the24-frame horizon')
+    available=min((len(row['forecast']['origin'])-1 for row in geometry.get('lines',())),default=geometry.get('horizon',24))
+    if np.any(np.abs(times-np.rint(times))>1e-6) or times.min()<0 or times.max()>available:
+        raise ValueError('Native line paths require integer ticks within the captured forecast horizon')
     indices=np.rint(times).astype(int)
     points=np.clip(starts[None]+velocities[None]*ticks[:,None,None],[-184,32],[184,432])+offset
     answer=np.full(len(starts),np.inf)
     native=geometry.get('player_half_extents') is not None
     centers=(np.clip(starts[None]+velocities[None]*ticks[:,None,None],[-184,32],[184,432])
         if native else None)
+    cache = projection_cache("line_rectangles") if native else None
+    if cache is not None:
+        prepared = _prepared_line_clearances(geometry, indices, centers, points, radius, max_relevant_margin, cache)
+        if prepared is not None:
+            return prepared
     pending=[]
     # Large broadcast temporaries spill CPU caches: a 324-path continuation is
     # already vectorized along candidates and benefits from one line at a time.
@@ -173,6 +283,10 @@ def native_line_path_clearances(features,geometry,starts,velocities,*,duration=4
         if native:
             # Native helper reads the player center itself, not the center of
             # its world-space bounds. Use the separately captured local extents.
+            if 'angle_by_frame' in forecast:
+                clearance=native_line_contact_clearances(a,np.asarray(forecast['length'])[indices],forecast['width'],
+                    np.asarray(forecast['angle_by_frame'])[indices],centers,geometry['player_half_extents'])
+                clearance[~active]=np.inf;answer=np.minimum(answer,clearance.min(0));continue
             pending.append((a,np.asarray(forecast['length'])[indices],forecast['width'],forecast['angle'],active))
             if len(pending)==chunk_size:
                 answer=np.minimum(answer,flush());pending.clear()

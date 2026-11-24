@@ -86,7 +86,7 @@ class ResourceTeacherV10(ResourceTeacherV9):
     def probabilities(self,snapshot):
         if snapshot is self._soft_snapshot:return self._soft_probabilities.copy()
         original=super().probabilities(snapshot)
-        observation=self.movement_encoder.encode(snapshot)
+        observation=self._movement_observation
         result,detail=soften_route_reference(original,observation,self.movement,support_mix=self.support_mix)
         self._soft_snapshot=snapshot;self._soft_probabilities=result;self._soft_detail=detail
         return result.copy()

@@ -1,0 +1,238 @@
+{
+  "schema": "nbnm-continuity-preparation-v1",
+  "formal_training_started": false,
+  "student_optimizer_updates": 0,
+  "branch": "experimental/nbnm",
+  "source_checkpoint": "hard-cards-route-guidance-v2/cycle001-parameters.pt",
+  "source_Adam": "hard-cards-route-guidance-v2/latest-training.pt",
+  "trial": {
+    "workers": 16,
+    "decision_budget": 32768,
+    "segment_decisions": 8192,
+    "updates": 128,
+    "groups": {
+      "s4_hard": 0.5,
+      "s3_hard": 0.25,
+      "bridge": 0.25
+    },
+    "speed_actor_weight": 0.0,
+    "qualified_speed_candidate": 0.01,
+    "current_rule_weight": 0.1,
+    "rehearsal_weight": 0.03,
+    "rehearsal_every_updates": 8,
+    "intermediate_frozen_evaluation": false
+  },
+  "teacher_checks": [
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "controller": "rule teacher; not student results",
+      "attempts": 4,
+      "successes": 4,
+      "decisions": 1317,
+      "Bomb_requests": 0,
+      "safe_forecast_contacts": 0,
+      "route_queries": 24,
+      "three_leg_queries": 13,
+      "unknown_immediate_rows": 712,
+      "intermediate_transitions": 0
+    },
+    {
+      "task": {
+        "mode": "chain",
+        "stage": 3,
+        "attack": "BossCard1",
+        "end_stage": 3,
+        "end_attack": "BossCard2"
+      },
+      "controller": "rule teacher; not student results",
+      "attempts": 4,
+      "successes": 4,
+      "decisions": 2721,
+      "Bomb_requests": 0,
+      "safe_forecast_contacts": 0,
+      "route_queries": 665,
+      "three_leg_queries": 39,
+      "unknown_immediate_rows": 838,
+      "intermediate_transitions": 12
+    },
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 3,
+        "attack": "BossCard2",
+        "spell_index": 2,
+        "spell_id": 35
+      },
+      "controller": "rule teacher; not student results",
+      "attempts": 4,
+      "successes": 4,
+      "decisions": 1161,
+      "Bomb_requests": 0,
+      "safe_forecast_contacts": 0,
+      "route_queries": 216,
+      "three_leg_queries": 17,
+      "unknown_immediate_rows": 357,
+      "intermediate_transitions": 0
+    },
+    {
+      "task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "controller": "rule teacher; not student results",
+      "attempts": 4,
+      "successes": 4,
+      "decisions": 1269,
+      "Bomb_requests": 0,
+      "safe_forecast_contacts": 0,
+      "route_queries": 3,
+      "three_leg_queries": 1,
+      "unknown_immediate_rows": 693,
+      "intermediate_transitions": 0
+    }
+  ],
+  "rehearsal": {
+    "student_histories": 5,
+    "teacher_histories": 8,
+    "development_data_used": false,
+    "PPO_rows": 0
+  },
+  "unit_tests": {
+    "passed": 58,
+    "failed": 0
+  },
+  "history_graph": {
+    "status": "passed",
+    "decisions": 128,
+    "maximum_state_difference": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "seconds": {
+      "False": 3.7527186999996047,
+      "True": 2.708998000000065
+    },
+    "optimizer_updates": 0
+  },
+  "topology_changed": false,
+  "one_shared_policy": true,
+  "full_game_NBNM_proven": false,
+  "collector": {
+    "workers": 16,
+    "decisions": 256,
+    "Bomb_actions": 0,
+    "deathbomb_labels": 0,
+    "policy_likelihood_replay_max_difference": 1.430511474609375e-06,
+    "task_groups": {
+      "s4_hard": 128,
+      "s3_hard": 64,
+      "bridge": 64
+    },
+    "retention_backward_only": {
+      "rehearsal_movement_loss": 2.6188058853149414,
+      "rehearsal_rows": 16,
+      "rehearsal_PPO_rows": 0,
+      "rehearsal_task": {
+        "mode": "attack",
+        "stage": 4,
+        "attack": "BossCard2",
+        "spell_index": 1,
+        "spell_id": 47
+      },
+      "rehearsal_burn_in": 439,
+      "rehearsal_memory": "current-weight complete committed-action history",
+      "gradients": {
+        "brain": {
+          "nonzero_parameters": 6,
+          "finite": true
+        },
+        "sensory": {
+          "nonzero_parameters": 5,
+          "finite": true
+        },
+        "movement": {
+          "nonzero_parameters": 6,
+          "finite": true
+        }
+      },
+      "seconds": 33.04593229999955,
+      "optimizer_updates": 0
+    }
+  },
+  "previous_checkpoint_diagnostic": {
+    "Q_current": {
+      "attempts": 4,
+      "successes": 0,
+      "rows": [
+        {
+          "native_seed": 4747,
+          "nbnm_success": false,
+          "task_native_frames": 240
+        },
+        {
+          "native_seed": 22687,
+          "nbnm_success": false,
+          "task_native_frames": 240
+        },
+        {
+          "native_seed": 35537,
+          "nbnm_success": false,
+          "task_native_frames": 240
+        },
+        {
+          "native_seed": 35846,
+          "nbnm_success": false,
+          "task_native_frames": 240
+        }
+      ]
+    },
+    "Q_eager_seed4747": {
+      "attempts": 1,
+      "successes": 0,
+      "rows": [
+        {
+          "native_seed": 4747,
+          "nbnm_success": false,
+          "task_native_frames": 240
+        }
+      ]
+    },
+    "V_current": {
+      "attempts": 4,
+      "successes": 1,
+      "rows": [
+        {
+          "native_seed": 4747,
+          "nbnm_success": false,
+          "task_native_frames": 2088
+        },
+        {
+          "native_seed": 22687,
+          "nbnm_success": false,
+          "task_native_frames": 1248
+        },
+        {
+          "native_seed": 35537,
+          "nbnm_success": true,
+          "task_native_frames": 2408
+        },
+        {
+          "native_seed": 35846,
+          "nbnm_success": false,
+          "task_native_frames": 1232
+        }
+      ]
+    }
+  }
+}

@@ -113,6 +113,7 @@ def _rect_clearance(intercepts, velocities, extents, start, end, radius):
 
 class ResourceTeacher:
     _retain_contactable_nonpositive_HP=False
+    allow_bomb=True
     def __init__(self, planner: CollisionPlanner, config: ResourceTeacherConfig | dict | None = None, **settings):
         self.planner = planner
         base = ResourceTeacherConfig(**config) if isinstance(config, dict) else config or ResourceTeacherConfig()
@@ -469,7 +470,7 @@ class ResourceTeacher:
         values = np.exp((logits - logits.max()) / s.temperature)
         movement[candidates] = values / values.sum()
         deathbomb = p.deathbomb_timer > 0 or p.state in s.deathbomb_states
-        bomb = snapshot.bombs > 0 and (deathbomb or (not viable and p.invulnerable_frames <= 0))
+        bomb = self.allow_bomb and snapshot.bombs > 0 and (deathbomb or (not viable and p.invulnerable_frames <= 0))
         bomb_probability = s.bomb_probability if bomb else 0.0
         if bomb:
             reasons.append("native deathbomb window" if deathbomb else "native Bomb: no predicted collision-free movement")

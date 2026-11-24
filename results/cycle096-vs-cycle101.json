@@ -1,0 +1,378 @@
+{
+  "status": "completed",
+  "before": {
+    "episodes": 20,
+    "clears": 1,
+    "stage_counts": {
+      "1": 20,
+      "2": 20,
+      "3": 20,
+      "4": 20,
+      "5": 17,
+      "6": 16
+    }
+  },
+  "after": {
+    "episodes": 20,
+    "clears": 0,
+    "stage_counts": {
+      "1": 20,
+      "2": 20,
+      "3": 20,
+      "4": 19,
+      "5": 4,
+      "6": 1
+    }
+  },
+  "training": {
+    "status": "operator_stopped_after_completed_cycle",
+    "final_parameters": "./outputs\\distillation\\compact-SNN-lower-field-default-20261104-v1\\operator-stop-parameters.pt",
+    "completed_cycle": 101,
+    "frozen_evaluation_deferred": true,
+    "student_actions_this_job": 327680,
+    "PPO_updates_this_job": 320,
+    "PPO_updates": 3939,
+    "new_student_actions": 2179072,
+    "stage_coverage": {
+      "scope": "student-controlled training only; excludes frozen evaluation and teacher games",
+      "stages": {
+        "1": {
+          "decisions": 103002,
+          "native_frames": 414076,
+          "normal_rows": 99004,
+          "guided_normal_rows": 79143,
+          "trusted_normal_rows_4_12_24": [
+            79149,
+            78077,
+            74771
+          ],
+          "partial_danger_pairs_4_12_24": [
+            721,
+            7924,
+            27176
+          ],
+          "teacher_Bomb_reference_corrections": 39,
+          "contacts": 3,
+          "Bombs": 56,
+          "deathbombs": 3
+        },
+        "2": {
+          "decisions": 92322,
+          "native_frames": 371888,
+          "normal_rows": 89031,
+          "guided_normal_rows": 70521,
+          "trusted_normal_rows_4_12_24": [
+            70546,
+            59798,
+            49316
+          ],
+          "partial_danger_pairs_4_12_24": [
+            2434,
+            32502,
+            102805
+          ],
+          "teacher_Bomb_reference_corrections": 7,
+          "contacts": 19,
+          "Bombs": 39,
+          "deathbombs": 7
+        },
+        "3": {
+          "decisions": 83738,
+          "native_frames": 337048,
+          "normal_rows": 78585,
+          "guided_normal_rows": 64656,
+          "trusted_normal_rows_4_12_24": [
+            64689,
+            54255,
+            42503
+          ],
+          "partial_danger_pairs_4_12_24": [
+            2831,
+            26947,
+            102409
+          ],
+          "teacher_Bomb_reference_corrections": 12,
+          "contacts": 41,
+          "Bombs": 54,
+          "deathbombs": 7
+        },
+        "4": {
+          "decisions": 47531,
+          "native_frames": 190397,
+          "normal_rows": 40966,
+          "guided_normal_rows": 29245,
+          "trusted_normal_rows_4_12_24": [
+            29300,
+            25047,
+            19218
+          ],
+          "partial_danger_pairs_4_12_24": [
+            3393,
+            30920,
+            90119
+          ],
+          "teacher_Bomb_reference_corrections": 18,
+          "contacts": 76,
+          "Bombs": 71,
+          "deathbombs": 12
+        },
+        "5": {
+          "decisions": 1087,
+          "native_frames": 4350,
+          "normal_rows": 1087,
+          "guided_normal_rows": 1084,
+          "trusted_normal_rows_4_12_24": [
+            1084,
+            1054,
+            965
+          ],
+          "partial_danger_pairs_4_12_24": [
+            0,
+            15,
+            135
+          ],
+          "teacher_Bomb_reference_corrections": 0,
+          "contacts": 0,
+          "Bombs": 0,
+          "deathbombs": 0
+        },
+        "6": {
+          "decisions": 0,
+          "native_frames": 0,
+          "normal_rows": 0,
+          "guided_normal_rows": 0,
+          "trusted_normal_rows_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "partial_danger_pairs_4_12_24": [
+            0,
+            0,
+            0
+          ],
+          "teacher_Bomb_reference_corrections": 0,
+          "contacts": 0,
+          "Bombs": 0,
+          "deathbombs": 0
+        }
+      },
+      "completed_games_per_world": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "complete_games": 15,
+      "target_games_per_world": 1,
+      "game_target_met": false,
+      "zero_sample_stages": [
+        6
+      ]
+    },
+    "requested_native_game_round_complete": false,
+    "training_paused": true,
+    "automatic_training_resume": false,
+    "remaining_first_games_aborted_by_operator": true
+  },
+  "final_parameters": "./outputs\\distillation\\compact-SNN-lower-field-default-20261104-v1\\operator-stop-parameters.pt",
+  "baseline_report": "./outputs\\diagnostics\\compact-SNN-cycle096-frozen20-20261103-v1\\development\\report.json",
+  "new_report": "./outputs\\diagnostics\\compact-SNN-lower-field-default-frozen20-20261104-v1\\development\\report.json",
+  "training_paused": true,
+  "automatic_training_resume": false,
+  "scope": "Paired development opening seeds; action-dependent native RNG may subsequently diverge; not a held-out test",
+  "positions": {
+    "1": {
+      "upper_fraction": {
+        "before": 0.44985210615300386,
+        "after": 0.27436682476114976
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.44660614979149993,
+        "after": 0.27277295698087567
+      },
+      "mean_y": {
+        "before": 240.18578027583897,
+        "after": 293.7924531161457
+      },
+      "misses": {
+        "before": 0,
+        "after": 0
+      },
+      "upper_misses": {
+        "before": 0,
+        "after": 0
+      },
+      "contacts_per_10000_frames": {
+        "before": 0.1747695663267981,
+        "after": 0.03538921053749133
+      },
+      "bombs": {
+        "before": 15,
+        "after": 35
+      }
+    },
+    "2": {
+      "upper_fraction": {
+        "before": 0.5161594748378241,
+        "after": 0.351301213464646
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.5033934698012849,
+        "after": 0.3412967997356782
+      },
+      "mean_y": {
+        "before": 219.11000973547027,
+        "after": 266.7579030307039
+      },
+      "misses": {
+        "before": 6,
+        "after": 11
+      },
+      "upper_misses": {
+        "before": 6,
+        "after": 8
+      },
+      "contacts_per_10000_frames": {
+        "before": 1.2952174814064334,
+        "after": 0.6666009726577671
+      },
+      "bombs": {
+        "before": 44,
+        "after": 42
+      }
+    },
+    "3": {
+      "upper_fraction": {
+        "before": 0.6512852857768769,
+        "after": 0.4464441576003442
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.6450751828188356,
+        "after": 0.4375614424062415
+      },
+      "mean_y": {
+        "before": 181.87849536505698,
+        "after": 243.31757036037786
+      },
+      "misses": {
+        "before": 19,
+        "after": 18
+      },
+      "upper_misses": {
+        "before": 15,
+        "after": 11
+      },
+      "contacts_per_10000_frames": {
+        "before": 1.598554703556911,
+        "after": 0.9412453722102533
+      },
+      "bombs": {
+        "before": 59,
+        "after": 71
+      }
+    },
+    "4": {
+      "upper_fraction": {
+        "before": 0.4097317871643407,
+        "after": 0.27005264989284655
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.405635643850857,
+        "after": 0.2708194944910584
+      },
+      "mean_y": {
+        "before": 260.2903151125353,
+        "after": 303.37086845811376
+      },
+      "misses": {
+        "before": 35,
+        "after": 44
+      },
+      "upper_misses": {
+        "before": 15,
+        "after": 17
+      },
+      "contacts_per_10000_frames": {
+        "before": 3.0932181192734927,
+        "after": 2.3750236574622132
+      },
+      "bombs": {
+        "before": 129,
+        "after": 110
+      }
+    },
+    "5": {
+      "upper_fraction": {
+        "before": 0.5523008895957495,
+        "after": 0.46620950797718824
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.5510025908931007,
+        "after": 0.455344311729922
+      },
+      "mean_y": {
+        "before": 217.32883043749885,
+        "after": 242.4248899508354
+      },
+      "misses": {
+        "before": 8,
+        "after": 3
+      },
+      "upper_misses": {
+        "before": 6,
+        "after": 2
+      },
+      "contacts_per_10000_frames": {
+        "before": 1.0014353907267082,
+        "after": 1.1779395481423893
+      },
+      "bombs": {
+        "before": 33,
+        "after": 3
+      }
+    },
+    "6": {
+      "upper_fraction": {
+        "before": 0.4382082712537812,
+        "after": 0.3041670202834592
+      },
+      "unprotected_upper_fraction": {
+        "before": 0.4154759660697455,
+        "after": 0.27058266224538136
+      },
+      "mean_y": {
+        "before": 253.00422821437874,
+        "after": 291.8244771626331
+      },
+      "misses": {
+        "before": 39,
+        "after": 3
+      },
+      "upper_misses": {
+        "before": 27,
+        "after": 2
+      },
+      "contacts_per_10000_frames": {
+        "before": 4.586867734841345,
+        "after": 3.7896731406916153
+      },
+      "bombs": {
+        "before": 107,
+        "after": 7
+      }
+    }
+  }
+}

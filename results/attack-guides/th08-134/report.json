@@ -1,0 +1,37 @@
+{
+  "source": "Original TH08 Lunatic Story, seed 18233, spell 134",
+  "observation_start": 34354,
+  "prefix_decision": 34386,
+  "archived_burn_in_rows": 0,
+  "rebased_teacher_opening_rows": 0,
+  "training_start": 32,
+  "spell": 134,
+  "verified_guide_decisions": 409,
+  "native_start": 147730,
+  "native_end": 149438,
+  "start_position": [
+    376.0,
+    384.0
+  ],
+  "end_position": [
+    154.41189575195312,
+    267.313720703125
+  ],
+  "exact_reference_observations": null,
+  "starting_health": 2200,
+  "ending_health": null,
+  "zero_contact": true,
+  "misses": 0,
+  "bombs": 0,
+  "continues": 0,
+  "native_spell_result": {
+    "raw_stage": 6,
+    "spell_id": 134,
+    "start_native_frame": 147662,
+    "end_native_frame": 149370,
+    "captured": true
+  },
+  "complete_attack": true,
+  "teacher_only": true,
+  "full_story": false
+}

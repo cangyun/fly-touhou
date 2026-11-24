@@ -1,0 +1,29 @@
+{
+  "name": "th08-1.00d-zh-input",
+  "game_id": 8,
+  "executable_names": ["th08.exe"],
+  "sha256": ["9d669602c6ecf0d2b5826c7af43bcfec1a5998ab0c6e47de547d6be264a5a1c5"],
+  "verification": "input-controller-only",
+  "offsets": {
+    "mode": [20768944, 4],
+    "stage": [19190476, 4],
+    "difficulty": [18937144, 4],
+    "shot_type": [19189937, 1],
+    "game_flags": [19189940, 4],
+    "game_input": [19191080, 2],
+    "gameplay_input": [19191084, 2],
+    "player_state": [20799224, 1],
+    "player_focused": [20799227, 1],
+    "player_youkai": [20799229, 1],
+    "player_position": [20799916, 8],
+    "misses": [19189668, 4],
+    "bombs_used": [19189672, 4],
+    "deathbombs_used": [19189676, 4],
+    "stage_timer": [11881720, 4]
+  },
+  "hooks": {
+    "schema": 1,
+    "input": {"rva": 252272, "pristine_bytes": "558bec81ec0801000066c785"},
+    "startup_mutex": {"import_rva": 737432, "caller_return_rva": 275519, "name": "Touhou 08 App"}
+  }
+}

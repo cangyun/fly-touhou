@@ -1,0 +1,23 @@
+[
+  {
+    "file": "th08-nbnm-18233.pt",
+    "bytes": 92812113,
+    "sha256": "4272b0a962499ed513839ff0ecceb8611e8620a944e90b1d5b3fabc0728e2666",
+    "dataset": "FlyWire FAFB materialization 783",
+    "notice": "THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "th14-clear-cycle087.pt",
+    "bytes": 87460944,
+    "sha256": "91ade499598bf9c036874d7a44259c6b7026f4c5805efab7b01994f1820128fe",
+    "dataset": "FlyWire FAFB materialization 783",
+    "notice": "THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "th14-nbnm-cycle073.pt",
+    "bytes": 88289771,
+    "sha256": "4687fdd84537c91afe94fcd01efe9f2959fd7ad203c30c2ad2d1a9b44f42bd01",
+    "dataset": "FlyWire FAFB materialization 783",
+    "notice": "THIRD_PARTY_NOTICES.md"
+  }
+]

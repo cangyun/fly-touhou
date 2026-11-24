@@ -10,9 +10,32 @@ from __future__ import annotations
 
 import math
 import struct
+from contextlib import contextmanager
+from contextvars import ContextVar
+
 import numpy as np
 
 COLLISION_REVISION = 'native-state2-pre-release-collision-v1'
+
+
+def fresh_ex2_centers(origin, velocities, frames, *, release_age):
+    """Predict unit-time EX2 argument-1 centers with no later motion command.
+
+    Age one is the first visible update. The engine subtracts four velocities
+    at creation. The gate-opening update moves at half speed, as does the
+    release update before its extra ordinary movement.
+    """
+    speed = np.asarray(velocities, dtype=np.float32)
+    center = np.asarray(origin, dtype=np.float32) - np.float32(4.) * speed
+    centers = np.empty((frames, *speed.shape), dtype=np.float32)
+    half_speed = np.float32(.5) * speed
+    for index in range(frames):
+        age = index + 1
+        center += half_speed if age <= release_age else speed
+        if age == release_age:
+            center += speed
+        centers[index] = center
+    return centers
 
 
 def predict_position_hold_candidate(raw,horizon):
@@ -166,7 +189,7 @@ def _polar_ex8_hint(raw,horizon,position,velocity,answer):
     return answer
 
 
-def predict_bullet_release(raw, horizon=24):
+def predict_bullet_release(raw, horizon=24, *, _clearance_arrays=False):
     """Return absolute center intervals at native frames0..horizon.
 
     ``bounds[k]`` contains two endpoints on a fixed motion axis; it encloses
@@ -182,6 +205,11 @@ def predict_bullet_release(raw, horizon=24):
     if isinstance(horizon,bool) or int(horizon)!=horizon or horizon<0:
         raise ValueError('A nonnegative integer native-frame horizon is required')
     horizon=int(horizon)
+    if raw.get('native_ex_program_revision'):
+        from .native_bullet_program import predict_program
+        program = predict_program(raw,horizon,_clearance_arrays=_clearance_arrays)
+        if program is not None:
+            return program
     position=np.asarray(raw['native_position'],float)
     velocity=np.asarray(raw['native_velocity'],float)
     if position.shape!=(2,) or velocity.shape!=(2,) or not np.isfinite([position,velocity]).all():
@@ -196,6 +224,12 @@ def predict_bullet_release(raw, horizon=24):
         positions=fallback.tolist(),
         bounds=np.stack((fallback,fallback),axis=1).tolist(),known_by_frame=[True]+[False]*horizon,
         direction=[1.,0.])
+    if raw.get('native_ex_program_revision') and not raw.get('native_ex_program_unit_clocks',True):
+        answer['reason']='non_unit_active_effect_clock'
+        return answer
+    if raw.get('native_ex_program_revision') and raw.get('native_motion_time_rate')!=1.:
+        answer['reason']='non_unit_native_motion_rate'
+        return answer
     if state == 2:
         # 4167e4 first moves at half the STORED velocity, then41685c tests
         # collision. Only afterwards can41687c promote the bullet and the
@@ -335,52 +369,137 @@ def _interval_distances(player,velocity,a,b,da,db,direction,begin,end):
     return np.sqrt(np.maximum(best,0.))
 
 
+def _scaled_release_shapes(f, points, ratio):
+    f = np.asarray(f, float)
+    circle = ((points[:, 1] > .5) | (points[:, 2] > .5)) & (points[:, 12] > .5)
+    circular = np.sqrt((points[:, 10, None] * 128 * ratio) ** 2 + (f[13] * 64) ** 2) + .05
+    rectangular = np.linalg.norm(points[:, None, 10:12] * 128 * ratio[..., None]
+                                   + f[None, None, 14:16] * 64 + .05, axis=-1)
+    offsets = np.where(circle[:, None], 0., (f[16:18] * 64)[None])
+    return np.where(circle[:, None], circular, rectangular), offsets
+
+
+_RELEASE_SWEEPS = ContextVar("release_sweeps", default=None)
+
+
+@contextmanager
+def share_release_sweeps():
+    """Keep swept inputs for repeated, read-only groups in one observation."""
+    if _RELEASE_SWEEPS.get() is not None:
+        yield
+        return
+    token = _RELEASE_SWEEPS.set({})
+    try:
+        yield
+    finally:
+        _RELEASE_SWEEPS.reset(token)
+
+
+def _sweep_key(f, objects, releases, anticipate_arming):
+    return (id(f), id(objects), anticipate_arming,
+            tuple((item["object_index"], id(item["release"])) for item in releases))
+
+
+def _sweep_inputs(f, rows, forecasts, frames):
+    from .thrl_movement_teacher import MovementSafetyTeacher
+
+    points = np.array(rows)
+    delays = np.where(points[:, 13] > .5, 0., np.maximum(0., np.rint(points[:, 17] * 8) - 1.))
+    points[:, 13] = 1.
+    _, _, _, circle, radii, extents, offset = MovementSafetyTeacher._scene(f, points)
+    radii = np.where(circle, radii, np.linalg.norm(extents, axis=-1))
+    dynamic_radii = None
+    if any("collision_scale_ratio_by_frame" in p for p in forecasts):
+        ratio = np.array([p.get("collision_scale_ratio_by_frame", [1.] * frames)[:frames] for p in forecasts])
+        dynamic_radii, offsets = _scaled_release_shapes(f, points, ratio)
+    else:
+        offsets = np.where(circle[:, None], 0., offset[None])
+    bounds = np.array([p["bounds"][:frames] for p in forecasts])
+    axis = np.array([p["direction"] for p in forecasts])
+    extras = np.array([p.get("extra_radii", [0.] * frames)[:frames] for p in forecasts])
+    collision = np.array([p.get("collision_enabled_by_frame", [True] * frames)[:frames] for p in forecasts], bool)
+    return bounds, axis, extras, radii, collision, delays, offsets, dynamic_radii
+
+
+def _native_clearances(starts, velocities, table, frames, duration, initial_time):
+    from .native_bullet_clearance_kernel import clearances
+
+    bounds, axis, extras, sizes, collision, delays, offsets, contact = table
+    return clearances(starts, velocities, bounds[:, :frames], axis, extras[:, :frames], sizes[:, :frames],
+                      collision[:, :frames], delays, offsets, float(duration), float(initial_time),
+                      contact[:, :frames] if contact is not None else None)
+
+
 def bullet_release_clearances(f,objects,releases,starts,velocities,*,duration,
                               initial_time=0,anticipate_arming=True):
     """Time-matched path clearance for object-index-aligned release sidecars.
 
     Includes unknown intervals as conditional hints. Callers must use each
-    sidecar's ``known_by_frame`` when deciding whether to trust a label.
+    sidecar's `known_by_frame` when deciding whether to trust a label.
     Current player and bullet dimensions retain the existing native geometry.
     """
-    from .thrl_movement_teacher import MovementSafetyTeacher
-    o=np.asarray(objects,float);starts=np.asarray(starts,float);velocities=np.asarray(velocities,float)
-    answer=np.full(len(starts),np.inf);rows=[];forecasts=[]
-    stop=float(initial_time+duration)
+    starts = np.asarray(starts, float)
+    velocities = np.asarray(velocities, float)
+    answer = np.full(len(starts), np.inf)
+    if isinstance(releases, (list, tuple)) and not releases:
+        return answer
+    stop = float(initial_time + duration)
+    frames = math.ceil(stop) + 1
+    sweeps = _RELEASE_SWEEPS.get()
+    key = entry = None
+    if sweeps is not None and isinstance(releases, (list, tuple)) and len(releases) >= 4:
+        key = _sweep_key(f, objects, releases, anticipate_arming)
+        entry = sweeps.get(key)
+        if entry is not None:
+            table = entry[3]
+            if table is not None and frames <= table[0].shape[1]:
+                return _native_clearances(starts, velocities, table, frames, duration, initial_time)
+        elif len(sweeps) < 16:
+            # Retain the identities in the key for the whole observation.
+            # Pack beyond the first requested horizon only for repeated groups.
+            sweeps[key] = (f, objects, tuple(item["release"] for item in releases), None)
+    o = np.asarray(objects, float)
+    rows = []
+    forecasts = []
     for item in releases:
         index=item['object_index'];row=o[index];forecast=item['release']
         eligible=row[0]>.5 and row[1]>.5 and (row[13]>.5 or
             (anticipate_arming and row[20]>.5 and row[21]>.5))
-        if eligible and len(forecast['bounds'])>math.ceil(stop):
+        if eligible and len(forecast['bounds']) >= frames:
             rows.append(row);forecasts.append(forecast)
-    if not rows:return answer
-    points=np.array(rows);delays=np.where(points[:,13]>.5,0.,np.maximum(0.,np.rint(points[:,17]*8)-1.))
-    points[:,13]=1.
-    _,_,_,circle,radii,extents,offset=MovementSafetyTeacher()._scene(f,points)
-    radii=np.where(circle,radii,np.linalg.norm(extents,axis=-1))
-    dynamic_radii=None
-    if any('collision_scale_ratio_by_frame' in p for p in forecasts):
-        f=np.asarray(f,float)
-        frames=len(forecasts[0]['bounds'])
-        ratio=np.array([p.get('collision_scale_ratio_by_frame',[1.]*frames) for p in forecasts])
-        circular=np.sqrt((points[:,10,None]*128*ratio)**2+(f[13]*64)**2)+.05
-        rectangular=np.linalg.norm(points[:,None,10:12]*128*ratio[...,None]+f[None,None,14:16]*64+.05,axis=-1)
-        dynamic_radii=np.where(circle[:,None],circular,rectangular)
-    offsets=np.where(circle[:,None],0.,offset[None])
-    bounds=np.array([p['bounds'] for p in forecasts]);axis=np.array([p['direction'] for p in forecasts])
-    extras=np.array([p.get('extra_radii',[0.]*len(p['bounds'])) for p in forecasts])
-    collision=np.array([p.get('collision_enabled_by_frame',[True]*len(p['bounds'])) for p in forecasts],bool)
+            pending=list(forecast.get('virtual_children',()))
+            while pending:
+                child=pending.pop();pending.extend(child.get('virtual_children',()))
+                virtual=row.copy();virtual[12:14]=1.;virtual[20]=0.;virtual[21]=1.
+                virtual[10:12]=child['virtual_radius']/128.
+                virtual[6:8]=(np.asarray(child['virtual_origin'])-[f[0]*368-184,f[1]*400+32])/[384,448]
+                virtual[8:10]=np.asarray(child['virtual_velocity'])/12.
+                rows.append(virtual);forecasts.append(child)
+    if not rows:
+        return answer
+    compiled = any(p.get("revision") == "th14-live-ex-program-v1" for p in forecasts)
+    growing = [(i, p["growth_collision"]) for i, p in enumerate(forecasts) if "growth_collision" in p]
+    full_frames = frames
+    cacheable = False
+    if entry is not None and compiled and not growing:
+        # A longer query must see the same eligible set and feature arrays.
+        # Mixed lengths or growth checks use the per-call preparation.
+        span = len(releases[0]["release"]["bounds"])
+        cacheable = span >= frames and all(len(r["release"]["bounds"]) == span for r in releases)
+        cacheable = cacheable and all(
+            len(p["bounds"]) == span and all(field not in p or len(p[field]) >= span for field in
+                ("collision_scale_ratio_by_frame", "extra_radii", "collision_enabled_by_frame", "collision_bounds"))
+            for p in forecasts
+        )
+        if cacheable:
+            full_frames = span
+    bounds, axis, extras, radii, collision, delays, offsets, dynamic_radii = _sweep_inputs(
+        f, rows, forecasts, full_frames)
     lo=np.array([-184.,32.]);hi=np.array([184.,432.])
-    wall=np.where(velocities>0,hi,lo)
-    hit=np.divide(wall-starts,velocities,out=np.full_like(starts,np.inf),where=np.abs(velocities)>1e-12)
-    phases=np.sort(np.column_stack((np.zeros(len(starts)),np.clip(hit,0.,duration),
-                                   np.full(len(starts),duration))),axis=-1)
-    growing = [(i, p['growth_collision']) for i, p in enumerate(forecasts)
-               if 'growth_collision' in p]
     if growing:
         indices = np.array([i for i, _ in growing])
-        centers = np.array([p['positions'] for _, p in growing])
-        possible = np.array([p['possible_by_frame'] for _, p in growing], bool)
+        centers = np.array([p['positions'][:frames] for _, p in growing])
+        possible = np.array([p['possible_by_frame'][:frames] for _, p in growing], bool)
         for tick in range(max(1, math.ceil(initial_time)), math.floor(stop) + 1):
             valid = possible[:, tick] & (delays[indices] <= tick)
             if not valid.any():
@@ -393,6 +512,20 @@ def bullet_release_clearances(f,objects,releases,starts,velocities,*,duration,
             size=radii[indices] if dynamic_radii is None else dynamic_radii[indices,tick]
             distance = np.linalg.norm(delta, axis=-1) - size[None]
             answer = np.minimum(answer, np.where(valid[None], distance, np.inf).min(-1))
+    if compiled:
+        sizes = (np.broadcast_to(radii[:, None], (len(radii), full_frames)).copy()
+                 if dynamic_radii is None else dynamic_radii)
+        contact = (np.array([p.get("collision_bounds", p["bounds"])[:full_frames] for p in forecasts])
+                   if any("collision_bounds" in p for p in forecasts) else None)
+        table = (bounds, axis, extras, sizes, collision, delays, offsets, contact)
+        if cacheable:
+            sweeps[key] = (*entry[:3], table)
+        clearance = _native_clearances(starts, velocities, table, frames, duration, initial_time)
+        return np.minimum(answer, clearance) if growing else clearance
+    wall=np.where(velocities>0,hi,lo)
+    hit=np.divide(wall-starts,velocities,out=np.full_like(starts,np.inf),where=np.abs(velocities)>1e-12)
+    phases=np.sort(np.column_stack((np.zeros(len(starts)),np.clip(hit,0.,duration),
+                                   np.full(len(starts),duration))),axis=-1)
     # Each native frame is affine between recorded interval endpoints.
     for tick in range(int(math.floor(initial_time)),max(int(math.ceil(stop)),int(math.floor(initial_time))+1)):
         a,b=bounds[:,tick,0],bounds[:,tick,1]

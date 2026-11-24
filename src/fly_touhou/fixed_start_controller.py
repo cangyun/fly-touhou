@@ -87,7 +87,7 @@ class FineStartControllerMixin:
         return ((event.get('kind') == 'native-process-detached' and event.get('reason') == 'process-terminated')
                 or (event.get('kind') == 'native-checkpoint-timeout' and event.get('expected') == 'checkpoint'))
 
-    def _startup_guard(self, operation, callback, difficulty=None):
+    def _startup_guard(self, operation, callback, difficulty=None, *, retry_callback=None):
         state = self._startup_retry_state
         if state is None:
             state = self._startup_retry_state = {'active': True, 'busy': False,
@@ -133,7 +133,7 @@ class FineStartControllerMixin:
                         need_start = False
                     else:
                         need_start = True
-                        callback = lambda: self._ensure_run_once(difficulty)
+                        callback = retry_callback or (lambda: self._ensure_run_once(difficulty))
         finally:
             state['busy'] = False
 

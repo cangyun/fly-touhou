@@ -39,6 +39,18 @@ def recorded_policy_context(previous,current,before,*,risk_scale=1.,history=32):
         model_calls=0,game_steps=0,teacher_queries=0)
 
 
+def _archive_forecasts(forecasts):
+    if not forecasts:
+        return forecasts
+    captured = dict(forecasts)
+    if captured.get('pending_stationary_volleys') is not None:
+        captured['pending_stationary_volleys'] = np.asarray(captured['pending_stationary_volleys']).tolist()
+    if captured.get('pending_rotating_rings') is not None:
+        from .native_pending_rings import archive_ring_geometry
+        captured['pending_rotating_rings'] = archive_ring_geometry(captured['pending_rotating_rings'])
+    return captured
+
+
 def _geometry_replay(snapshot, encoding):
     """Archive the actual encoder geometry, including observed laser motion.
 
@@ -66,7 +78,7 @@ def _geometry_replay(snapshot, encoding):
         full_observed_hazards=details['full_observed_hazards'],
         forecast_native_arming=bool(uncertainty.get('pending_native_arming_forecast')),
         forecast_growth_motion=bool(uncertainty.get('growth_motion_modeled')),
-        source_native_forecasts=encoding.get('source_native_forecasts'),
+        source_native_forecasts=_archive_forecasts(encoding.get('source_native_forecasts')),
         margins=np.asarray(details['margins']).tolist(),
         trusted=np.asarray(details['trusted']).tolist(),
         policy_features_changed=False, teacher_labels_changed=False,

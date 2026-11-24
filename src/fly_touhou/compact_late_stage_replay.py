@@ -17,10 +17,13 @@ SENSOR_FLAGS=('native_motion_forecast','native_focus_gate','unknown_laser_player
 
 
 class LateStageReplay:
-    def __init__(self,*,sensor_flags,max_per_stage=32,native_repair_revisions=None):
+    def __init__(self,*,sensor_flags,max_per_stage=32,native_repair_revisions=None,
+                 protected_exit_from_stage=1,protected_exit_preserve_long_shield=False):
         self.sensor_flags={key:bool(sensor_flags.get(key,False)) for key in SENSOR_FLAGS}
-        if self.sensor_flags['protected_exit_forecast'] or not self.sensor_flags['native_contact_risk_calibration']:
-            raise ValueError('Late replay currently requires native-contact calibration and the standard protection interface')
+        if not self.sensor_flags['native_contact_risk_calibration']:
+            raise ValueError('Late replay requires native-contact calibration')
+        self.protection_settings=dict(protected_exit_from_stage=int(protected_exit_from_stage),
+            protected_exit_preserve_long_shield=bool(protected_exit_preserve_long_shield))
         self.max_per_stage=max_per_stage
         self.native_repair_revisions=native_repair_revisions
         self.incompatible_banks=[]
@@ -34,6 +37,12 @@ class LateStageReplay:
         if source in self.examined:return 0
         self.examined.add(source)
         metadata=dict(source_settings or {},**rollout.get('metadata',{}))
+        if self.sensor_flags['protected_exit_forecast']:
+            from .compact_protected_exit_candidate import REVISION
+            if (metadata.get('protected_exit_revision')!=REVISION
+                    or any(metadata.get(k)!=v for k,v in self.protection_settings.items())
+                    or any(k not in rollout for k in ('risk_training_eligible','risk_training_trusted'))):
+                self.incompatible_sources.append(source);return 0
         if (self.native_repair_revisions is not None
                 and metadata.get('native_repair_revisions')!=self.native_repair_revisions):
             self.incompatible_sources.append(source);return 0
@@ -71,6 +80,8 @@ class LateStageReplay:
             for world in sorted(best):
                 _,t,mask=best[world]
                 data={key:rollout[key][t:t+16,world:world+1].detach().cpu().clone() for key in FIELDS}
+                for key in ('risk_training_eligible','risk_training_trusted','lower_field_exception'):
+                    if key in rollout:data[key]=rollout[key][t:t+16,world:world+1].detach().cpu().clone()
                 data['partial_point_danger']=(rollout['partial_point_danger'][t:t+16,world:world+1].detach().cpu().clone()
                     if 'partial_point_danger' in rollout else torch.zeros_like(data['margins'],dtype=torch.bool))
                 data['valid_mask']=mask[:,None].cpu()
@@ -104,16 +115,24 @@ class LateStageReplay:
         if not selected:raise ValueError('No late-stage training windows available')
         data={key:torch.cat([window['data'][key] for window in selected],dim=1).to(model.device)
               for key in (*FIELDS,'valid_mask')}
+        from .compact_lower_field import special_pattern_mask
+        exceptions=torch.cat([special_pattern_mask(window['data']) for window in selected],1).to(model.device)
         data['partial_point_danger']=torch.cat([window['data'].get('partial_point_danger',
             torch.zeros_like(window['data']['margins'],dtype=torch.bool)) for window in selected],1).to(model.device)
+        for key,fallback in (('risk_training_eligible','unprotected_mask'),('risk_training_trusted','trusted')):
+            data[key]=torch.cat([window['data'].get(key,window['data'][fallback])
+                for window in selected],1).to(model.device)
         before=SpikingState.pack([window['before'] for window in selected]).to(model.device)
         result=sequence(model,data['features'],data['episode_starts'],before,data['actions'])
         data['unprotected_mask']=data['unprotected_mask']&data['valid_mask']
+        data['risk_training_eligible']&=data['valid_mask']
         data['rule_weights']=data['rule_weights']*data['valid_mask'].to(data['rule_weights'].dtype)
         guide=gru_aligned_guidance_loss(result['logits'],data['margins'],data['trusted'],
             data['actions'],data['outcomes'],valid_mask=data['valid_mask'],
             unprotected_mask=data['unprotected_mask'],rule_probabilities=data['rule_probabilities'],
-            rule_weights=data['rule_weights'],deathbomb_mask=data['deathbomb_mask'],veto_rule_on_contact=True)
+            rule_weights=data['rule_weights'],deathbomb_mask=data['deathbomb_mask'],veto_rule_on_contact=True,
+            position_features=data['features'] if getattr(model,'lower_field_default',False) else None,
+            position_exceptions=exceptions)
         reg,cls=rollout_risk_weights(data)
         cls,partial=partial_risk_weights(data,cls)
         from .compact_native_contact_targets import native_exposure_mask
@@ -133,6 +152,7 @@ class LateStageReplay:
         return dict(stage3_windows=len(self.windows[3]),stage4_plus_windows=len(self.windows[4]),
             source_tapes=self.sources,incompatible_sources=self.incompatible_sources,
             sensor_flags=self.sensor_flags,source_hold_forecasts=self.source_hold_forecasts,
+            protection_settings=self.protection_settings,
             native_repair_revisions=self.native_repair_revisions,incompatible_banks=self.incompatible_banks,
             source_hidden_contacts=self.source_hidden_contacts,source_ex8_polar4_forecasts=self.source_ex8_polar4_forecasts,
             scope='Student training trajectories;teacher and measured risk supervision only;no historical PPO rows.')
@@ -140,6 +160,7 @@ class LateStageReplay:
     def payload(self):
         return dict(schema='compact-student-late-stage-supervision-bank-v1',
             sensor_flags=self.sensor_flags,windows=self.windows,source_hold_forecasts=self.source_hold_forecasts,
+            protection_settings=self.protection_settings,
             native_repair_revisions=self.native_repair_revisions,
             source_hidden_contacts=self.source_hidden_contacts,source_ex8_polar4_forecasts=self.source_ex8_polar4_forecasts,
             scope='Student-controlled training data,never PPO samples')
@@ -147,6 +168,8 @@ class LateStageReplay:
     def merge_payload(self,payload,*,source=None):
         if payload.get('schema')!='compact-student-late-stage-supervision-bank-v1' or payload.get('sensor_flags')!=self.sensor_flags:
             raise ValueError('Late-stage bank requires the same native sensory interface')
+        if self.sensor_flags['protected_exit_forecast'] and payload.get('protection_settings')!=self.protection_settings:
+            raise ValueError('Late-stage bank requires matching protection horizon settings')
         if (self.native_repair_revisions is not None
                 and payload.get('native_repair_revisions')!=self.native_repair_revisions):
             self.incompatible_banks.append(dict(source=source,

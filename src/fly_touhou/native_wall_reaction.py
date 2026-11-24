@@ -1,7 +1,7 @@
 """The distance-triggered marker/EX restart in TH14 callback42cb00.
 
-This models the callback only. It does not yet model the restarted bullet
-program or certify a future player path. No production sensor uses it yet.
+The native_wall_motion module advances the restarted bullet program along
+each candidate player path used by the Wall of Issun corridor sensor.
 424866..424872 passes EnemyData as ECX; its+29c/+2a0 are the two radii.
 """
 import numpy as np

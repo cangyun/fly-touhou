@@ -9,6 +9,7 @@ const at = rva => module.base.add(rva);
 const counters = {misses: 0, bombs_used: 0};
 let recent = [];
 const listeners = [];
+let attackTransitions = [], attackSequence = 0;
 function bytes(address, length) {
     return Array.from(new Uint8Array(address.readByteArray(length)))
         .map(x => x.toString(16).padStart(2, '0')).join('');
@@ -36,6 +37,34 @@ for (const hook of CONFIG.hooks) {
             const after = at(hook.inventory).readS32();
             if (before >= 0 && after === before - 1)
                 event(hook.counter, before, after);
+        }
+    }));
+}
+if (CONFIG.attack_events) {
+    // 423c1e/423d39: original HP/timer interrupt branches resolve the chosen
+    // sub and immediately install its IP. Observing the whole lookup routine
+    // catches one-tick MBossDead paths which disappear before a 4f snapshot.
+    // Other lookups (registration, async helpers, ordinary calls) earn nothing.
+    const cfg = CONFIG.attack_events;
+    listeners.push(Interceptor.attach(at(0x848b0), {
+        onEnter(args) {
+            this.attack = null;
+            const caller = this.returnAddress.sub(module.base).toUInt32();
+            if (!liveStory() || (caller !== 0x23c23 && caller !== 0x23d3e)) return;
+            const owner = this.context.esi, data = owner.add(cfg.enemy_data);
+            if (!(data.add(cfg.flags).readU32() & cfg.boss_mask) || data.add(cfg.subboss_id).readS32() !== 0) return;
+            const target = args[0].readUtf8String();
+            if (!/^(M?Boss[AB]?)(Card\d+|\d+|Dead|Escape)$/.test(target)) return;
+            const manager = at(cfg.ascii_manager).readPointer();
+            this.attack = {sequence: 0, owner: owner.toUInt32(), target,
+                stage: at(cfg.stage).readS32(), frame: manager.add(cfg.global_timer).readS32(),
+                caller_rva: caller, source: 'native-phase-interrupt'};
+        },
+        onLeave(result) {
+            if (!this.attack || result.isNull()) return;
+            this.attack.sequence = ++attackSequence;
+            attackTransitions.push(this.attack);
+            if (attackTransitions.length > 128) attackTransitions.shift();
         }
     }));
 }
@@ -68,11 +97,14 @@ rpc.exports = {
             point_items: at(CONFIG.point_items).readU32(),
             recent_events: recent.slice(), exact_inventory_commit_hooks: true,
             event_read_method: 'whole-native-routine-entry-and-return-commit-check-v2',
-            point_items_source: 'native_point_item_counter_0x4f5848'};
+            point_items_source: 'native_point_item_counter_0x4f5848',
+            ...(CONFIG.attack_events ? {attack_event_revision: CONFIG.attack_events.revision,
+                attack_event_sequence: attackSequence, attack_transitions: attackTransitions.slice()} : {})};
     },
     reset() {
         counters.misses = counters.bombs_used = 0;
         recent = [];
+        attackTransitions = []; attackSequence = 0;
         return true;
     },
     close() {

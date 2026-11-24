@@ -1,0 +1,285 @@
+{
+  "game": "th08",
+  "rank": "Lunatic",
+  "seed": 18233,
+  "version": "1.00d",
+  "objective": "nbnm",
+  "checkpoint": "weights/published/th08-nbnm-18233.pt",
+  "spec": "configs/th08/nbnm.json",
+  "rollout_scope": "remaining-story",
+  "full_game_NBNM": false,
+  "entry_decision": 34386,
+  "autonomous_decisions": 5690,
+  "checkpoint_training_updates": 0,
+  "end": {
+    "stage": 6,
+    "raw_stage": 6,
+    "stage_history": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "route_history": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6
+    ],
+    "stage_rng_seeds": [
+      54861,
+      10336,
+      19094,
+      54098,
+      5840,
+      9280
+    ],
+    "stage_frame": 4265,
+    "native_frames": 171781,
+    "position": [
+      22.48528480529785,
+      415.5147705078125
+    ],
+    "difficulty": 3,
+    "team": 0,
+    "contact": false,
+    "misses": 0,
+    "Bombs": 0,
+    "deathbombs": 0,
+    "continues": 0,
+    "time": 8,
+    "time_orbs": 16703,
+    "power": 128.0,
+    "native_mode": 9,
+    "native_phase": 0,
+    "native_next_mode": 9,
+    "outcome": "story-clear",
+    "native_normal_ending": true,
+    "spell_active": false,
+    "native_spell_practice": false,
+    "practice_spell": null,
+    "native_spell_id": null,
+    "native_spellcards_captured": 13,
+    "native_dialogue_edges": true,
+    "native_dialogue_frames": 6244,
+    "full_game_NBNM": true
+  },
+  "previous_original_spell_results": [
+    {
+      "raw_stage": 0,
+      "spell_id": 1,
+      "start_native_frame": 3956,
+      "end_native_frame": 6056,
+      "captured": false
+    },
+    {
+      "raw_stage": 0,
+      "spell_id": 5,
+      "start_native_frame": 9604,
+      "end_native_frame": 11524,
+      "captured": false
+    },
+    {
+      "raw_stage": 0,
+      "spell_id": 9,
+      "start_native_frame": 13444,
+      "end_native_frame": 15724,
+      "captured": false
+    },
+    {
+      "raw_stage": 1,
+      "spell_id": 16,
+      "start_native_frame": 22808,
+      "end_native_frame": 24608,
+      "captured": false
+    },
+    {
+      "raw_stage": 1,
+      "spell_id": 20,
+      "start_native_frame": 27064,
+      "end_native_frame": 29344,
+      "captured": false
+    },
+    {
+      "raw_stage": 1,
+      "spell_id": 24,
+      "start_native_frame": 31624,
+      "end_native_frame": 33712,
+      "captured": true
+    },
+    {
+      "raw_stage": 1,
+      "spell_id": 28,
+      "start_native_frame": 33792,
+      "end_native_frame": 36072,
+      "captured": false
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 35,
+      "start_native_frame": 41932,
+      "end_native_frame": 44212,
+      "captured": false
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 38,
+      "start_native_frame": 48740,
+      "end_native_frame": 50780,
+      "captured": false
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 42,
+      "start_native_frame": 50860,
+      "end_native_frame": 52900,
+      "captured": false
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 46,
+      "start_native_frame": 54936,
+      "end_native_frame": 57264,
+      "captured": true
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 50,
+      "start_native_frame": 57344,
+      "end_native_frame": 59324,
+      "captured": false
+    },
+    {
+      "raw_stage": 2,
+      "spell_id": 53,
+      "start_native_frame": 59464,
+      "end_native_frame": 61564,
+      "captured": false
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 80,
+      "start_native_frame": 69738,
+      "end_native_frame": 72138,
+      "captured": false
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 84,
+      "start_native_frame": 74538,
+      "end_native_frame": 77982,
+      "captured": true
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 88,
+      "start_native_frame": 82466,
+      "end_native_frame": 85166,
+      "captured": false
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 92,
+      "start_native_frame": 87566,
+      "end_native_frame": 90046,
+      "captured": true
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 96,
+      "start_native_frame": 90126,
+      "end_native_frame": 92018,
+      "captured": true
+    },
+    {
+      "raw_stage": 4,
+      "spell_id": 99,
+      "start_native_frame": 92178,
+      "end_native_frame": 95558,
+      "captured": true
+    },
+    {
+      "raw_stage": 5,
+      "spell_id": 103,
+      "start_native_frame": 108877,
+      "end_native_frame": 111877,
+      "captured": false
+    },
+    {
+      "raw_stage": 5,
+      "spell_id": 107,
+      "start_native_frame": 113985,
+      "end_native_frame": 116785,
+      "captured": true
+    },
+    {
+      "raw_stage": 5,
+      "spell_id": 111,
+      "start_native_frame": 119385,
+      "end_native_frame": 122385,
+      "captured": false
+    },
+    {
+      "raw_stage": 5,
+      "spell_id": 115,
+      "start_native_frame": 122465,
+      "end_native_frame": 125525,
+      "captured": false
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 122,
+      "start_native_frame": 131477,
+      "end_native_frame": 133133,
+      "captured": true
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 126,
+      "start_native_frame": 136941,
+      "end_native_frame": 139013,
+      "captured": true
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 130,
+      "start_native_frame": 141381,
+      "end_native_frame": 144933,
+      "captured": true
+    }
+  ],
+  "spell_results": [
+    {
+      "raw_stage": 6,
+      "spell_id": 134,
+      "start_native_frame": 147665,
+      "end_native_frame": 149373,
+      "captured": true
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 138,
+      "start_native_frame": 152829,
+      "end_native_frame": 155797,
+      "captured": true
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 142,
+      "start_native_frame": 155877,
+      "end_native_frame": 163137,
+      "captured": false
+    },
+    {
+      "raw_stage": 6,
+      "spell_id": 146,
+      "start_native_frame": 163609,
+      "end_native_frame": 171201,
+      "captured": true
+    }
+  ]
+}

@@ -23,6 +23,7 @@ class ResourceTeacherV7(ResourceTeacherV6):
         super().reset()
         self._movement_snapshot=None;self._movement_probabilities=None
         self._movement_detail=None
+        self._movement_observation=None
 
     def config(self):
         result=super().config()
@@ -40,6 +41,7 @@ class ResourceTeacherV7(ResourceTeacherV6):
         base=super().probabilities(snapshot)
         # Use exactly the current student's normalized/clipped modalities.
         obs=self.movement_encoder.encode(snapshot)
+        self._movement_observation=obs
         safe,detail=self.movement.label(obs['features'],obs['objects'],obs['maps'],force=True)
         result=base.copy()
         if safe.any():

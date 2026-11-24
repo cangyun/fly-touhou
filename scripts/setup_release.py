@@ -1,4 +1,4 @@
-"""Download this branch's weights, headless backend and pinned upstream data."""
+"""Prepare pinned graph data and verify the published runtime assets."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -49,23 +49,29 @@ def install_native(archive, root=ROOT):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--assets-directory', type=Path, help='Use already downloaded Release attachments')
+    parser.add_argument('--assets-directory', type=Path, help='Import compatible assets from a local historical archive')
     parser.add_argument('--data-source', type=Path, help='Reuse an existing complete data/connectome directory')
     parser.add_argument('--connectome', type=Path, default=ROOT/'data/connectome')
-    parser.add_argument('--skip-data', action='store_true', help='Install only the weights and native DLL')
+    parser.add_argument('--skip-data', action='store_true', help='Only check the packaged weights and native DLLs')
     args = parser.parse_args(argv)
     release = json.loads((ROOT/'configs/release.json').read_text(encoding='utf-8'))
-    base = f"https://github.com/{release['repository']}/releases/download/{release['tag']}"
-    assets = ROOT/'outputs/downloads'
-    assets.mkdir(parents=True, exist_ok=True)
-    for name, target in [(release['checkpoint'], ROOT/release['checkpoint_path']),
-                         (release['native_asset'], assets/release['native_asset'])]:
+    if args.assets_directory:
+        target = ROOT/release['checkpoint_path']
         target.parent.mkdir(parents=True, exist_ok=True)
-        if args.assets_directory:
-            shutil.copy2(args.assets_directory/name, target)
-        else:
-            download(base+'/'+name, target)
-    install_native(assets/release['native_asset'])
+        shutil.copy2(args.assets_directory/release['checkpoint'], target)
+        install_native(args.assets_directory/release['native_asset'])
+    weights = ROOT/'weights/published'
+    manifest = json.loads((weights/'manifest.json').read_text(encoding='utf-8'))
+    for entry in manifest:
+        weight = weights/entry['file']
+        if not weight.is_file() or weight.stat().st_size != entry['bytes']:
+            parser.error(f'Missing {weight.name}. Run git lfs pull.')
+        with weight.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != entry['sha256']:
+                parser.error(f'Published weight differs from its manifest: {weight.name}')
+    for backend in (ROOT/'native/th14_fake_d3d9.dll', ROOT/'native/th08/d3d8.dll'):
+        if not backend.is_file():
+            parser.error(f'Native dependency is missing: {backend}')
     if not args.skip_data:
         directory = args.connectome.resolve()
         directory.mkdir(parents=True, exist_ok=True)

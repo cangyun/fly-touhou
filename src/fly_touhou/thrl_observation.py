@@ -298,13 +298,13 @@ class THRLObservationEncoder:
                 _clip(rows[e.id]['vx']/12, -1), _clip(rows[e.id]['vy']/12, -1), _clip(math.hypot(dx, dy)/500)))
         state = [_clip(snapshot.stage/6), _clip(snapshot.graze/1000), _clip(snapshot.score/100000000),
                  _clip(misses/10), _clip(point_items/100), _clip(snapshot.difficulty/3)]
-        bullets = sorted((b for b in snapshot.bullets if b.active and not b.intangible),
-                         key=lambda b: ((b.x-p.x)**2+(b.y-p.y)**2, b.id))
-        if _geometry is not None:
+        if _geometry is None:
+            bullets = sorted((b for b in snapshot.bullets if b.active and not b.intangible),
+                             key=lambda b: ((b.x-p.x)**2+(b.y-p.y)**2, b.id))
+            bullet_map = [(b.x+192., b.y, b.vx, b.vy, abs(b.kind)%256/255., 8.) for b in bullets]
+        else:
             bullets = sorted((b for b in snapshot.bullets if _geometry[b.id]['visible']),
                 key=lambda b: ((b.x-p.x)**2+(b.y-p.y)**2,b.id))
-        bullet_map = [(b.x+192., b.y, b.vx, b.vy, abs(b.kind)%256/255., 8.) for b in bullets]
-        if _geometry is not None:
             bullet_map = []
             for b in bullets:
                 g = _geometry[b.id]

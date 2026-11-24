@@ -52,6 +52,9 @@ def scaled_prediction(raw,horizon):
     if not np.isfinite(scales).all() or (scales<0).any():return None
     from .native_bullet_release import predict_bullet_release,_pending_command
     reduced=dict(raw,native_ex_active_flags=raw['native_ex_active_flags']&~0x400000)
+    # This specialist bounds an already running scale phase. Its reduced
+    # motion state must not dispatch the pending whole program prematurely.
+    reduced.pop('native_ex_program_revision',None)
     result=predict_bullet_release(reduced,horizon)
     known=np.asarray(result['known_by_frame'],bool)
     command=_pending_command(raw)

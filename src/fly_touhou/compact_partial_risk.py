@@ -55,12 +55,13 @@ def partial_point_danger(features,objects,native_forecasts=None,*,horizons=(4,12
     covered=np.ones((horizon+1,len(indices)),bool)
     collision_enabled=np.ones_like(covered)
     size_ratio=np.ones_like(covered,dtype=float)
+    center_error=np.zeros_like(covered,dtype=float)
     releases={row['object_index']:row['release'] for row in (native_forecasts or {}).get('bullets',())}
     for j,index in enumerate(indices):
         release=releases.get(int(index))
         if release is None:continue
         known=np.asarray(release['known_by_frame'],bool)
-        bounds=np.asarray(release['bounds'],float)
+        bounds=np.asarray(release.get('collision_bounds',release['bounds']),float)
         extra=np.asarray(release.get('extra_radii',np.zeros(len(bounds))),float)
         covered[:,j]=False
         length=min(horizon+1,len(known),len(bounds),len(extra))
@@ -69,7 +70,14 @@ def partial_point_danger(features,objects,native_forecasts=None,*,horizons=(4,12
             length=min(length,len(scales))
             size_ratio[:length,j]=scales[:length]
         exact=np.max(np.abs(bounds[:length,0]-bounds[:length,1]),axis=-1)<1e-6
-        valid=known[:length]&exact&(np.abs(extra[:length])<1e-6)
+        if release.get('exact_center_trajectory') and release.get('revision')=='th14-live-ex-program-v1':
+            # The new executor adds a small floating-point enclosure. Shrink
+            # the guaranteed collision interior by that amount; do not lose
+            # all danger supervision merely because the bound is nonzero.
+            valid=known[:length]&exact&np.isfinite(extra[:length])&(extra[:length]>=0)
+            center_error[:length,j]=extra[:length]
+        else:
+            valid=known[:length]&exact&(np.abs(extra[:length])<1e-6)
         # Once a command/interval is unknown, later endpoints cannot restore
         # an unobserved trajectory history by themselves.
         covered[:length,j]=np.logical_and.accumulate(valid)
@@ -85,7 +93,8 @@ def partial_point_danger(features,objects,native_forecasts=None,*,horizons=(4,12
     circle=selected[:,12]>.5
     radius=np.sqrt((selected[None,:,10]*128*size_ratio)**2+(f[13]*64)**2)
     extent=selected[None,:,10:12]*128*size_ratio[...,None]+f[14:16]*64
-    radius=np.maximum(0.,radius-.25);extent=np.maximum(0.,extent-.25)
+    radius=np.maximum(0.,radius-.25-center_error)
+    extent=np.maximum(0.,extent-.25-center_error[...,None])
     offset=f[16:18]*64
 
     def overlap(player):

@@ -6,6 +6,7 @@ mode or missing record keeps the existing unknown-motion fallback.
 import numpy as np
 from collections import OrderedDict
 from .native_curve_laser_motion import curve_node_sequence
+from .native_projection_cache import projection_cache
 
 REVISION='native-curve-trajectory-forecast-v1'
 _NODE_CACHE=OrderedDict()
@@ -16,7 +17,8 @@ def motion_covered(curve,ahead):
     if (not m.get('available') or not m.get('record_chain_complete') or m.get('clock_rate')!=1.
             or m.get('active_ex_flags')!=0 or curve.get('native_state')!=2 or len(curve['nodes'])<2):return False
     pending=m.get('pending_ex_record_hex')
-    if pending is None or bytes.fromhex(pending)[0x20:0x24]!=b'\0'*4:return False
+    terminal=m.get('compiled_ex_terminal_supported') and m.get('ex_index',0)>=18
+    if not terminal and (pending is None or bytes.fromhex(pending)[0x20:0x24]!=b'\0'*4):return False
     # Entire current tail plus every future tick must have a supported record.
     ticks=np.float32(curve['curve_time']-1)+np.arange(1-len(curve['nodes']),int(np.ceil(ahead))+1,dtype=np.float32)
     ticks=ticks[ticks>=0]
@@ -33,18 +35,33 @@ def motion_covered(curve,ahead):
     return bool(covered.all())
 
 
+def _curve_rectangles(nodes, width):
+    raw = np.asarray(nodes, np.float32)[:, :-1]
+    lengths = raw[:, :, 3]
+    eligible = np.cumsum(lengths, axis=1, dtype=np.float32) >= np.float32(16.)
+    angle = raw[:, :, 2].astype(float)
+    direction = np.stack((np.cos(angle), np.sin(angle)), axis=-1)
+    offset = (direction * (lengths * np.float32(.5)).astype(float)[:, :, None]).astype(np.float32)
+    anchor = (raw[:, :, :2] + offset).astype(np.float32)
+    half_width = np.float32(np.float32(width * .5) * np.float32(.5))
+    return (lengths, eligible, angle, direction, anchor), half_width
+
+
 def temporal_curve_clearances(nodes,width,points,half_extents,*,max_relevant_margin=None,per_node=False):
     """Same 44f0b0 arithmetic, batched over independent native ticks."""
-    raw=np.asarray(nodes,np.float32)[:,:-1]
-    points=np.asarray(points,np.float32);half=np.asarray(half_extents,np.float32)
-    if raw.shape[1]==0:return np.empty((*points.shape[:2],0)) if per_node else np.full(points.shape[:2],np.inf)
-    if per_node and max_relevant_margin is not None:raise ValueError('Per-node labels require the unfiltered native array')
-    lengths=raw[:,:,3];eligible=np.cumsum(lengths,axis=1,dtype=np.float32)>=np.float32(16.)
-    angle=raw[:,:,2].astype(float)
-    direction=np.stack((np.cos(angle),np.sin(angle)),axis=-1)
-    offset=(direction*(lengths*np.float32(.5)).astype(float)[:,:,None]).astype(np.float32)
-    anchor=(raw[:,:,:2]+offset).astype(np.float32)
-    half_width=np.float32(np.float32(width*.5)*np.float32(.5))
+    rectangles, half_width = _curve_rectangles(nodes, width)
+    return _rectangle_clearances(rectangles, half_width, points, half_extents,
+                                 max_relevant_margin=max_relevant_margin, per_node=per_node)
+
+
+def _rectangle_clearances(rectangles, half_width, points, half_extents, *, max_relevant_margin=None, per_node=False):
+    lengths, eligible, angle, direction, anchor = rectangles
+    points = np.asarray(points, np.float32)
+    half = np.asarray(half_extents, np.float32)
+    if lengths.shape[1] == 0:
+        return np.empty((*points.shape[:2], 0)) if per_node else np.full(points.shape[:2], np.inf)
+    if per_node and max_relevant_margin is not None:
+        raise ValueError('Per-node labels require the unfiltered native array')
     if max_relevant_margin is not None:
         extent=np.maximum(float(half[0]),np.abs(lengths.astype(float)+float(half[0])))
         ex=np.abs(direction[:,:,0])*extent+np.abs(direction[:,:,1])*(float(half_width)+float(half[1]))
@@ -54,8 +71,20 @@ def temporal_curve_clearances(nodes,width,points,half_extents,*,max_relevant_mar
               &(anchor[:,:,1]+ey>=lo[:,1,None]-room)&(anchor[:,:,1]-ey<=hi[:,1,None]+room)).any(axis=0)
         lengths,eligible,angle,anchor=lengths[:,keep],eligible[:,keep],angle[:,keep],anchor[:,keep]
         if not keep.any():return np.full(points.shape[:2],np.inf)
+    co=np.cos(-angle).astype(np.float32);si=np.sin(-angle).astype(np.float32)
+    if not per_node and lengths.size*points.shape[1]>=64:
+        try:
+            from .native_curve_minimum import minimum_clearances
+        except ImportError:
+            minimum_clearances=None
+        # The scalar casts implement the native float32 rotation. Unbounded
+        # or nonfinite capture data keeps NumPy's full propagation semantics.
+        limit=np.finfo(np.float32).max/8.
+        if minimum_clearances is not None and all(
+                np.abs(v).max(initial=0.)<=limit for v in (points,anchor,lengths,co,si,half,half_width)):
+            return minimum_clearances(points,anchor,lengths,eligible,co,si,half,half_width)
     delta=(points[:,:,None,:]-anchor[:,None,:,:]).astype(np.float32)
-    co=np.cos(-angle).astype(np.float32)[:,None,:];si=np.sin(-angle).astype(np.float32)[:,None,:]
+    co=co[:,None,:];si=si[:,None,:]
     x=(delta[:,:,:,0]*co-delta[:,:,:,1]*si).astype(np.float32)
     y=(delta[:,:,:,1]*co+delta[:,:,:,0]*si).astype(np.float32)
     sx=np.maximum((x-half[0]).astype(np.float32).astype(float)-lengths[:,None,:],-(x+half[0]).astype(np.float32).astype(float))
@@ -76,7 +105,11 @@ def predicted_curve_nodes(curve,ticks):
         end=int(ticks.max(initial=0));cached=_NODE_CACHE.get(key)
         if cached is None or len(cached)<=end:
             through=max(24,end) if motion_covered(curve,max(24,end)) else end
-            cached=curve_node_sequence(curve,np.arange(through+1))
+            if cached is not None and projection_cache("curve_rectangles") is not None:
+                suffix = curve_node_sequence(curve, np.arange(len(cached), through + 1))
+                cached = np.concatenate((cached, suffix), axis=0)
+            else:
+                cached = curve_node_sequence(curve, np.arange(through+1))
             _NODE_CACHE[key]=cached
             if len(_NODE_CACHE)>64:_NODE_CACHE.popitem(last=False)
         else:_NODE_CACHE.move_to_end(key)
@@ -89,9 +122,33 @@ def predicted_curve_nodes(curve,ticks):
 
 
 def predicted_curve_clearances(curve,points,half_extents,ticks,*,max_relevant_margin=None):
-    nodes=predicted_curve_nodes(curve,ticks)
-    return temporal_curve_clearances(nodes,curve['width'],points,half_extents,
-                                    max_relevant_margin=max_relevant_margin)
+    cache = projection_cache("curve_rectangles")
+    if cache is not None:
+        times = np.asarray(ticks, dtype=float)
+        indices = times.astype(np.intp)
+        if np.array_equal(times, indices) and indices.min(initial=0) >= 0:
+            end = indices.max(initial=0)
+            key = id(curve)
+            entry = cache.get(key)
+            if entry is None or end >= len(entry[1][0]):
+                # The node predictor already prepares this prefix. Retain
+                # its float32 geometry and pick individual ticks per path.
+                through = max(24, end) if motion_covered(curve, max(24, end)) else end
+                first = 0 if entry is None else len(entry[1][0])
+                nodes = predicted_curve_nodes(curve, np.arange(first, through + 1))
+                rectangles, half_width = _curve_rectangles(nodes, curve["width"])
+                if entry is not None:
+                    rectangles = tuple(np.concatenate((before, after)) for before, after in zip(entry[1], rectangles))
+                entry = cache[key] = (curve, rectangles, half_width)
+            _, rectangles, half_width = entry
+            rows = indices
+            if indices.size and indices[-1] - indices[0] + 1 == len(indices) and np.all(np.diff(indices) == 1):
+                rows = slice(indices[0], indices[-1] + 1)
+            return _rectangle_clearances(tuple(array[rows] for array in rectangles), half_width,
+                                         points, half_extents, max_relevant_margin=max_relevant_margin)
+    nodes = predicted_curve_nodes(curve, ticks)
+    return temporal_curve_clearances(nodes, curve["width"], points, half_extents,
+                                     max_relevant_margin=max_relevant_margin)
 
 
 def partial_curve_danger(geometry,origin,velocities,*,horizons=(4,12,24)):

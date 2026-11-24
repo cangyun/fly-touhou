@@ -7,7 +7,92 @@ from __future__ import annotations
 import math
 import numpy as np
 
-REVISION = 'compact-native-ecl-motion-contact-line-spawn-v3'
+REVISION = 'compact-native-ecl-motion-contact-line-spawn-v6'
+
+
+def extend_enemy_window(forecasts, snapshot, memory, *, horizon=60, line_scenes_only=False):
+    """Project the observed emitters and body/contact schedules on one clock."""
+    import struct
+    from .native import NativeError
+    from .native_enemy_contact import read_enemy_contact
+    from .native_enemy_ecl import forecast_ecl
+    from .native_enemy_motion import MAX_FORECAST_FRAMES, predict_enemy_positions
+    from .native_pending_lines import LASER_STOPS, forecast_line_emitter
+    from .native_shot_rules import ReadCache
+
+    if type(horizon) is not int or not 1 <= horizon <= MAX_FORECAST_FRAMES:
+        raise ValueError('Unsupported native emitter forecast horizon')
+    if forecasts.get('emitter_projection_horizon', 0) >= horizon:
+        return forecasts
+    source = forecasts.get('enemies', ())
+    resources = snapshot.extra.get('resources', {})
+    bodies = {row['id']: row for row in
+              (*resources.get('enemies', ()), *resources.get('hidden_enemy_contacts', ()))}
+    cache = ReadCache(memory) if source else None
+    instructions = {}
+    schedules = []
+    lines, point_bounds, boundaries = [], [], []
+    line_scene = bool((forecasts.get('line_geometry') or {}).get('lines'))
+    for row in source:
+        identity = row.get('native_id')
+        captured = bodies.get(identity, {}).get('native_motion')
+        if captured is None:
+            return None
+        state = dict(captured)
+        try:
+            projected = forecast_ecl(cache, state, horizon=horizon)
+            if (projected['unknown_reason'] in LASER_STOPS or
+                    projected['contact_unknown_reason'] in LASER_STOPS):
+                line_scene = True
+                projected, new_lines, new_points, boundary = forecast_line_emitter(
+                    cache, state, horizon, instructions)
+                lines.extend(new_lines)
+                point_bounds.extend(new_points)
+                if boundary is not None:
+                    boundaries.append(boundary)
+            for key in ('unmodeled_projectiles_from_tick', 'unknown_from_tick', 'contact_unknown_from_tick'):
+                if projected.get(key) is not None:
+                    boundaries.append(projected[key])
+            state['ecl_forecast'] = projected
+        except (NativeError, OSError, ValueError, struct.error):
+            return None
+        schedules.append((row, state))
+    if line_scenes_only and not line_scene:
+        return forecasts
+
+    extended = []
+    for row, state in schedules:
+        try:
+            movement = predict_enemy_positions(state, horizon=horizon)
+            contact = read_enemy_contact(memory, row['native_id'], state['data_address'],
+                                         image_base=state['image_base'], horizon=horizon, motion_state=state)
+        except (NativeError, OSError, ValueError, struct.error):
+            return None
+        # Respect the known part of the already captured motion and contact
+        # schedule. A previously unknown suffix can become known after repair.
+        previous = row['motion']
+        kept = min(horizon, previous.get('exact_until_frame', len(previous['positions']) - 1))
+        previous_positions = previous['positions'][:kept + 1]
+        previous_gate = row['contact']['forecast']['ticks']
+        if (movement['positions'][:len(previous_positions)] != previous_positions or
+                any(old['known'] and new != old for new, old in
+                    zip(contact['forecast']['ticks'], previous_gate))):
+            return None
+        extended.append(dict(row, motion=movement, contact=contact))
+    scene = dict(forecasts, enemies=extended, emitter_projection_horizon=horizon)
+    if lines:
+        extents = (snapshot.extra.get('native_line_lasers') or {}).get('player_half_extents')
+        if extents is None:
+            boundaries.append(min(row['tick'] for row in lines))
+        else:
+            saved = list(forecasts.get('pending_line_births', ()))
+            saved.extend(row for row in lines if row not in saved)
+            scene.update(pending_line_births=saved, pending_line_half_extents=extents)
+    if point_bounds:
+        scene['pending_point_birth_bounds'] = point_bounds
+    if boundaries:
+        scene['pending_emitter_unknown_from_tick'] = min(boundaries)
+    return scene
 
 
 def native_repair_revisions(*,reactive_orbs=None,bullet_scale=None):

@@ -10,9 +10,9 @@ import math
 ALLOW_NAMES={'python.exe','pythonw.exe','th14.exe','frida-helper-x86.exe','frida-helper-x86_64.exe'}
 
 
-def worker_cpu_pool(available):
+def worker_cpu_pool(available, *, expanded=False):
     cpus=sorted(set(available))
-    if len(cpus)>6:return cpus[4:-2]
+    if len(cpus)>6:return cpus[2:] if expanded else cpus[4:-2]
     return cpus[2:] if len(cpus)>2 else cpus
 
 

@@ -5,7 +5,7 @@ import struct
 SCHEMA='th14-native-curve-laser-geometry-v1'
 
 
-def read_native_curve_lasers(memory,snapshot,*,player_address,offsets):
+def read_native_curve_lasers(memory,snapshot,*,player_address,offsets,live_program=False):
     """Capture the fields consumed by native curve collision, not future motion.
 
     Nodes are a linear array; node +0x0c is intentionally not interpreted as
@@ -31,4 +31,7 @@ def read_native_curve_lasers(memory,snapshot,*,player_address,offsets):
         rows.append(dict(id=laser.id,width=laser.width,native_state=laser.native_state,
             native_iframes=laser.native_iframes,curve_time=memory.floating(laser.id+0x48),nodes=nodes,
             motion_records=read_curve_motion_records(memory,laser.id)))
+        if live_program:
+            rows[-1]['motion_records']['compiled_ex_terminal_supported']=True
+            rows[-1]['motion_records']['ex_program_hex']=memory.read(laser.id+0x5ec,18*44).hex()
     return dict(schema=SCHEMA,frame=snapshot.frame,player_half_extents=[half_x,half_y],curves=rows)

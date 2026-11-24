@@ -11,6 +11,9 @@ import math
 import struct
 
 import numpy as np
+from numba import njit
+
+from .native_projection_cache import projection_cache
 
 REVISION = 'native-curve-trajectory-records-v1'
 
@@ -87,6 +90,76 @@ def trajectory_record_nodes(record, times):
     return np.column_stack((position,angles,speeds))
 
 
+@njit(cache=True)
+def _curve_angles(result, times, indices, fields):
+    pi, tau = np.float32(math.pi), np.float32(2 * math.pi)
+    for frame in range(len(result)):
+        for i in range(1, result.shape[1]):
+            record = indices[frame, i]
+            if record < 0 or times[frame, i] < 0:
+                continue
+            mode, angle, speed, da, ds, _, _ = fields[record]
+            if mode == 2:
+                angle = np.float32(result[frame, i-1, 2] - da)
+                while angle > pi:
+                    angle = np.float32(angle - tau)
+                while angle < -pi:
+                    angle = np.float32(angle + tau)
+                speed = np.float32(result[frame, i-1, 3] - ds)
+            result[frame, i, 2] = angle
+            result[frame, i, 3] = speed
+
+
+@njit(cache=True)
+def _curve_positions(result, times, indices, fields, velocity):
+    for frame in range(len(result)):
+        for i in range(1, result.shape[1]):
+            record = indices[frame, i]
+            time = times[frame, i]
+            if record < 0 or time < 0:
+                continue
+            mode, _, _, _, _, vx, vy = fields[record]
+            if mode == 0:
+                result[frame, i, 0] = np.float32(result[frame, i-1, 0] - vx)
+                result[frame, i, 1] = np.float32(result[frame, i-1, 1] - vy)
+            else:
+                fraction = np.float32(time - np.floor(time))
+                complement = np.float32(1.) - fraction
+                for axis in range(2):
+                    position = np.float32(result[frame, i-1, axis] - fraction * velocity[frame, i-1, axis])
+                    result[frame, i, axis] = np.float32(position - complement * velocity[frame, i, axis])
+
+
+def _batched_curve_nodes(result, times, indices, records):
+    """Retain the reference float32 stores. Trig still uses NumPy in float64."""
+    fields = np.zeros((len(records), 7), dtype=np.float32)
+    for j in np.unique(indices):
+        if j < 0:
+            continue
+        record = records[j]
+        mode = record['mode']
+        angle, speed = record['angle'], record['speed']
+        if mode == 0:
+            vx, vy = np.asarray(record["unit_vector"][:2], np.float32) * np.float32(speed)
+            values = mode, angle, speed, 0., 0., vx, vy
+        elif mode == 2:
+            values = mode, angle, speed, record['angle_delta'], record['speed_delta'], 0., 0.
+        else:
+            return False
+        if any(value is None or not np.isfinite(value) for value in values) or abs(values[3]) > 10.:
+            return False
+        fields[j] = values
+    for j in np.unique(indices[:, 0]):
+        mask = (indices[:, 0] == j) & (times[:, 0] >= 0)
+        if j >= 0 and mask.any():
+            result[mask, 0] = trajectory_record_nodes(records[j], times[mask, 0])
+    _curve_angles(result, times, indices, fields)
+    angle64 = result[:, :, 2].astype(float)
+    velocity = (np.stack((np.cos(angle64), np.sin(angle64)), axis=-1) * result[:, :, 3, None]).astype(np.float32)
+    _curve_positions(result, times, indices, fields, velocity)
+    return True
+
+
 def curve_node_sequence(curve, ahead):
     """Offline geometry candidate; does not enable trust or change live inputs.
 
@@ -108,6 +181,11 @@ def curve_node_sequence(curve, ahead):
             mask=(indices<0)&(times>=record['start'])&(times<record['end'])
             indices[mask]=j
     if np.any((times>=0)&(indices<0)):raise ValueError('Some native node times have no captured trajectory record')
+    if times.size >= 512 and projection_cache("curve_rectangles") is not None:
+        if _batched_curve_nodes(result, times, indices, motion["records"]):
+            if not np.isfinite(result).all():
+                raise ValueError('Nonfinite native trajectory candidate')
+            return result
     pi=np.float32(math.pi);tau=np.float32(2*math.pi)
     for i in range(count):
         for j in np.unique(indices[:,i]):

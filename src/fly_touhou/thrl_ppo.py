@@ -143,16 +143,16 @@ def compute_gae(rewards, values, bootstrap_values, terminated, episode_starts=No
                     torch.as_tensor(truncation_values, device=rewards.device, dtype=rewards.dtype))
     if trunc_values.shape != values.shape:
         raise ValueError('Expected truncation_values[T,N,3]')
+    following = torch.cat((values[1:], bootstrap[None]))
+    following = torch.where(truncated[..., None], trunc_values, following)
+    # Discard unused terminal bootstrap values, including a possible NaN.
+    following = torch.where(terminated[..., None], torch.zeros_like(following), following)
+    delta = rewards + gamma * following - values
+    trace = (gamma * gae_lambda) * (~(boundary | cuts))[..., None].to(rewards.dtype)
     advantages = torch.zeros_like(rewards)
     gae = rewards.new_zeros(envs, objectives)
     for t in range(steps - 1, -1, -1):
-        next_value = bootstrap if t == steps - 1 else values[t + 1]
-        next_value = torch.where(truncated[t, :, None], trunc_values[t], next_value)
-        # Do not multiply an unused terminal bootstrap (possibly NaN) by zero.
-        next_value = torch.where(terminated[t, :, None], torch.zeros_like(next_value), next_value)
-        delta = rewards[t] + gamma * next_value - values[t]
-        continuation = (~(boundary[t] | cuts[t]))[:, None].to(rewards.dtype)
-        gae = delta + gamma * gae_lambda * continuation * gae
+        gae = delta[t] + trace[t] * gae
         advantages[t] = gae
     return advantages, advantages + values
 

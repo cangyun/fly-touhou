@@ -24,7 +24,8 @@ The project's code is distributed under AGPL-3.0-or-later, except where an accom
 - Its code license is MIT, copyright Philip Shiu and Nico Spiller; the download script fetches the upstream LICENSE alongside the input data and model.py.
 - Annotation source: https://github.com/flyconnectome/flywire_annotations at `ebd66db2596fcc39c6950fb54ea3efa00f7fe8a0` (v2.1.0, materialization 783).
 - Annotation sources and exact download records are in `release-data/annotation-sources.json`. The shipped port-order metadata was generated from these sources; its original provenance is retained. The filename's historical 1024-input selection is not the current full-VP selection.
-- Data and annotation use follows the respective upstream terms and citation requirements; the project's AGPL license does not replace them. Bulk upstream datasets are downloaded from their original source, not republished in this repository.
+- FlyWire's public FAFB data is available under CC BY-NC 4.0 with the [FlyWire citation guidance](https://join.flywire.ai/guidelines). The Python setup obtains the graph and annotations from their pinned upstream sources.
+- The checkpoints in [weights/published](weights/published) are trained against FAFB v783. They are provided for noncommercial reproduction with attribution under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Their file digests are listed in [the weight manifest](weights/published/manifest.json). The weights require corresponding graph data and input-port ordering. The project source code uses AGPL-3.0-or-later.
 
 Relevant original research:
 
@@ -35,7 +36,12 @@ Relevant original research:
 
 ## Touhou Project
 
-Touhou 14 / Double Dealing Character is a game by Team Shanghai Alice. This repository is an independent research controller, not an official game distribution. No game executable, BGM, graphics or other game assets are included; users must provide their own compatible game installation.
+Touhou 14 / Double Dealing Character and Touhou 8 / Imperishable Night are games by Team Shanghai Alice. Users provide their original executable and game assets. This independent controller distributes source, trained parameters, numeric research records, and the licensed adapter components.
+
+## d3d8to9
+
+- TH08 uses crosire's [d3d8to9 1.16.0](https://github.com/crosire/d3d8to9/releases/tag/v1.16.0).
+- The original upstream x86 DLL and its [BSD 2-Clause license](native/th08/LICENSE-BSD-2-Clause.md) are supplied together.
 
 ## Other dependencies and historical tools
 

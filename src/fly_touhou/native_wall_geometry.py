@@ -7,7 +7,7 @@ from .native_wall_motion import parse_program, simulate
 REVISION = 'candidate-player-path-reactive-orbs-v1'
 
 
-def _untriggered_prefix(point, context):
+def _untriggered_prefix(point, context, horizon=24, *, _clearance_arrays=False):
     """A blue orb remains ordinary if NO legal player route can reach64px.
 
     The old growth envelope is usable in that case, including its pre-release
@@ -17,7 +17,10 @@ def _untriggered_prefix(point, context):
     raw=point['native']
     if point['marker']!=1 or raw['native_ex_active_flags']!=0:return None
     from .native_bullet_release import predict_bullet_release
-    release=predict_bullet_release(raw)
+    # The following reach calculation proves this callback cannot trigger;
+    # only for that proof may the generic motion model ignore its selector.
+    release=predict_bullet_release(dict(raw,native_ex_ignore_reaction_for_reach_bound=True),horizon,
+                                   _clearance_arrays=_clearance_arrays)
     if not all(release['known_by_frame']):return None
     bounds=np.asarray(release['bounds'],float);a,b=bounds[:,0],bounds[:,1]
     direction=b-a;length=np.square(direction).sum(-1)
@@ -51,7 +54,7 @@ def attach_reactive_forecasts(forecasts, metadata, object_indices):
             program = parse_program(metadata['programs'][point['program_index']])
             release=_untriggered_prefix(point,metadata)
             if release is not None:
-                ordinary.append(dict(object_index=index,release=release))
+                ordinary.append(dict(object_index=index,release=release,reactive_point=point))
                 continue
             simulate(point, program, body['near_radius'], body['far_radius'], [metadata['player']], player_order='after')
         except ValueError as error:
@@ -84,9 +87,45 @@ def _cached_positions(point_json, program_hex, near, far, path_bytes, shape):
     point, program = json.loads(point_json), parse_program(program_hex)
     paths = np.frombuffer(path_bytes,dtype=np.float32).reshape(shape)
     answer = np.empty_like(paths)
-    answer[:,0] = point['native']['native_position']
-    for i, path in enumerate(paths):
-        answer[i,1:] = [row['position'] for row in simulate(point,program,near,far,path,player_order='after')]
+    if not len(paths):
+        return answer
+    raw = point['native']
+    answer[:,0] = raw['native_position']
+    pending = np.arange(len(paths))
+    index = int(raw.get('native_ex_index',18))
+    if (point['marker'] == 1 and raw['native_state'] == 1 and not raw['native_flags'] & 0x200
+            and raw.get('native_motion_time_rate',1.) == 1. and raw['native_ex_active_flags'] == 0
+            and (index >= len(program) or program[index][8] == 0)):
+        # With no active command a blue orb keeps precisely the native float32
+        # velocity until its first near callback. Check every candidate against
+        # the previous bullet position and the NEXT player position.
+        straight = np.empty(paths.shape[1:], np.float32)
+        straight[0] = raw['native_position']
+        straight[1:] = raw['native_velocity']
+        np.add.accumulate(straight, axis=0, dtype=np.float32, out=straight)
+        delta = paths[:,1:] - straight[:-1]
+        near2 = np.float32(near) * np.float32(near)
+        can_trigger = (np.square(delta).sum(axis=-1) < near2).any(axis=1)
+        answer[~can_trigger] = straight
+        pending = np.flatnonzero(can_trigger)
+    if len(pending):
+        try:
+            from .native_wall_position_kernel import batch_positions
+        except ImportError:
+            batch_positions=None
+        if batch_positions is not None:
+            answer[pending]=batch_positions(point,program,near,far,paths[pending])
+            return answer
+        # Different commands can trace the exact same path at a native wall.
+        # Keep byte-identical paths together without merging nearby trajectories.
+        by_path = {}
+        for i in pending:
+            key = paths[i].tobytes()
+            if key in by_path:
+                answer[i] = answer[by_path[key]]
+            else:
+                answer[i,1:] = [row['position'] for row in simulate(point,program,near,far,paths[i],player_order='after')]
+                by_path[key] = i
     return answer
 
 
@@ -97,11 +136,30 @@ def predicted_positions(item, context, paths):
         context['programs'][item['point']['program_index']], body['near_radius'],body['far_radius'],path.tobytes(),path.shape)
 
 
+def _numpy_reactive_clearance(answer, paths, centers, offset, radius, begin, end):
+    delta = paths.astype(float) - centers + offset
+    for tick in range(int(np.floor(begin)), int(np.ceil(end))):
+        start = delta[:,tick]
+        travel = delta[:,tick+1] - start
+        length = np.square(travel).sum(-1)
+        u = np.divide(-(start*travel).sum(-1),length,out=np.zeros_like(length),where=length>1e-12)
+        u = np.clip(u,max(0.,begin-tick),min(1.,end-tick))
+        np.minimum(answer,np.linalg.norm(start+u[:,None]*travel,axis=-1)-radius,out=answer)
+
+
+try:
+    from .swept_clearance_kernel import accumulate_reactive_clearance as _accumulate_reactive_clearance
+except ImportError:
+    _accumulate_reactive_clearance = _numpy_reactive_clearance
+
+
 def reactive_clearances(f, objects, forecasts, paths, *, initial_time, duration):
     """Continuous swept hints using each candidate's OWN reactive trajectory."""
     from .thrl_movement_teacher import MovementSafetyTeacher
     answer = np.full(len(paths),np.inf)
     stop = initial_time+duration
+    scene = MovementSafetyTeacher()
+    zero_offset = np.zeros(2)
     for item in forecasts.get('reactive_bullets',()):
         row = np.asarray(objects[item['object_index']],float)
         if not item['supported']:
@@ -118,16 +176,10 @@ def reactive_clearances(f, objects, forecasts, paths, *, initial_time, duration)
         if row[13] <= .5:
             continue
         centers = predicted_positions(item,forecasts['reactive_context'],paths)
-        _,_,_,circle,radii,extents,offset = MovementSafetyTeacher()._scene(f,row[None])
+        _,_,_,circle,radii,extents,offset = scene._scene(f,row[None])
         radius = radii[0] if circle[0] else np.linalg.norm(extents[0])
-        delta = paths.astype(float)-centers
-        if not circle[0]:delta += offset
-        for tick in range(int(np.floor(initial_time)),int(np.ceil(stop))):
-            start = delta[:,tick];travel = delta[:,tick+1]-start
-            length = np.square(travel).sum(-1)
-            u = np.divide(-(start*travel).sum(-1),length,out=np.zeros_like(length),where=length>1e-12)
-            u = np.clip(u,max(0.,initial_time-tick),min(1.,stop-tick))
-            answer = np.minimum(answer,np.linalg.norm(start+u[:,None]*travel,axis=-1)-radius)
+        _accumulate_reactive_clearance(answer,paths,centers,zero_offset if circle[0] else offset,radius,
+            float(initial_time),float(stop))
     return answer
 
 

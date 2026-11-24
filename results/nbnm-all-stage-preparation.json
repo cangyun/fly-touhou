@@ -1,0 +1,75 @@
+{
+  "schema": "nbnm-all-stage-preparation-v1",
+  "network_training": false,
+  "topology_changed": false,
+  "native_catalog_cards": 28,
+  "primary_story_cards": 25,
+  "alternate_story_cards": 3,
+  "nonspell_tasks": 29,
+  "whole_stage_tasks": 6,
+  "forward_tail_chains": 12,
+  "full_story_tasks": 1,
+  "prepared_tasks": 76,
+  "primary_training_tasks": 73,
+  "qualification": {
+    "frozen_distinct_attempts": 20,
+    "minimum_successes": 18
+  },
+  "native_teacher_probe": {
+    "attempts": 28,
+    "successes": 24,
+    "runtime_errors": 0,
+    "attempts_per_card": 1,
+    "student_evaluation": false,
+    "failed_tasks": [
+      "s4_BossCard3",
+      "s5_BossCard4",
+      "s6_BossCard2",
+      "s6_BossCard4"
+    ],
+    "caution": "Single training seed per card; teacher is not an infallible NBNM expert."
+  },
+  "stage_prefix_roundtrips": [
+    {
+      "stage": 1,
+      "passed": true
+    },
+    {
+      "stage": 2,
+      "passed": true
+    },
+    {
+      "stage": 3,
+      "passed": true
+    },
+    {
+      "stage": 4,
+      "passed": true
+    },
+    {
+      "stage": 5,
+      "passed": true
+    },
+    {
+      "stage": 6,
+      "passed": true
+    }
+  ],
+  "CUDA_collector": {
+    "workers": 16,
+    "decisions": 256,
+    "optimizer_updates": 0,
+    "Bomb_actions": 0,
+    "policy_likelihood_replay_max_difference": 1.430511474609375e-06,
+    "stage_coverage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "additional_development_prefixes": "Optional ongoing cache; independent20-seed evaluation is built on demand, never repeat one seed20 times",
+  "regression_tests_passed": 46
+}

@@ -18,23 +18,35 @@ SCHEMA = 'continuous-directed-CSR-SpMM-chunked-SDDMM-v1'
 
 class _SparseEdgeMM(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, activity, edge_values, operator):
+    def forward(ctx, activity, edge_values, operator, ordered_forward, ordered_transpose, binary_activity, precomputed):
         ctx.operator = operator
-        ctx.save_for_backward(activity, edge_values)
-        return operator._multiply(activity, edge_values, transpose=False)
+        ctx.compact = ordered_forward is not None and operator.compact_training
+        ctx.save_for_backward(activity, edge_values, ordered_transpose)
+        if precomputed is not None:
+            return precomputed
+        return operator._multiply(activity, edge_values, transpose=False, ordered=ordered_forward,
+                                  compact=ctx.compact, binary_activity=binary_activity)
 
     @staticmethod
     @once_differentiable
     def backward(ctx, grad_output):
-        activity, edge_values = ctx.saved_tensors
+        activity, edge_values, ordered_transpose = ctx.saved_tensors
         operator = ctx.operator
-        grad_activity = (operator._multiply(grad_output, edge_values, transpose=True)
+        shared_gradient = None
+        if (all(ctx.needs_input_grad[:2]) and activity.is_cuda
+                and operator.deterministic_spmm and operator.fused_edge_grad):
+            # Both CUDA kernels consume the same contiguous per-neuron values.
+            shared_gradient = grad_output.T.contiguous()
+        grad_activity = (operator._multiply(grad_output, edge_values, transpose=True,
+            ordered=ordered_transpose, compact=ctx.compact, activity_by_neuron=shared_gradient)
             if ctx.needs_input_grad[0] else None)
         grad_edges = None
         if ctx.needs_input_grad[1]:
             if operator.fused_edge_grad and activity.is_cuda:
                 from .fused_edge_gradient import edge_gradient
-                grad_edges=edge_gradient(activity,grad_output,operator.pre,operator.post)
+                grad_edges = edge_gradient(activity, grad_output, operator.pre, operator.post,
+                    prune_zero_tiles=ctx.compact and operator.prune_edge_gradient_tiles,
+                    gradient_by_neuron=shared_gradient)
             else:
                 grad_edges = torch.empty_like(edge_values)
                 for start in range(0, operator.n_edges, operator.edge_chunk_size):
@@ -43,7 +55,7 @@ class _SparseEdgeMM(torch.autograd.Function):
                     outgoing = activity.index_select(1, operator.pre[start:end])
                     incoming_gradient = grad_output.index_select(1, operator.post[start:end])
                     grad_edges[start:end] = (incoming_gradient * outgoing).sum(0)
-        return grad_activity, grad_edges, None
+        return grad_activity, grad_edges, None, None, None, None, None
 
 
 class TrainableDirectedSparse(nn.Module):
@@ -62,6 +74,13 @@ class TrainableDirectedSparse(nn.Module):
             raise ValueError('Original in-range directed edge arrays required')
         self.n_neurons, self.n_edges = n_neurons, len(pre)
         self.edge_chunk_size = edge_chunk_size
+        self.reuse_ordered_weights = True
+        self.compact_training = True
+        self.binary_training_spmm = True
+        self.prune_edge_gradient_tiles = True
+        self.reuse_sequence_weights = True
+        self.compact_history = True
+        self.packed_history_edges = True
         self.fused_edge_grad=os.environ.get('FLY_TOUHOU_FUSED_EDGE_GRAD','0')=='1'
         self.deterministic_spmm=os.environ.get('FLY_TOUHOU_DETERMINISTIC_SPMM','0')=='1'
         pre, post = pre.astype(np.int64,copy=False), post.astype(np.int64,copy=False)
@@ -77,24 +96,40 @@ class TrainableDirectedSparse(nn.Module):
             self.register_buffer(prefix+'_crow',torch.from_numpy(crow),persistent=False)
             self.register_buffer(prefix+'_columns',torch.from_numpy(columns[permutation].copy()),persistent=False)
 
-    def _multiply(self, activity, values, *, transpose):
+    def ordered_weights(self, values):
+        """Prepare the two CSR layouts once per differentiable LIF forward."""
+        detached = values.detach()
+        return (detached.index_select(0, self.forward_permutation),
+                detached.index_select(0, self.transpose_permutation))
+
+    def _multiply(self, activity, values, *, transpose, ordered=None, compact=False,
+                  binary_activity=False, activity_by_neuron=None):
         prefix = 'transpose' if transpose else 'forward'
+        if ordered is None:
+            ordered = values.index_select(0, getattr(self, prefix + '_permutation'))
         if self.deterministic_spmm and activity.is_cuda:
             from .deterministic_spmm import multiply
-            return multiply(activity,values.index_select(0,getattr(self,prefix+'_permutation')),
-                getattr(self,prefix+'_crow'),getattr(self,prefix+'_columns'))
+            crow = getattr(self, prefix + '_crow')
+            columns = getattr(self, prefix + '_columns')
+            if binary_activity and self.binary_training_spmm and len(activity) in (32, 128):
+                from .frozen_binary_messages import multiply_training_spikes
+                return multiply_training_spikes(activity, ordered, crow, columns)
+            return multiply(activity, ordered, crow, columns, compact=compact,
+                            activity_by_neuron=activity_by_neuron)
         matrix = torch.sparse_csr_tensor(getattr(self,prefix+'_crow'),getattr(self,prefix+'_columns'),
-            values.index_select(0,getattr(self,prefix+'_permutation')),
-            size=(self.n_neurons,self.n_neurons),dtype=values.dtype,device=values.device)
+            ordered,size=(self.n_neurons,self.n_neurons),dtype=ordered.dtype,device=ordered.device)
         return torch.sparse.mm(matrix,activity.T.contiguous()).T.contiguous()
 
-    def forward(self, activity, edge_values):
+    def forward(self, activity, edge_values, *, ordered_weights=(None, None), binary_activity=False,
+                precomputed=None):
         if (activity.ndim != 2 or activity.shape[0] < 1 or activity.shape[1] != self.n_neurons
                 or edge_values.shape != (self.n_edges,) or activity.dtype != torch.float32
                 or edge_values.dtype != torch.float32 or activity.device != edge_values.device
                 or activity.device != self.pre.device):
             raise ValueError('Same-device FP32 activity[B,N] and original-order values[E] required')
-        return _SparseEdgeMM.apply(activity,edge_values,self)
+        # Ordered buffers only affect the sparse reads. Gradients remain
+        # in edge_values' original parameter order.
+        return _SparseEdgeMM.apply(activity, edge_values, self, *ordered_weights, binary_activity, precomputed)
 
     def config(self):
         return dict(schema=SCHEMA,n_neurons=self.n_neurons,n_edges=self.n_edges,

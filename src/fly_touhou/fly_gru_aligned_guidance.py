@@ -66,7 +66,8 @@ def validate_gru_aligned_guidance_inputs(logits,margins,trusted,actions,outcomes
 
 def gru_aligned_guidance_loss(logits,margins,trusted,actions,outcomes,*,valid_mask=None,
         unprotected_mask,config=DEFAULT_CONFIG,normalizers=None,rule_probabilities=None,
-        rule_weights=None,deathbomb_mask=None,veto_rule_on_contact=False):
+        rule_weights=None,deathbomb_mask=None,veto_rule_on_contact=False,position_features=None,position_exceptions=None,
+        future_reference_from_rule=False,future_replaced_by_corridor=None):
     """Local sums / whole256-row counts; sum four microblocks without reweighting.
 
 Call the host validator on sealed CPU evidence first. This tensor path has no
@@ -75,6 +76,9 @@ scores; hit/rule/DB use the original T1 policy clamp and inventory support.
 """
     c,v,a,y,valid,normal,p,w,db=_inputs(logits,margins,trusted,actions,outcomes,valid_mask,
         unprotected_mask,config,rule_probabilities,rule_weights,deathbomb_mask)
+    if position_features is not None:
+        from .compact_lower_field import movement_reference
+        p,_=movement_reference(position_features,c,v,normal,p,w,exceptions=position_exceptions)
     eligible=valid&normal
     trust=v&eligible[...,None]
     # Eligibility deliberately does NOT depend on sampled action or outcome.
@@ -92,6 +96,20 @@ scores; hit/rule/DB use the original T1 policy clamp and inventory support.
     worst=scores.masked_fill(~keep,torch.inf).amin(-1)
     future_row=trust[...,0]&(size>0)&trust[...,1:].any(-1)&((best-worst)>.05)
     target=(scores*2.).masked_fill(~keep,-torch.inf).softmax(-1).detach()
+    if future_reference_from_rule:
+        # A four-frame movement can be followed by a turn. On guided NBNM
+        # states, do not teach a constant24-frame continuation that contradicts
+        # the live route teacher. Risk-head geometric labels stay unchanged.
+        route_target=p[...,:18]*keep.to(p.dtype)
+        route_mass=route_target.sum(-1,keepdim=True)
+        use_route=eligible&(w>0)&trust[...,0]&trust[...,1:].any(-1)&(route_mass[...,0]>0)
+        if veto_rule_on_contact:use_route=use_route&(y!=1)
+        route_target=route_target/route_mass.clamp_min(1e-12)
+        target=torch.where(use_route[...,None],route_target,target).detach()
+        route_varies=(route_target.amax(-1)-route_target.amin(-1))>.05
+        future_row=future_row|(use_route&route_varies)
+    if future_replaced_by_corridor is not None:
+        future_row=future_row&~future_replaced_by_corridor
     conditional_logp=move.masked_fill(~keep,-torch.inf).log_softmax(-1).masked_fill(~keep,0.)
     future_ce=-(target*conditional_logp).sum(-1)
     hit_row=eligible&(a>=0)&(a<18)&(y==1)

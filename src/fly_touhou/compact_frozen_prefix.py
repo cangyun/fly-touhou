@@ -12,6 +12,7 @@ def start(env):
     from .native_replay import semantic_state
     env._frozen_prefix=dict(start=semantic_state(env.snapshot),raw_input_segments=[],
         transitions=[],ticks=0,native_seed=env.native_seed,status='recording')
+    env._saved_bookmark_stages = set()
     env.controller.begin_input_tape()
 
 
@@ -41,6 +42,9 @@ def after_step(env,before,info,done):
             stage_frame=s.stage_frame,frame=s.frame,ticks=record['ticks']),
             initial_tape=commands[:-bridge_ticks] if bridge_ticks else commands,
             loading_bridge_ticks=bridge_ticks,state=semantic_state(s)))
+    if getattr(env, 'frozen_story_bookmarks', False):
+        from .nbnm_story_bookmark import capture
+        capture(env, record, info, done)
     if s.stage==5 and not record.get('stage5_capture'):
         from .native_replay import semantic_state
         target=Path(env.stage6_prefix_capture).parent.parent/'stage5-prefix'/Path(env.stage6_prefix_capture).name
@@ -50,7 +54,14 @@ def after_step(env,before,info,done):
             native_events={k:s.extra['thrl_events'][k] for k in ('misses','bombs_used','point_items')},
             teacher_actions=0,optimizer_updates=0,prefix_was_played_live_by_frozen_network=True))
         record['stage5_capture']=str(target)
-    if s.stage!=6 and not done:return
+    if not done and (s.stage != 6 or (getattr(env, 'frozen_story_bookmarks', False)
+                                   and 6 not in env._saved_bookmark_stages)):
+        return
+    native=None
+    if s.stage==6 and getattr(env,'nbnm',None):
+        from .nbnm_stage_bookmark import replay_stage_record
+        if s.stage_frame>=32:native=replay_stage_record(env.controller._memory)
+        if native is None and not done:return
     from .native_replay import semantic_state
     record.update(schema='frozen-SNN-actual-prefix-commands-v1',
         raw_input_segments=env.controller.end_input_tape(),landing=semantic_state(s),
@@ -59,3 +70,8 @@ def after_step(env,before,info,done):
         teacher_actions=0,optimizer_updates=0,prefix_was_played_live_by_frozen_network=True)
     write_json(Path(env.stage6_prefix_capture),record)
     info['stage6_prefix_capture']=env.stage6_prefix_capture
+    if native is not None:
+        dest=Path(env.stage6_prefix_capture).with_suffix('.native-stage.json')
+        write_json(dest,native)
+        info['native_stage_record']=str(dest)
+        info['stage6_attack_age']=s.frame-env.encoder._attack_start

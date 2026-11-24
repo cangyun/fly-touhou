@@ -375,7 +375,11 @@ def _script_boundary(state, horizon):
     if first_tick > horizon:
         return None, None
     if state.get("tick_callback"):
-        return first_tick, "native tick callback is not interpreted"
+        from .native_enemy_ecl import variable_only_tick_callback, CALLBACK_EFFECTS_REVISION
+        shared=state.get('ecl_forecast') or {}
+        resolved=(shared.get('tick_callback_effects_revision')==CALLBACK_EFFECTS_REVISION
+                  and variable_only_tick_callback(state['tick_callback'],state['image_base']))
+        if not resolved:return first_tick, "native tick callback is not interpreted"
     if not state.get("ecl_read", False):
         return first_tick, "ECL contexts were not read"
     if state.get("ecl_context_list_truncated"):
@@ -407,6 +411,18 @@ def _script_boundary(state, horizon):
         if due <= horizon and (first is None or due < first):
             first, reason = due, f"uninterpreted ECL opcode {context['opcode']} at {context['instruction']:#x}"
     return first, reason
+
+
+def advance_phase_timer(timer):
+    """Advance the captured EnemyBase timer once, after its ECL update."""
+    scale = timer['timer_scale']
+    timer['previous_timer'] = timer['timer']
+    if scale is None or _f32(.99) < scale < _f32(1.01):
+        timer['timer'] += 1
+        timer['elapsed'] = _add(timer['elapsed'], 1.)
+    else:
+        timer['elapsed'] = _add(timer['elapsed'], scale)
+        timer['timer'] = math.trunc(timer['elapsed'])
 
 
 def _phase_boundary(state, horizon):
@@ -456,13 +472,7 @@ def _phase_boundary(state, horizon):
         timer = copy.deepcopy(state["phase_timer"])
         due = first_tick
         while timer["timer"] < timed["time"] and due <= horizon:
-            scale = timer["timer_scale"]
-            if scale is None or _f32(0.99) < scale < _f32(1.01):
-                timer["timer"] += 1
-                timer["elapsed"] = _add(timer["elapsed"], 1)
-            else:
-                timer["elapsed"] = _add(timer["elapsed"], scale)
-                timer["timer"] = math.trunc(timer["elapsed"])
+            advance_phase_timer(timer)
             due += 1
         if due <= horizon:
             time_due = due
@@ -483,8 +493,11 @@ def _phase_boundary(state, horizon):
     return None, None, details
 
 
-def predict_enemy_positions(state, horizon=24):
-    """Forecast up to 24 native frames from a captured motion state.
+MAX_FORECAST_FRAMES = 120
+
+
+def predict_enemy_positions(state, horizon=24, *, include_damage_flags=False):
+    """Forecast native frames from a captured motion state and ECL schedule.
 
     ``positions[0]`` is the observed final position. Later positions are a
     conditional trajectory from the captured native movement program. A pending
@@ -493,10 +506,11 @@ def predict_enemy_positions(state, horizon=24):
     An unsupported movement/easing stops the trajectory instead of inventing
     stationary or finite-difference motion. No source state is mutated.
     """
-    if not isinstance(horizon, int) or not 0 <= horizon <= 24:
-        raise ValueError("native enemy prediction horizon must be an integer in [0, 24]")
+    if type(horizon) is not int or not 0 <= horizon <= MAX_FORECAST_FRAMES:
+        raise ValueError(f"Native enemy prediction horizon must be an integer in [0, {MAX_FORECAST_FRAMES}]")
     work = copy.deepcopy(state)
     positions = [work["final"]["position"][:]]
+    damage_flags = [work["flags"]] if include_damage_flags else None
     velocities = [work["final"]["velocity"][:]]
     displacements = [[0.0, 0.0, 0.0]]
     boundary, reason = _script_boundary(work, horizon) if horizon else (None, None)
@@ -522,6 +536,8 @@ def predict_enemy_positions(state, horizon=24):
                 boundary, reason = frame, motion_error
             break
         positions.append(work["final"]["position"][:])
+        if damage_flags is not None:
+            damage_flags.append(work["flags"])
         velocities.append(work["final"]["velocity"][:])
         displacements.append(displacement)
     result = {"schema": SCHEMA, "horizon": horizon, "positions": positions,
@@ -535,6 +551,8 @@ def predict_enemy_positions(state, horizon=24):
             "forecast_complete": supported and boundary is None,
             "exact_until_frame": horizon if boundary is None else boundary - 1,
             "update_order": "motion; ECL; optional callback; contact; contact-timer decrement"}
+    if damage_flags is not None:
+        result["damage_flags_by_tick"] = damage_flags
     ecl = work.get('ecl_forecast', {})
     # A distant parent can create a contact body near the player. Keep the
     # known creation times; forecasting the parent alone does not cover it.
