@@ -9,7 +9,7 @@ import numpy as np
 REVISION = 'supported-route-space-v2'
 
 
-def preference(probabilities, encoding, routes=None, *, support_mix=.03):
+def preference(probabilities, encoding, routes=None, *, support_mix=.03, include_wall_space=True):
     d = encoding['details']
     margins = np.asarray(d['margins'], float)
     safe = margins[0] > 1.
@@ -17,25 +17,28 @@ def preference(probabilities, encoding, routes=None, *, support_mix=.03):
     if not safe.any():
         return p, dict(revision=REVISION, applied=False, reason='no_buffered_first_step')
     p = p / p.sum() if p.sum() else safe / safe.sum()
-    from .thrl_movement_teacher import action_velocities
-    from .native_wall_geometry import player_paths
-    f = np.asarray(encoding['source_features25'], float)
-    v = action_velocities()
-    if f[18] < 0:
-        v[9:] = v[:9]
-    origin = np.asarray((encoding.get('source_native_forecasts') or {}).get(
-        'reactive_context', {}).get('player', [f[0]*368-184, f[1]*400+32]), float)
-    ends = player_paths(np.broadcast_to(origin, (18, 2)), v)[:, 4]
+    log_quality = .35*np.log(np.maximum(p, 1e-8))
+    reserve_gain = np.zeros_like(p)
+    if include_wall_space:
+        from .thrl_movement_teacher import action_velocities
+        from .native_wall_geometry import player_paths
+        f = np.asarray(encoding['source_features25'], float)
+        v = action_velocities()
+        if f[18] < 0:
+            v[9:] = v[:9]
+        origin = np.asarray((encoding.get('source_native_forecasts') or {}).get(
+            'reactive_context', {}).get('player', [f[0]*368-184, f[1]*400+32]), float)
+        ends = player_paths(np.broadcast_to(origin, (18, 2)), v)[:, 4]
 
-    # A spatial preference is never allowed to turn a dangerous move safe.
-    # Encourage reserve at EVERY wall; the lower combat band is not the
-    # bottom boundary. Do not force a single x coordinate or camp for reward.
-    def space(xy):
-        lateral = np.minimum(xy[..., 0]+184, 184-xy[..., 0])
-        vertical = np.minimum(xy[..., 1]-32, 432-xy[..., 1])
-        return np.minimum(lateral, 48)/48 + np.minimum(vertical, 64)/64
-    reserve_gain = space(ends) - space(origin)
-    log_quality = .35*np.log(np.maximum(p, 1e-8)) + 4.*reserve_gain
+        # A spatial preference is never allowed to turn a dangerous move safe.
+        # Encourage reserve at EVERY wall; the lower combat band is not the
+        # bottom boundary. Do not force a single x coordinate or camp for reward.
+        def space(xy):
+            lateral = np.minimum(xy[..., 0]+184, 184-xy[..., 0])
+            vertical = np.minimum(xy[..., 1]-32, 432-xy[..., 1])
+            return np.minimum(lateral, 48)/48 + np.minimum(vertical, 64)/64
+        reserve_gain = space(ends) - space(origin)
+        log_quality += 4.*reserve_gain
     found = safe.copy()
     if routes is not None and np.any(safe & (np.asarray(routes['exits']) > 0)):
         found = safe & (np.asarray(routes['exits']) > 0)

@@ -56,4 +56,4 @@ def test_guidance_migration_preserves_worlds_and_rejects_uncommitted_update():
     state['in_progress']={'rollout':'old-data'}
     with pytest.raises(ValueError,match='committed'):validate_resume(state,new)
     state['in_progress']=None;new['nbnm']['objective']={'phase':'speed'}
-    with pytest.raises(ValueError,match='unchanged'):validate_resume(state,new)
+    with pytest.raises(ValueError,match='compatible success and event objectives'):validate_resume(state,new)

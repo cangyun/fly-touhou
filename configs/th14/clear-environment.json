@@ -24,6 +24,9 @@
   "compact_forecast_growth_motion": true,
   "compact_primary_attack_target": true,
   "compact_full_native_teacher_support": true,
+  "compact_wall_exit_guidance": {
+    "revision": "comparable-wall-exits-v1"
+  },
   "compact_native_motion_forecast": true,
   "compact_native_focus_gate": true,
   "compact_native_curve_laser_geometry": true,

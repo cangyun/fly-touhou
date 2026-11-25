@@ -18,6 +18,8 @@
 
 真人录像的整局留出评估用于检查模仿是否泛化。实机阶段由学生执行动作，冻结评测按原作结局和接触记录验收。目前普通通关入口支持《辉针城》，《永夜抄》的普通通关入口待适配。
 
+[通用离边引导](TRAINING.md#通用离边引导) 在训练中优先比较安全性和出路。条件接近时，让教师更偏向能腾出活动空间的走位。新原作通过自己的边界和几何证据复用这项规则。
+
 ### 扩展方向
 
 | 方向 | 后续工作 |
@@ -44,6 +46,8 @@ This roadmap describes the next full training pipeline. See [reproduction](REPRO
 | 5. Transfer to NBNM | Inherit the regular-clear policy, disable Bombs, and terminate at the first original-game contact. Continue in-game training. Fine-tune repeated road or spell failures with correction routes verified in the original game from states visited by the student. | Keep avoidance and route transitions intact throughout a no-Miss, no-Bomb, no-continue clear. |
 
 Hold out entire human replays to evaluate imitation. The student executes the actions during in-game learning. Frozen evaluation checks native contact and the ending. The regular-clear entry point supports TH14, and the TH08 regular-clear adapter is pending.
+
+[Shared wall-exit guidance](TRAINING.md#shared-wall-exit-guidance) compares safety and continuation evidence before giving teacher preference to a move that creates space. New games reuse the rule with their own bounds and geometry.
 
 ### Expansion directions
 

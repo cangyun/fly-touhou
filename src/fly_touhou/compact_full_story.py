@@ -95,6 +95,8 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
     _attach=THRLTeacherEnv._attach
     def __init__(self,*args,teacher_revision=None,forecast_native_arming=False,primary_attack_target=False,forecast_growth_motion=False,full_native_teacher_support=False,protected_exit_forecast=False,protected_exit_from_stage=1,protected_exit_preserve_long_shield=False,stage6_prefix_capture=None,frozen_story_bookmarks=False,frozen_prefix_replay=None,native_motion_forecast=False,native_focus_gate=False,unknown_laser_player_motion=False,native_curve_laser_geometry=False,native_curve_motion_forecast=False,native_enemy_damage_bound=False,**kwargs):
         self.frozen_stage6_metrics=kwargs.pop('frozen_stage6_metrics',None)
+        from .nbnm_wall_exit_guidance import validate as validate_wall_exit_guidance
+        self.wall_exit_guidance=validate_wall_exit_guidance(kwargs.pop('wall_exit_guidance',None))
         lower_reward=kwargs.pop('lower_field_reward',None)
         if lower_reward is not None and kwargs.get('reward_schema')!='th14-completion-reward-v4':
             raise ValueError('Lower-field shaping is calibrated to completion reward v4')
@@ -157,10 +159,13 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
             bind(self.snapshot,getattr(self.encoder,'last_result',None) if restore else None)
         result=THRLTeacherEnv._label_current(self,info)
         protected=getattr(self,'protected_exit_forecast',False)
-        if not (restore or protected):return result
+        from .nbnm_wall_exit_guidance import comparable
+        wall_exit=getattr(self,'wall_exit_guidance',None)
+        if not (restore or protected or comparable(wall_exit)):return result
         encoding=getattr(self.encoder,'last_result',None)
         if encoding is None:return result
         support_mix=getattr(self._teacher,'support_mix',.1)
+        route_detail={}
         if restore:
             from .compact_teacher_support import restore_full_native_support,correct_avoidable_bomb_reference
             self._teacher_label,detail=restore_full_native_support(self._teacher_label,encoding,support_mix=support_mix)
@@ -174,6 +179,10 @@ class CompactFullStoryEnv(THRLFullStoryEnv):
             from .compact_protected_exit_candidate import protected_exit_reference
             self._teacher_label,detail=protected_exit_reference(self._teacher_label,encoding,support_mix=support_mix)
             self._teacher_label['protected_exit_support_attempt']=detail
+        if comparable(wall_exit):
+            from .nbnm_wall_exit_guidance import th14_reference
+            routes=route_detail if route_detail.get('applied') else None
+            self._teacher_label=th14_reference(self._teacher_label,encoding,wall_exit,routes)
         return self._attach(result)
     def _info(self,elapsed=0):
         info=super()._info(elapsed)
@@ -315,6 +324,8 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
         for r in rows:r['native_enemy_damage_bound']=True
     if teacher and cfg.get('compact_full_native_teacher_support'):
         for r in rows:r['full_native_teacher_support']=True
+    if teacher and not config.get('nbnm') and cfg.get('compact_wall_exit_guidance') is not None:
+        for r in rows:r['wall_exit_guidance']=dict(cfg['compact_wall_exit_guidance'])
     if not teacher:
         for r in rows:r.pop('online_teacher_revision',None)
     return rows

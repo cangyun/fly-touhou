@@ -16,6 +16,12 @@
 
 走廊与验证长度可跨越多个动作段。无法确定的首次接触帧使用空值。几何预测如何参与评分由既有模型配置决定，最终动作由网络选出。
 
+## 离边引导
+
+接入新原作时，为教师提供当前自机坐标、**实际可移动边界**、各候选的第一拍落点及对应路线余量。至少需要可靠的 4／12／24 帧预测。已有更长走廊或不同出口数量时，一起参与比较。落点按原作的动作速度、输入延迟和边界钳位计算。缺少覆盖的时域留空。
+
+[公共规则](../src/fly_touhou/nbnm_wall_exit_guidance.py) 在安全和接续相近时才提高向内动作的监督权重。离边的判定依据实际落点和可用空间，适用于每一面和每部接入的原作。风险标签仍来自几何和实际碰撞，冻结动作仍由网络选择。
+
 ## 脚本观测
 
 `script(frame)` 提供可读取的原作计时、触发上下文与发弹信息。各作负责解释自己的 ECL、计时和内存布局。
@@ -23,3 +29,7 @@
 ## English
 
 The adapter returns original frames, resources, collision objects, and terminal events. The geometry interface reports candidate movement tapes in the same frame. Its coverage distinguishes unknown, rule-projected, and original-executed results. The script interface exposes available native clocks, trigger contexts, and emission records. Each policy retains its versioned input and action ordering.
+
+### Wall-exit guidance
+
+For a new game, provide the player's position, legal movement bounds, clamped first-command endpoints, and covered route clearances from the same native checkpoint. Use reliable 4-, 12-, and 24-frame evidence. Include longer witnessed corridors and distinct follow-up exits when available. Represent missing coverage explicitly. The [shared rule](../src/fly_touhou/nbnm_wall_exit_guidance.py) raises the teacher weight of an inward move when safety and continuation evidence are comparable. Frozen action selection remains with the policy.

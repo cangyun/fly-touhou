@@ -93,6 +93,7 @@ class ReadyCollector(Collector):
         event_stats=dict(events=0,unweighted_progress=0.,weighted_reward=0.,
             by_kind=dict(road=0,nonspell=0,spell=0,stage_clear=0,power=0),by_stage={},by_task_mode={})
         shaping_totals = {}
+        wall_exit_stats = dict(rows=0, teacher_mass_shift=0., by_stage={})
         task_counts={}
         episode_initial_states={}
         suspended=set()
@@ -153,7 +154,10 @@ class ReadyCollector(Collector):
         motion_stats = dict(eligible=0, idle=0, reversals=0, distance=0., cost=0., by_stage={})
         lure_stats = dict(card_rows=0, guided_rows=0, followed_rows=0, followed_contacts=0)
         pace_stats = dict(successes=0, reward_sum=0., damageable_target_rows=0, aimed_rows=0)
+        comparable_wall_exit = False
         if getattr(model, 'nbnm', None):
+            from ..nbnm_wall_exit_guidance import comparable
+            comparable_wall_exit = comparable(model.nbnm.get('wall_exit_guidance'))
             from ..nbnm_objective import Objective
             objective = Objective(**model.nbnm.get('objective', {}))
             objective_weights = objective.weights
@@ -224,6 +228,13 @@ class ReadyCollector(Collector):
                     f=features[j];label=labels[j];expert=experts[j];normal=bool(label['normal'])
                     weight=float(expert.get('guidance_weight',1.))
                     if model.phase_valid_control:weight*=float(f[14]>.5 or f[17]>.5)
+                    wall_exit = expert.get('wall_exit_guidance')
+                    if wall_exit and weight > 0:
+                        wall_exit_stats['rows'] += 1
+                        wall_exit_stats['teacher_mass_shift'] += wall_exit['probability_mass_shift']
+                        stage = str(infos[j]['stage'])
+                        counts_by_stage = wall_exit_stats['by_stage']
+                        counts_by_stage[stage] = counts_by_stage.get(stage, 0) + 1
                     record=dict(features=f,actions=np.int64(actions[j]),old_log_probs=logp[j],
                         old_values=network['values'][j],episode_starts=bool(self.starts[i]),
                         margins=np.asarray(label['margins'],np.float32),trusted=np.asarray(label['trusted'],bool),
@@ -317,21 +328,25 @@ class ReadyCollector(Collector):
                                 route_stats['teacher_turn_rows']+=1
                                 route_stats['teacher_turn_mass_sum']+=float(teacher[turns].sum())
                                 route_stats['student_turn_mass_sum']+=float(probability[turns].sum())
-                            x,y=f[0]*368-184,f[1]*400+32
-                            if abs(x)>160 or y>408:
-                                from ..thrl_movement_teacher import action_velocities
-                                from ..nbnm_live_routes import reserve
-                                velocity=action_velocities().copy()
-                                if f[11]<0:velocity[9:]=velocity[:9]
-                                ends=np.clip(np.array([x,y])+4*velocity,[-184,32],[184,432])
-                                inward=safe&(reserve(ends)-reserve([x,y])>.05)
-                                if inward.any():
-                                    route_stats['border_exit_rows']+=1
-                                    route_stats['border_teacher_inward_mass_sum']+=float(teacher[inward].sum())
-                                    route_stats['border_student_inward_mass_sum']+=float(probability[inward].sum())
-                                    phase_stats['border_exit_rows']+=1
-                                    phase_stats['border_teacher_inward_mass_sum']+=float(teacher[inward].sum())
-                                    phase_stats['border_student_inward_mass_sum']+=float(probability[inward].sum())
+                            inward=np.zeros(18,bool)
+                            if wall_exit:
+                                inward[wall_exit['inward_actions']]=True
+                            elif expert.get('nb_nm_route') and not comparable_wall_exit:
+                                # Legacy TH14-only diagnostic. TH08 uses the
+                                # actual native endpoints from its teacher.
+                                x,y=f[0]*368-184,f[1]*400+32
+                                if abs(x)>160 or y>408:
+                                    from ..thrl_movement_teacher import action_velocities
+                                    from ..nbnm_live_routes import reserve
+                                    velocity=action_velocities().copy()
+                                    if f[11]<0:velocity[9:]=velocity[:9]
+                                    ends=np.clip(np.array([x,y])+4*velocity,[-184,32],[184,432])
+                                    inward=safe&(reserve(ends)-reserve([x,y])>.05)
+                            if inward.any():
+                                for scope_stats in (route_stats,phase_stats):
+                                    scope_stats['border_exit_rows']+=1
+                                    scope_stats['border_teacher_inward_mass_sum']+=float(teacher[inward].sum())
+                                    scope_stats['border_student_inward_mass_sum']+=float(probability[inward].sum())
                         demonstration=expert.get('nb_nm_route',{}).get('complete_demonstration') or {}
                         matched=bool(demonstration.get('available'))
                         route_stats['demonstration_available_rows']+=int(matched)
@@ -589,5 +604,7 @@ class ReadyCollector(Collector):
                     for g in set(groups)} if groups is not None else {})
         if shaping_totals:
             result['metadata']['nbnm_reward_shaping'] = shaping_totals
+        if wall_exit_stats['rows']:
+            result['metadata']['wall_exit_guidance'] = wall_exit_stats
         if episode_initial_states:result['episode_initial_states']=episode_initial_states
         return result

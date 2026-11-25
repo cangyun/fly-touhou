@@ -150,3 +150,25 @@ def test_web_console_lists_plans_and_stops_managed_jobs(tmp_path):
         finally:
             server.shutdown()
             thread.join()
+
+
+def test_published_story_training_routes_the_wall_teacher_only_to_training(tmp_path, monkeypatch):
+    from fly_touhou.compact_full_story import story_kwargs
+    from fly_touhou.nbnm_wall_exit_guidance import COMPARABLE_REVISION
+    from fly_touhou.training.nbnm_run import validate_spec
+
+    clear = plan("train", "th14", "clear")
+    ((_, cfg),) = clear.settings.items()
+    native_runner = SimpleNamespace(make_env_kwargs=lambda config, output, count, role: [{} for _ in range(count)])
+    monkeypatch.setitem(sys.modules, "train_thrl_native", native_runner)
+    assert story_kwargs(cfg, tmp_path, 1, "train", teacher=True)[0]["wall_exit_guidance"] == {
+        "revision": COMPARABLE_REVISION}
+    assert "wall_exit_guidance" not in story_kwargs(cfg, tmp_path, 1, "eval")[0]
+
+    th14 = plan("train", "th14", "nbnm")
+    files = {path.name: data for path, data in th14.settings.items()}
+    assert files["spec.json"]["nbnm"]["wall_exit_guidance"]["revision"] == COMPARABLE_REVISION
+    env_file = tmp_path / "environment.json"
+    env_file.write_text(json.dumps(files["environment.json"]), encoding="utf-8")
+    spec = dict(files["spec.json"], environment_config=str(env_file))
+    assert validate_spec(spec)["status"] == "ready"

@@ -12,6 +12,12 @@ fly-touhou console
 
 `--resume` 读取同训练契约的 optimizer checkpoint。NBNM 默认使用对应的输出恢复，TH14 有限残机训练从新输出继续。切换原作、目标、训练范围或输入版本时，用 `--checkpoint` 显式选择兼容的模型参数并启动新优化器。新 checkpoint 记录原作、难度、目标、观测、动作、连接组和训练范围。
 
+## 通用离边引导
+
+靠近边界时，教师比较**两个都有可靠短程余量、且后续出路相近**的动作。向场内腾出更多空间的动作获较高指导权重，留在边上或继续靠外的动作相对降低。若只有一个方向有可靠出路，优先用出路证据。角落里的候选还要保留另一侧的余量。贴墙键和原地等待如果落点相同，就按相同的活动空间比较。
+
+该规则源自《辉针城》v9 的留空间偏好。公开配置在《辉针城》普通通关和 NBNM、《永夜抄》NBNM 的全部关卡生效。默认最多转移匹配外侧动作 **20%** 的教师概率质量，沿用原作已算好的短程与续走证据。它进入训练的动作监督，冻结时由网络按自己的分数选动作。NBNM 的采样日志记录触发行数和转移的教师概率质量。[新作接入约定](original-game-interfaces.md#离边引导)
+
 ## TH08 符卡专项
 
 ```powershell
@@ -39,6 +45,10 @@ fly-touhou fit-attack --game th08 --difficulty lunatic --objective nbnm --guide 
 ## English
 
 The commands above preview the selected backend and budget. A matching `--resume` restores Adam. Use an explicit compatible `--checkpoint` when initializing a new optimizer. TH08 attack-local fitting uses a verified original-game certificate and matching sensory and action rows.
+
+### Shared wall-exit guidance
+
+When two moves near a boundary have reliable short-horizon clearance and comparable follow-up exits, the teacher gives more weight to the move that creates more space inward. Better-supported continuations take priority. Each game supplies its own bounds and clamped endpoints. The published TH14 clear and NBNM presets and the TH08 NBNM preset enable the rule in every stage. The default transfers at most 20% of each matching outer move's teacher mass. It supplies movement supervision during training. The network selects actions in frozen evaluation. [Adapter contract](original-game-interfaces.md#wall-exit-guidance)
 
 ### TH08 NBNM rewards
 

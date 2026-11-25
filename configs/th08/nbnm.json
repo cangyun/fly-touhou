@@ -42,6 +42,9 @@
     "task_context": "th08-observed-attack-practice-opening-nonspells-v1",
     "history_cuda_graph": true,
     "route_preference_revision": "supported-route-space-v2",
+    "wall_exit_guidance": {
+      "revision": "comparable-wall-exits-v1"
+    },
     "future_guidance_coefficient": 0.25,
     "future_reference": "teacher-route-v1",
     "live_route_planner": {

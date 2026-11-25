@@ -98,6 +98,8 @@ def route_reference(label, encoding, *, preference_revision=None, demonstration_
     """Project no-Bomb attack advice onto reliable next-step route choices."""
     from .nbnm_objective import movement_reference
     from .compact_route_guidance import turning_routes
+    from .nbnm_wall_exit_guidance import comparable
+    compare_wall_exits = comparable(wall_exit_guidance)
     result=movement_reference(label);d=encoding['details']
     trust=np.asarray(d['trusted'],bool);m=np.asarray(d['margins'],float)
     safe=m[0]>1.;p=np.asarray(result['probabilities'][:18],float)
@@ -149,7 +151,7 @@ def route_reference(label, encoding, *, preference_revision=None, demonstration_
     if preference_revision is not None:
         from .nbnm_route_preference import REVISION as PREFERENCE_REVISION, preference
         if preference_revision!=PREFERENCE_REVISION:raise ValueError('Unknown route preference revision')
-        p,detail['preference']=preference(p,encoding,routes)
+        p,detail['preference']=preference(p,encoding,routes,include_wall_space=not compare_wall_exits)
     else:
         p=.9*p+.1*safe/safe.sum()
     if demonstration_route is not None:
@@ -179,7 +181,7 @@ def route_reference(label, encoding, *, preference_revision=None, demonstration_
     from .nbnm_future_sensation import guide_future
     p=guide_future(p,safe,encoding.get('future_rules'))
     detail['future_rules']=encoding.get('future_rules')
-    if wall_exit_guidance is not None:
+    if wall_exit_guidance is not None and not compare_wall_exits:
         from .nbnm_wall_exit_guidance import guide
         p,detail['wall_exit_guidance']=guide(p,encoding,routes,wall_exit_guidance)
     # A search may have triggered a conditional fallback after the initial
@@ -187,5 +189,10 @@ def route_reference(label, encoding, *, preference_revision=None, demonstration_
     if forecast_failed():return untrusted_reference()
     target=np.r_[p,0.].astype(np.float32)
     if not np.isfinite(target).all():raise ValueError('Non-finite NBNM movement teacher distribution')
-    return dict(result,probabilities=target.tolist(),action=int(target.argmax()),
+    reference = dict(result,probabilities=target.tolist(),action=int(target.argmax()),
         guidance_weight=1.,guidance_weight_reason='NBNM_route_then_attack',nb_nm_route=detail)
+    if compare_wall_exits:
+        from .nbnm_wall_exit_guidance import th14_reference
+        verified_turns = routes if horizon == 24 else None
+        reference = th14_reference(reference, encoding, wall_exit_guidance, verified_turns)
+    return reference

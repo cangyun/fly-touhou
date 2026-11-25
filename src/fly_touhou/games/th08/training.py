@@ -17,6 +17,7 @@ from ...th08_controller import TH08InputController
 from ...th08_game_state import STAGE_NUMBERS, capture_goal_outcome
 from ...th08_prefix import prepare_replay, read_prefix_source
 from ...th08_story import TH08StoryWorld
+from ...nbnm_wall_exit_guidance import comparable, comparable_reference, validate as validate_wall_exit_guidance
 from .rewards import RewardShapingConfig, TH08RewardShaping
 
 
@@ -27,7 +28,12 @@ def portable_spec(source, *, native_forecasts=True):
     for key in ("teacher_outcome_revision", "timed_corridor_supervision", "live_route_planner",
                 "demonstration_route_teacher", "native_rule_geometry", "native_emitter_forecast_frames"):
         settings.pop(key, None)
-    rule_guidance = .35 if settings.get("native_capture_sequence") else .25 if settings.get("native_survival_guidance") else 0.
+    wall_exit = validate_wall_exit_guidance(settings.get("wall_exit_guidance"))
+    rule_guidance = .10 if comparable(wall_exit) else 0.
+    if settings.get("native_capture_sequence"):
+        rule_guidance = .35
+    elif settings.get("native_survival_guidance"):
+        rule_guidance = .25
     settings.update(task={"mode": "full_story"}, rule_guidance_coefficient=rule_guidance, future_guidance_coefficient=0.,
                     continuation_supervision=False, risk_target_revision="student-native-continuation-risk-v2",
                     forecast_native_branches=native_forecasts)
@@ -172,6 +178,7 @@ class TH08TrainingEnv:
         self.settings = settings
         self.survival_guidance = settings.get("native_survival_guidance", False)
         self.native_forecasts = settings.get("forecast_native_branches", False)
+        self.wall_exit_guidance = validate_wall_exit_guidance(settings.get("wall_exit_guidance"))
         self.objective = Objective(**settings["objective"])
         shaping = settings.get("reward_shaping")
         self.reward_config = RewardShapingConfig(**shaping) if shaping is not None else None
@@ -483,8 +490,16 @@ class TH08TrainingEnv:
             elif self.survival_guidance:
                 guide = native_survival_guidance(geometry,
                     prioritize_exit=status["native_spell_id"] in self.focus_spells)
-            info["teacher_label"] = dict(current, probabilities=guide if guide is not None else [1. / 18.] * 18 + [0.],
-                                         guidance_weight=float(guide is not None))
+            teacher = dict(current, probabilities=guide if guide is not None else [1. / 18.] * 18 + [0.],
+                           guidance_weight=float(guide is not None))
+            if normal and self.native_forecasts and comparable(self.wall_exit_guidance):
+                coverage = geometry["native_coverage"]
+                motion = self.world.raw_scene[0]
+                teacher = comparable_reference(teacher, origin=motion.position,
+                    minimum=motion.minimum, maximum=motion.maximum, ends=geometry["ends"],
+                    clearances=np.where(coverage, geometry["margins"], np.nan),
+                    settings=self.wall_exit_guidance, allow_new_reference=True)
+            info["teacher_label"] = teacher
         return info
 
     def _entry_scope(self):
