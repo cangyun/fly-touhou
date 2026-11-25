@@ -32,6 +32,12 @@ def test_published_runner_selection(game, objective, train, frozen):
     assert training.runner.name == train and training.runner.is_file()
     assert evaluation.runner.name == frozen and evaluation.runner.is_file()
     assert training.identity["train_scope"] == "encoder-heads"
+    assert training.identity["observation_version"] == evaluation.identity["observation_version"] + "-collection-v1"
+    settings = {path.name: data for path, data in training.settings.items()}
+    if objective == "nbnm":
+        assert settings["spec.json"]["nbnm"]["item_collection_input"] is True
+    else:
+        assert settings["environment.json"]["compact_item_collection_input"] is True
     assert "brain" not in training.identity["optimizer_groups"]
     assert any("owned game" in str(path) for path in evaluation.inputs)
 

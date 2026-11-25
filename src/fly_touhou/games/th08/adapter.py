@@ -1,6 +1,7 @@
 """Structured access to the existing original TH08 Story world."""
 
 from ..contracts import Coverage, HORIZONS, HorizonResult, NativeFrame, RouteResult, ScriptObservation
+from .items import collection_state
 from .native_forecast import query_live_native_routes
 from .sensation import POLICY_MASKS
 
@@ -20,6 +21,7 @@ class TH08Adapter:
     def observe(self):
         world = self.world
         info, game = world.status(), world.game
+        collection = None
         if world.outcome is None:
             motion = world.controller.read_motion(world.state)
             objects = world.controller.read_projectiles()
@@ -27,13 +29,15 @@ class TH08Adapter:
             bounds = motion.minimum, motion.maximum
             bullets, lasers = objects["bullets"], objects["lasers"]
             enemies = world.controller.read_enemies()
+            collection = collection_state(world.state, game, motion, world.controller.read_items())
         else:
             player = bounds = bullets = lasers = enemies = None
         return NativeFrame("th08", world.state["input_poll"], info["stage"], info["stage_frame"],
                            player, bounds, bullets, lasers, enemies, info["native_spell_id"],
                            game.get("lives"), game.get("bombs"), info["misses"], info["Bombs"],
                            info["continues"], info["outcome"], dict(contact=info["contact"],
-                           spell_result=game.get("native_spell_result_id"), normal_ending=game["normal_ending"]))
+                           spell_result=game.get("native_spell_result_id"), normal_ending=game["normal_ending"]),
+                           item_collection=collection)
 
     def predict(self, frame, candidates, horizons=HORIZONS):
         self._check_frame(frame)

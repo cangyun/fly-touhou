@@ -64,7 +64,7 @@ def restore_world(env, capsule):
     requested_corridor=env.encoder.corridor_risk
     saved_corridor=capsule.get('corridor_risk')
     changed_planner=bool(saved_corridor and requested_corridor
-        and saved_corridor!=requested_corridor and len(capsule['features'])==407)
+        and saved_corridor!=requested_corridor and len(capsule['features'])>=407)
     if changed_planner:
         env.encoder.corridor_risk=saved_corridor
     if old_corridor_input:
@@ -124,7 +124,7 @@ def restore_world(env, capsule):
         # revalidates it from the actual position before making it available.
         observation=env.encoder.finish_corridor_migration()
         changed_corridor_columns=int(np.count_nonzero(
-            np.abs(observation['features'][281:]-new_features[281:])>1e-6))
+            np.abs(observation['features'][281:407]-new_features[281:407])>1e-6))
         info=dict(info,**env._info())
     if changed_planner or old_corridor_input:
         env._last_measurable_observation=env._copy_observation(observation)
@@ -166,9 +166,10 @@ def checkpoint_continuation(state):
     if capsule is None:
         return None
     spec=state['spec']
+    from .games.item_collection import WIDTH as COLLECTION_WIDTH
     worlds=[]
     for world in capsule['worlds']:
-        if 'corridor_risk' not in world and len(world['features'])==407:
+        if 'corridor_risk' not in world and len(world['features']) in (407, 407+COLLECTION_WIDTH):
             task_settings=spec.get('task_entries',{}).get(world.get('task_key'),{})
             original=task_settings.get('corridor_risk',spec['nbnm'].get('corridor_risk'))
             world=dict(world,corridor_risk=deepcopy(original))

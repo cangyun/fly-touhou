@@ -18,6 +18,7 @@ from ...th08_game_state import STAGE_NUMBERS, capture_goal_outcome
 from ...th08_prefix import prepare_replay, read_prefix_source
 from ...th08_story import TH08StoryWorld
 from ...nbnm_wall_exit_guidance import comparable, comparable_reference, validate as validate_wall_exit_guidance
+from ..item_collection import WIDTH as COLLECTION_WIDTH, input_schema as collection_schema, validate
 from .rewards import RewardShapingConfig, TH08RewardShaping
 
 
@@ -25,6 +26,7 @@ def portable_spec(source, *, native_forecasts=True):
     """Adapt the shared policy to TH08. Historical replays supply their recorded forecast mode."""
     spec = deepcopy(source)
     settings = spec["nbnm"]
+    validate(settings.get("item_collection_input", False))
     for key in ("teacher_outcome_revision", "timed_corridor_supervision", "live_route_planner",
                 "demonstration_route_teacher", "native_rule_geometry", "native_emitter_forecast_frames"):
         settings.pop(key, None)
@@ -84,7 +86,9 @@ def training_worlds(executable, profile, d3d8to9, output, count, settings, *, pr
                 temporary.replace(local)
         configure_private_audio(source.parent / "th08.cfg", folder / "th08.cfg", recording=record_audio)
         worlds.append(dict(executable=folder / source.name, profile=profile, d3d8to9=d3d8to9,
-                           private_appdata=folder / "appdata", input_schema=SCHEMA, settings=settings,
+                           private_appdata=folder / "appdata",
+                           input_schema=collection_schema(SCHEMA, settings.get("item_collection_input", False)),
+                           settings=settings,
                            practice_slot=practice_slot, capture_entry=capture_entry, course_lane=lane,
                            route_output=None if route_output is None else Path(route_output) / folder.name))
     return worlds
@@ -169,8 +173,10 @@ def native_survival_guidance(scene, *, prioritize_exit=False):
 class TH08TrainingEnv:
     def __init__(self, *, executable, profile, d3d8to9, private_appdata, input_schema, settings,
                  practice_slot=None, capture_entry=None, course_lane=(), route_output=None):
-        if input_schema != SCHEMA:
-            raise ValueError("TH08 Story requires the shared 407-column observation")
+        self.item_collection_input = validate(settings.get("item_collection_input", False))
+        if input_schema != collection_schema(SCHEMA, self.item_collection_input):
+            raise ValueError("TH08 Story inputs must match the configured collection observation")
+        self.observation_width = FEATURE_WIDTH + COLLECTION_WIDTH * self.item_collection_input
         self.executable = executable
         self.profile = profile
         self.d3d8to9 = d3d8to9
@@ -298,7 +304,7 @@ class TH08TrainingEnv:
             self._set_task(task.get("practice_slot"), entry, task.get("seed"))
         ready, failures = self._start_controller()
         if not ready:
-            return {"features": np.zeros(FEATURE_WIDTH, np.float32)}, dict(
+            return {"features": np.zeros(self.observation_width, np.float32)}, dict(
                 native_reset_unavailable=True, native_start_retries=failures, native_seed=self.native_seed,
                 stage=self.task.get("stage", 1), episode_frames=0, nb_nm_task=self.task, nb_nm_task_key=self.task_key)
         self.capture_start = 0
@@ -307,7 +313,7 @@ class TH08TrainingEnv:
             observation, status, history = self._restore_capture_entry()
             return self._finish_reset(observation, status, failures, history)
         self.world = TH08StoryWorld(self.controller, task_context=self.settings.get("task_context", "legacy"),
-                                    practice_slot=self.practice_slot, spell_slot=self.capture_spell_slot,
+                                    item_collection_input=self.item_collection_input, practice_slot=self.practice_slot, spell_slot=self.capture_spell_slot,
                                     retain_raw_scene=True,
                                     forecast_sweep_laser_births=self.settings.get("forecast_sweep_laser_births", False),
                                     forecast_wide_beam_births=self.settings.get("forecast_wide_beam_births", False),
@@ -350,6 +356,7 @@ class TH08TrainingEnv:
             raise ValueError("The restored original input checkpoint does not match its selected attack")
         self.capture_start = len(self.world.spell_results)
         self.world.native_dialogue_edges = True
+        self.world.encoder.item_collection_input = self.item_collection_input
         if self.course_lane:
             self.world.encoder.task_context = self.settings.get("task_context", "legacy")
         self.world.encoder.forecast_native_narrow_exits = self.settings.get("forecast_native_narrow_exits", False)
@@ -428,7 +435,7 @@ class TH08TrainingEnv:
                     native_frames=status["native_frames"], elapsed_native_frames=elapsed,
                     action=action, native_objects=self.world.contact_objects(previous_scene))
         if terminal:
-            observation = {"features": np.zeros(FEATURE_WIDTH, np.float32)}
+            observation = {"features": np.zeros(self.observation_width, np.float32)}
         reward = float(np.dot(info["reward_vector"], self.objective.weights))
         return observation, reward, terminal, False, info
 

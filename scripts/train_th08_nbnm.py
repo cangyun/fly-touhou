@@ -258,10 +258,13 @@ def run(args, plan, spec, teacher):
         progress("loading")
         torch.manual_seed(spec["seed"])
         torch.cuda.manual_seed_all(spec["seed"])
+        from fly_touhou.games.item_collection import input_schema as collection_schema
         model, migrated = load_model(spec, args.checkpoint,
-            payload=stored["model_payload"] if stored is not None else None, apply_native_sensors=False)
-        if migrated or model.input_schema != OBSERVATION_SCHEMA or not model.soft_risk_composition:
-            raise ValueError("Supply a compatible 407-column NBNM whole-connectome policy")
+            payload=stored["model_payload"] if stored is not None else None, apply_native_sensors=False,
+            reset_collection_line=True)
+        expected_schema = collection_schema(OBSERVATION_SCHEMA, spec["nbnm"].get("item_collection_input", False))
+        if migrated or model.input_schema != expected_schema or not model.soft_risk_composition:
+            raise ValueError("Supply a compatible NBNM whole-connectome policy")
         if course_lanes and not model.bombs_disabled:
             raise ValueError("The original NBNM course needs Bomb disabled")
         model.native_contact_risk_calibration = True

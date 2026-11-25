@@ -94,6 +94,8 @@ flowchart LR
 
 同设定用 `--resume` 恢复优化器。新设定用 `--checkpoint` 载入兼容权重并初始化 Adam。TH08 符卡专项读出用 `fit-attack`。 [训练与局部微调](docs/TRAINING.md)
 
+两作的训练入口已接入原作回收线和 P 点回收状态。可为真人录像采集同一组特征。[自动回收与录像采集](docs/TRAINING.md#自动回收与真人录像采集)
+
 ### 训练方案与后续方向
 
 [训练方案与扩展方向](docs/ROADMAP.md#中文) 记录从连接组初始化、避弹监督和真人录像模仿，到普通通关 PPO 与 NBNM 迁移的五个阶段。后续对照覆盖感觉编码与输出头容量、奖励、预测效率、训练配方、能力保持和其他原作。
@@ -201,6 +203,8 @@ The default queue shows active jobs. Enable **Show completed jobs** to inspect h
 - **`encoder-heads`** freezes brain parameters and advances the recurrent state. Gradients reach the encoder through the brain and the named output groups can update.
 
 Use `--resume` to restore the optimizer for matching settings. Use `--checkpoint` to start a new optimizer from compatible weights. TH08 attack-local readouts use `fit-attack`. [Training and local adaptation](docs/TRAINING.md)
+
+Both games expose native collection-line and Power pickup state to the training presets and replay tools. [Automatic item collection and human replays](docs/TRAINING.md#automatic-item-collection-and-human-replays)
 
 ### Training plan and roadmap
 

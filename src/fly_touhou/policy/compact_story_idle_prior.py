@@ -55,7 +55,7 @@ def prefer_route_aware_wait(output, features, bonus):
     rows = torch.arange(len(features), device=features.device)
     move = chosen.clamp(max=17)
     idle = (move // 9) * 9  # Retain the focus/shot mode proposed by the policy.
-    paths = features[:, 281:].reshape(-1,18,7)
+    paths = features[:, 281:407].reshape(-1,18,7)
     pause, moving = paths[rows,idle], paths[rows,move]
     hint = features[:,18:72].reshape(-1,3,18).amax(1)[rows,idle]
     room = hint <= math.tanh((1. - 32.) / 8.)
@@ -89,7 +89,7 @@ def prefer_safe_heading(output, features, previous_actions, steps, bonus):
     clear = ((worst_hint[rows, old] <= math.tanh((1. - 32.) / 8.))
              & (worst_hint[rows, new] <= math.tanh((1. - 32.) / 8.)))
     wall_room = features[rows, 93 + old] >= 8 / 64
-    paths = features[:, 281:].reshape(-1, 18, 7)
+    paths = features[:, 281:407].reshape(-1, 18, 7)
     old_path, new_path = paths[rows, old], paths[rows, new]
     # The actuator holds for four ticks. A conditional tail can corroborate a
     # wider, trusted short path, but it does not certify the future 96 ticks.
@@ -134,7 +134,7 @@ def prefer_wall_escape(logits, features):
     short_room = ((hints[:, 0] <= math.tanh((1. - 4.) / 8.))
                   & (hints[:, 1] <= math.tanh((1. - 2.) / 8.)))
     wall_after = features[:, 93:111] * 64
-    paths = features[:, 281:].reshape(-1, 18, 7)
+    paths = features[:, 281:407].reshape(-1, 18, 7)
     # A 96-frame witness may turn after its first four frames, including when
     # continuing straight for the full 24 frames would lead into the barrage.
     witness = ((paths[:, :, 3] >= .75) & (paths[:, :, 1] >= 1 / 9)

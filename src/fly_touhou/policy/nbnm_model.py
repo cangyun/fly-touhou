@@ -6,7 +6,11 @@ from ..nbnm_sensation import EXTENSION_WIDTH, SCHEMA
 from ..th08_attack_readout import ATTACK_TASK_CONTEXTS, CRITIC_TASK_CONTEXTS, TH08AttackReadout
 
 
-def configure_model(model, config, *, reset_critics=True):
+def configure_model(model, config, *, reset_critics=True, reset_collection_line=False):
+    from ..games.item_collection import validate
+    collection = validate(config.get('item_collection_input', False))
+    if not collection and getattr(model, 'item_collection_input', False):
+        raise ValueError('Use the checkpoint collection observation when loading trained collection ports')
     previous_corridor=(getattr(model,'nbnm',None) or {}).get('corridor_risk') or {}
     corridor=config.get('corridor_risk') or {}
     if previous_corridor and (not corridor or
@@ -101,6 +105,8 @@ def configure_model(model, config, *, reset_critics=True):
             encoder.register_buffer('course_port_population',population,persistent=False)
         model.core.sensory_width+=CW
         model.input_schema=CS
+    if collection:
+        model.enable_item_collection(reset_line=reset_collection_line)
     model.bombs_disabled = True
     model.lower_field_default = False
     model.combat_position_guidance_coefficient = 0.

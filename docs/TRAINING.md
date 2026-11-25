@@ -12,6 +12,14 @@ fly-touhou console
 
 `--resume` 读取同训练契约的 optimizer checkpoint。NBNM 默认使用对应的输出恢复，TH14 有限残机训练从新输出继续。切换原作、目标、训练范围或输入版本时，用 `--checkpoint` 显式选择兼容的模型参数并启动新优化器。新 checkpoint 记录原作、难度、目标、观测、动作、连接组和训练范围。
 
+## 自动回收与真人录像采集
+
+使用公开预设新建训练时，感觉输入默认包含当前回收状态。复用已有的回收线距离和待收 P 点数量，新增当前能否回收、高速越线资格、低速越线资格、吸附中 P 点数四列。TH14 普通通关输入为 **133 维**，两作的走廊版 NBNM 输入为 **411 维**。四列投影到现有视觉端口，由策略自行决定何时上行、切低速和撤回。[两作回收规则与适配接口](original-game-interfaces.md#自动回收)
+
+已有 checkpoint 的冻结评估按权重保存的输入版本运行。同目录续训沿用原设置。要从旧模型学习新输入，用 `--checkpoint` 载入其参数并新建训练输出。自定义 NBNM 配置用 `nbnm.item_collection_input`，TH14 普通通关环境用 `compact_item_collection_input`，可显式设为 `true` 或 `false`。
+
+采集真人走位时，TH08 的 [`capture_th08_teacher_windows.py`](../scripts/capture_th08_teacher_windows.py) 和 TH14 的 [`capture_nbnm_human_replay.py`](../scripts/capture_nbnm_human_replay.py) 均接受 `--item-collection-input`。启用后把回收特征和真人动作一起保存，TH08 同时记录每步实际 Power 增量 `native_power_gain`。可用这些片段监督安全上行、越线时的移速和收点后的撤退。
+
 ## 通用离边引导
 
 靠近边界时，教师比较**两个都有可靠短程余量、且后续出路相近**的动作。向场内腾出更多空间的动作获较高指导权重，留在边上或继续靠外的动作相对降低。若只有一个方向有可靠出路，优先用出路证据。角落里的候选还要保留另一侧的余量。贴墙键和原地等待如果落点相同，就按相同的活动空间比较。
@@ -45,6 +53,14 @@ fly-touhou fit-attack --game th08 --difficulty lunatic --objective nbnm --guide 
 ## English
 
 The commands above preview the selected backend and budget. A matching `--resume` restores Adam. Use an explicit compatible `--checkpoint` when initializing a new optimizer. TH08 attack-local fitting uses a verified original-game certificate and matching sensory and action rows.
+
+### Automatic item collection and human replays
+
+Fresh public training presets include native collection observations. The encoder reuses the collection-line distance and pending Power count and appends four cues for current eligibility, fast and focused movement above the line, and already homing Power. This gives 133 features in TH14 clear and 411 in each corridor-based NBNM preset. The added projection uses the existing visual ports. The policy controls movement. [Adapter contract](original-game-interfaces.md#automatic-item-collection)
+
+Frozen checkpoints select their saved feature version. Resume with the original run settings, or warm-start with `--checkpoint` in a new output directory to learn the new inputs. Custom configurations use `nbnm.item_collection_input` for NBNM or `compact_item_collection_input` for TH14 clear.
+
+Pass `--item-collection-input` to [TH08 replay capture](../scripts/capture_th08_teacher_windows.py) or [TH14 replay capture](../scripts/capture_nbnm_human_replay.py) to record the cues alongside human inputs. TH08 tapes also provide the observed `native_power_gain` for each recorded action.
 
 ### Shared wall-exit guidance
 

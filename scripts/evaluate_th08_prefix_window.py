@@ -115,16 +115,19 @@ def run(args):
         source_settings = portable_spec(read(Path(report["policy_spec"])),
                                         native_forecasts=report.get("forecast_native_branches", False))["nbnm"]
         spec = portable_spec(read(args.spec))
+        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False,
+                                     preserve_collection_input=True)
         if use_archived_history:
             from fly_touhou.th08_attack_readout import ATTACK_TASK_CONTEXTS
 
             source_sense = source_settings.copy()
             target_sense = spec["nbnm"].copy()
+            for settings in (source_sense, target_sense):
+                settings.setdefault("item_collection_input", False)
             contexts = (source_sense.pop("task_context", None), target_sense.pop("task_context", None))
             if source_sense != target_sense or any(context not in ATTACK_TASK_CONTEXTS for context in contexts):
                 raise ValueError("Recorded burn-in needs matching sensory settings and observed-attack context")
             archived_features, archived_actions = recorded_burn_in(source_dir, trace, decision + 1)
-        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False)
         if migrated or not (model.bombs_disabled and model.soft_risk_composition):
             raise ValueError("Use the existing NBNM connectome policy")
         model.eval().requires_grad_(False)

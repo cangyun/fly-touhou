@@ -12,6 +12,7 @@ class SharedDirections(nn.Module):
         super().__init__()
         # Five short-range cues, eight route cues, and the configured
         # per-direction extension beyond the repeated scene context.
+        self.cue_width = cue_width
         self.sensory = nn.Linear(18 * (13 + cue_width - 63), ports, bias=False, device=device)
         self.readout = nn.Sequential(nn.LayerNorm(dn_width, device=device),
             nn.Linear(dn_width, 128, device=device), nn.SiLU(),
@@ -23,7 +24,8 @@ class SharedDirections(nn.Module):
 
     def inputs(self, cues):
         shared = cues.mean(dim=1)
-        directional = torch.cat((cues[..., :3], cues[..., 6:8], cues[..., 47:55], cues[..., 63:]), -1)
+        # Collection cues are common to all actions and enter through the shared sensory drive.
+        directional = torch.cat((cues[..., :3], cues[..., 6:8], cues[..., 47:55], cues[..., 63:self.cue_width]), -1)
         # Keep the direction-specific differences in action order.
         distinctive = directional - directional.mean(dim=1, keepdim=True)
         return shared, distinctive.flatten(start_dim=1)

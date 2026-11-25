@@ -130,7 +130,7 @@ def attempt(args, episode, model, graphs, spec, executable, report_progress, cap
                             unpaced=args.unpaced, native_seed=args.native_seed,
                             native_branch_checkpoints=settings["forecast_native_branches"]) as controller:
         world = TH08StoryWorld(controller, task_context=spec["nbnm"].get("task_context", "legacy"),
-                               retain_raw_scene=True, practice_slot=args.practice_stage,
+                               item_collection_input=settings.get("item_collection_input", False), retain_raw_scene=True, practice_slot=args.practice_stage,
                                spell_slot=args.practice_spell,
                                forecast_sweep_laser_births=settings.get("forecast_sweep_laser_births", False),
                                forecast_wide_beam_births=settings.get("forecast_wide_beam_births", False),
@@ -315,10 +315,14 @@ def run(args):
         if metadata["forecast_spawn_animations"]:
             from fly_touhou.th08_bullet_spawn import SPAWN_FORECAST_REVISION
             metadata["spawn_forecast_revision"] = SPAWN_FORECAST_REVISION
-        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False)
-        if (migrated or model.input_schema != SCHEMA
+        from fly_touhou.games.item_collection import input_schema as collection_schema
+        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False,
+                                     preserve_collection_input=True)
+        expected_schema = collection_schema(SCHEMA, spec["nbnm"].get("item_collection_input", False))
+        if (migrated or model.input_schema != expected_schema
                 or not (model.bombs_disabled and model.soft_risk_composition)):
-            raise ValueError("TH08 transfer requires the existing 407-column NBNM policy")
+            raise ValueError("TH08 transfer requires a compatible NBNM policy")
+        metadata["input_schema"] = model.input_schema
         corridor = spec["nbnm"]["corridor_risk"]
         metadata["learned_score_weights"] = dict(
             route_temperature=model.temperature, neural_risk_scale=model.neural_risk_scale,

@@ -71,7 +71,7 @@ def run(args, parser):
             raise StopRequested()
     try:
         torch.manual_seed(spec['seed']);torch.cuda.manual_seed_all(spec['seed'])
-        model,_=load_model(spec,args.checkpoint)
+        model,_=load_model(spec,args.checkpoint,preserve_collection_input=True)
         report=evaluate(model,spec,args.output/'native-result',task=task,split=args.split,progress=progress,
             opening_stage=args.opening_stage,through_stage=args.through_stage,checkpoint=args.checkpoint,
             resume_bookmark=args.resume_entry,guard=guard)

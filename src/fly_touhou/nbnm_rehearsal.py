@@ -474,7 +474,7 @@ class SuccessRehearsal:
             evidence=verified_exit_mask(measured,row,f,first,end,
                 getattr(model,'nbnm',{}).get('native_rule_geometry'))
             predicted=out['corridor_witness_logits'].reshape(self.length,18,2)[rows,action_ids]
-            candidates=features[:,0,281:].reshape(self.length,18,7)
+            candidates=features[:,0,281:407].reshape(self.length,18,7)
             geometry_status=candidates[rows,action_ids,2:4]
             teach=geometry_status<=0
             if self.include_supported_native_exits:

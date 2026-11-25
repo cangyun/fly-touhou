@@ -262,7 +262,9 @@ def factory(options):
 def story_kwargs(config,output,workers,role,*,teacher=False):
     import copy,train_thrl_native
     from .compact_story_sensation import SCHEMA
-    cfg=copy.deepcopy(config);cfg['input_schema']=SCHEMA
+    from .games.item_collection import input_schema as collection_schema
+    cfg=copy.deepcopy(config)
+    cfg['input_schema']=collection_schema(SCHEMA, cfg.get('compact_item_collection_input', False))
     if teacher:
         from .resource_teacher_v10 import REVISION
         cfg['teacher_revision']=REVISION;cfg.setdefault('movement_guidance',{})['online_teacher_coefficient']=.1
@@ -276,8 +278,9 @@ def story_kwargs(config,output,workers,role,*,teacher=False):
             from .nbnm_future_sensation import SCHEMA as NBNM_SCHEMA
         if config['nbnm'].get('corridor_risk'):
             from .nbnm_corridor import SCHEMA as NBNM_SCHEMA
+        schema = collection_schema(NBNM_SCHEMA, config['nbnm'].get('item_collection_input', False))
         for i,r in enumerate(rows):
-            r.update(input_schema=NBNM_SCHEMA,nbnm=dict(config['nbnm'],seed=cfg['seed']+1009*i))
+            r.update(input_schema=schema,nbnm=dict(config['nbnm'],seed=cfg['seed']+1009*i))
             tasks=config['nbnm'].get('world_tasks')
             if tasks:
                 if len(tasks)!=workers:raise ValueError('One NBNM task per native worker required')
@@ -341,7 +344,10 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
     from .compact_story_action_selection import StoryActionSelector
     if bool(config.get('compact_protected_exit_forecast',False))!=bool(getattr(model,'protected_exit_forecast',False)):
         raise ValueError('Frozen model and environment protected exit semantics differ')
-    config=dict(config,compact_native_motion_forecast=bool(getattr(model,'native_motion_forecast',False)),
+    from .thrl_inputs import COMPACT_STORY_INPUT
+    from .games.item_collection import SUFFIX as COLLECTION_SUFFIX
+    config=dict(config,compact_item_collection_input=bool(getattr(model, 'item_collection_input', False)),
+        compact_native_motion_forecast=bool(getattr(model,'native_motion_forecast',False)),
         compact_native_focus_gate=bool(getattr(model,'native_focus_gate',False)),
         compact_unknown_laser_player_motion=bool(getattr(model,'unknown_laser_player_motion',False)),
         compact_native_curve_laser_geometry=bool(getattr(model,'native_curve_laser_geometry',False)),
@@ -357,7 +363,8 @@ def evaluate(model,config,output,*,episodes=4,seed=2027432926,worker_cpus=None,g
     if action_selection!='joint_mode' and not getattr(model,'candidate_conditioned',False):
         raise ValueError('Alternate decoding requires action-consistent candidate-state commits')
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
-    maker=story_kwargs if getattr(model,'input_schema',None)=='connectome-compact129-full-story-v1' else kwargs
+    schema = getattr(model, 'input_schema', '')
+    maker=story_kwargs if schema.removesuffix(COLLECTION_SUFFIX)==COMPACT_STORY_INPUT else kwargs
     rows=maker(config,output,episodes,evaluation_split);old=thrl_vector.worker_factory;vector=None
     plans=([int(np.random.SeedSequence([seed,i]).generate_state(2)[0]) for i in range(episodes)]
         if opening_seeds is None else [int(value) for value in opening_seeds])

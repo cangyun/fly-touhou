@@ -4,6 +4,8 @@ import numpy as np
 
 from ...compact_spiking_sensation import pack_movement_observation
 from ...compact_story_sensation import pickup_context
+from ..item_collection import WIDTH as COLLECTION_WIDTH, augment, input_schema
+from .items import collection_state
 from ...native import NativeError
 from ...nbnm_corridor import FEATURE_WIDTH, HORIZONS, LEGS, SCHEMA, WIDTH
 from ...nbnm_route_support import physical_exit_support
@@ -332,16 +334,22 @@ def _native_route_geometry(controller, proposals, motion, velocities, *, keep_na
 
 
 class TH08ObservationEncoder:
-    schema = SCHEMA
-    feature_shape = (FEATURE_WIDTH,)
+    @property
+    def schema(self):
+        return input_schema(SCHEMA, self.item_collection_input)
+
+    @property
+    def feature_shape(self):
+        return (FEATURE_WIDTH + COLLECTION_WIDTH * self.item_collection_input,)
 
     def __init__(self, *, task_context="critic-only-v1", task=None, forecast_sweep_laser_births=False,
                  forecast_wide_beam_births=False, forecast_orbital_point_births=False,
                  forecast_final_b_ring=False, retain_scene=False, native_forecast_controller=None,
                  forecast_native_narrow_exits=False, forecast_native_carried_courses=False,
                  forecast_native_hold_fallback=False, forecast_native_corner_turns=False,
-                 forecast_final_spark_cue=False, measure_spell_damage=False):
+                 forecast_final_spark_cue=False, measure_spell_damage=False, item_collection_input=False):
         self.task_context = task_context
+        self.item_collection_input = item_collection_input
         self.forecast_sweep_laser_births = forecast_sweep_laser_births
         self.forecast_wide_beam_births = forecast_wide_beam_births
         self.forecast_orbital_point_births = forecast_orbital_point_births
@@ -487,8 +495,11 @@ class TH08ObservationEncoder:
         direction[:, 5:8] = np.stack((exits, _scaled_gap(followup_gap), opposed), axis=1)
         context = self._attack_context(poll, game, enemies["slot"][boss])
         features = np.concatenate((base, np.clip(task, -1., 1.), direction.ravel(), context, corridor.ravel()))
+        if self.item_collection_input:
+            features = augment(features, collection_state(state, game, motion, items),
+                               field_height=motion.maximum[1] - motion.minimum[1])
         if features.shape != self.feature_shape or not np.isfinite(features).all() or np.abs(features).max() > 1.:
-            raise ValueError("Original TH08 did not produce a finite bounded 407-column observation")
+            raise ValueError("Original TH08 did not produce a finite bounded observation")
         self.last_result = dict(margins=margins, known=known, corridor=corridor, corridor_courses=courses, ends=ends,
                                 native_candidate_routes=native_routes,
                                 live_bullets=len(projectiles["bullets"]["slot"]),

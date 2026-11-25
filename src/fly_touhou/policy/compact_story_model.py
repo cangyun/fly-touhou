@@ -11,6 +11,7 @@ from torch.utils.checkpoint import checkpoint
 from ..candidate_spiking_model import candidates,build_compact_model,restore_parameters
 from ..spiking_engineered_control import SpikingState
 from ..compact_story_sensation import SCHEMA as INPUT_SCHEMA
+from ..games.item_collection import SUFFIX as COLLECTION_SUFFIX, WIDTH as COLLECTION_WIDTH, input_schema
 
 SCHEMA='full-connectome-compact129-spiking-story-PPO-v1'
 
@@ -25,6 +26,7 @@ class ContextPortDrive(nn.Module):
         self.route_prior_context=None
         self.future_rule_context=None
         self.corridor_context=None
+        self.collection_context=None
         self.course_port_gain=0.
         self.batch_invariant=False
     @property
@@ -67,6 +69,8 @@ class ContextPortDrive(nn.Module):
                         for s in scope:applicable=applicable | (stage==s)
                         active=active & applicable
                     drive=drive+self.course_port_gain*active[:,None]*self.course_port_population
+        if self.collection_context is not None:
+            drive = drive + self.collection_context(x[:, -COLLECTION_WIDTH:])
         if self.task_progress is not None:drive=drive+self.task_progress(x)
         return F.relu(drive)
 
@@ -147,7 +151,31 @@ class CompactStoryPolicy(nn.Module):
     @property
     def device(self):return self.core.device
     def initial_state(self,batch):return self.core.initial_state(batch)
+    @property
+    def item_collection_input(self):
+        return self.core.input_encoder.collection_context is not None
+
+    def enable_item_collection(self, *, reset_line=False):
+        encoder = self.core.input_encoder
+        if encoder.collection_context is None:
+            encoder.collection_context = nn.Linear(COLLECTION_WIDTH, encoder.residual.out_features,
+                                                    bias=False, device=self.device)
+            nn.init.zeros_(encoder.collection_context.weight)
+            if reset_line:
+                with torch.no_grad():
+                    encoder.context.weight[:, 35].zero_()  # Previously unused TH08 line offset.
+        if not self.input_schema.endswith(COLLECTION_SUFFIX):
+            self.input_schema = input_schema(self.input_schema, True)
+            self.core.sensory_width += COLLECTION_WIDTH
+
     def candidate_features(self,features):
+        collection = None
+        if getattr(self, 'item_collection_input', False):
+            from ..thrl_inputs import feature_dimension
+            if features.shape[-1] == feature_dimension(self.input_schema):
+                features, collection = features[..., :-COLLECTION_WIDTH], features[..., -COLLECTION_WIDTH:]
+            else:
+                collection = features.new_zeros((*features.shape[:-1], COLLECTION_WIDTH))
         base=story_candidates(features)
         if getattr(self,'nbnm',None):
             from ..nbnm_sensation import candidate_extension
@@ -157,6 +185,9 @@ class CompactStoryPolicy(nn.Module):
             if self.nbnm.get('task_context') in CRITIC_TASK_CONTEXTS:
                 extension=torch.cat((extension[...,:12],torch.zeros_like(extension[...,12:16]),extension[...,16:]), -1)
             base=torch.cat((base,extension),-1)
+        if collection is not None:
+            shared = collection.unsqueeze(-2).expand(*base.shape[:-1], COLLECTION_WIDTH)
+            base = torch.cat((base, shared), -1)
         return base
     def enable_task_progress_ports(self,*,amplitude=.025):
         from ..compact_story_task_drive import TaskProgressPortDrive
@@ -166,12 +197,16 @@ class CompactStoryPolicy(nn.Module):
                 initial_amplitude=amplitude).to(self.device)
         self.task_progress_ports=True
         return encoder.task_progress.specification()
+    @property
+    def directional_cue_width(self):
+        return self.core.sensory_width - (COLLECTION_WIDTH if self.item_collection_input else 0)
+
     def enable_shared_directions(self):
         from ..compact_shared_directions import SharedDirections
-        if not getattr(self,'nbnm',None) or self.core.sensory_width < 63:
+        if not getattr(self,'nbnm',None) or self.directional_cue_width < 63:
             raise ValueError('Single-state directions require configured NBNM sensory cues')
         if self.shared_directions is None:
-            self.shared_directions=SharedDirections(self.core.sensory_width,len(self.core.input_indices),
+            self.shared_directions=SharedDirections(self.directional_cue_width,len(self.core.input_indices),
                 2*len(self.core.output_indices),device=self.device)
 
     def advance_shared(self,cue,directional,state,**core_options):
@@ -276,7 +311,7 @@ class CompactStoryPolicy(nn.Module):
                 from ..nbnm_corridor_loss import endpoint_adjustment
                 endpoint=risk_readout(self.corridor_endpoint_head,all_DN)
                 correction=endpoint_adjustment(endpoint,features,self.nbnm['corridor_risk']['endpoint_risk'])
-                observed=features[...,281:].reshape(*features.shape[:-1],18,7)[...,6].amax(-1)>0
+                observed=features[...,281:407].reshape(*features.shape[:-1],18,7)[...,6].amax(-1)>0
                 endpoint_cost=correction*(vulnerable&observed)[...,None]
                 logits=torch.cat((logits[...,:18]-endpoint_cost,logits[...,18:]),-1)
             priority = self.nbnm["corridor_risk"].get("short_risk_priority")
@@ -400,6 +435,7 @@ class CompactStoryPolicy(nn.Module):
             raw_geometry_or_teacher_action_bypass=False,map_in_policy=False,bombs_disabled=self.bombs_disabled,
             pad_candidate_batch=self.pad_candidate_batch,
             batch_invariant_sensory=self.core.input_encoder.batch_invariant,
+            item_collection_input=self.item_collection_input,
             phase_valid_control=self.phase_valid_control,
             protection_aware_risk=self.protection_aware_risk,
             protection_expiry_inclusive=getattr(self,'protection_expiry_inclusive',False),
@@ -460,6 +496,8 @@ def from_story_checkpoint(connectome,payload,*,device='cuda:0'):
     if payload.get('nbnm'):
         from ..nbnm_model import configure_model
         configure_model(model,payload['nbnm'],reset_critics=False)
+    elif payload.get('item_collection_input', False):
+        model.enable_item_collection()
     if model.native_attack_readout is not None:
         prefix = "native_attack_readout.specialists."
         suffix = ".minimum_age"

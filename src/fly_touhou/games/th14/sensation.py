@@ -1,6 +1,8 @@
 """Compact111 hazard sensing plus18 nonduplicated full-story task scalars."""
 import numpy as np
 from ...compact_spiking_sensation import CompactObservationEncoder,FEATURE_NAMES
+from ..item_collection import NAMES as COLLECTION_NAMES, augment, input_schema
+from .items import collection_state
 
 SCHEMA='connectome-compact129-full-story-v1'
 TASK_NAMES=('stage','resources_observed','attack_target_present','attack_target_dx','attack_target_dy','attack_target_hp',
@@ -52,15 +54,24 @@ def pickup_context(x, position, span, items, poc_line_y=None):
 
 class CompactStoryEncoder:
     schema=SCHEMA;feature_shape=(129,);map_shape=None;feature_names=(*FEATURE_NAMES,*TASK_NAMES)
-    def __init__(self):self.base=CompactObservationEncoder();self.last_result=None;self.primary_attack_target=False
+    def __init__(self, *, item_collection_input=False):
+        self.base=CompactObservationEncoder();self.last_result=None;self.primary_attack_target=False
+        self.item_collection_input = item_collection_input
+        if item_collection_input:
+            self.schema = input_schema(self.schema, True)
+            self.feature_names = (*self.feature_names, *COLLECTION_NAMES)
+            self.feature_shape = (len(self.feature_names),)
     def reset(self):self.base.reset();self.last_result=None
     def set_native_episode(self,episode):self.base.set_native_episode(episode)
     def specification(self):
-        return dict(schema=SCHEMA,features=dict(shape=[129],names=self.feature_names),maps=False,objects=False,
+        return dict(schema=self.schema,features=dict(shape=list(self.feature_shape),names=self.feature_names),maps=False,objects=False,
             primary_attack_target=self.primary_attack_target,
             task_source='current native enemies/resources only;no teacher action,RNG,reward or future state',
             inherited_hazards=self.base.specification())
     def encode(self,snapshot):
-        base=self.base.encode(snapshot)['features'];features=np.concatenate((base,task_features(snapshot,primary_attack_target=self.primary_attack_target)))
+        base=self.base.encode(snapshot)['features']
+        features=np.concatenate((base,task_features(snapshot,primary_attack_target=self.primary_attack_target)))
+        if self.item_collection_input:
+            features = augment(features, collection_state(snapshot), field_height=400.)
         self.last_result={**self.base.last_result,'features':features}
         return {'features':features.copy()}

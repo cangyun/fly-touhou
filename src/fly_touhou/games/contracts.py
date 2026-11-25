@@ -16,6 +16,19 @@ class Coverage(str, Enum):
 
 
 @dataclass(frozen=True)
+class ItemCollection:
+    """Original upper-field pickup conditions at one native input checkpoint."""
+
+    line_y: float | None
+    distance_to_line: float | None
+    can_trigger_now: bool | None
+    fast_allowed_above_line: bool | None
+    focused_allowed_above_line: bool | None
+    available_power_items: int | None
+    attracting_power_items: int | None
+
+
+@dataclass(frozen=True)
 class NativeFrame:
     game: str
     frame: int
@@ -34,6 +47,7 @@ class NativeFrame:
     continues: int | None
     outcome: str | None
     events: object
+    item_collection: ItemCollection | None = None
 
 
 @dataclass(frozen=True)

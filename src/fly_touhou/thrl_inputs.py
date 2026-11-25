@@ -1,4 +1,6 @@
 """Versioned observation shapes. Importable by workers without Torch/Frida."""
+from .games.item_collection import SUFFIX as COLLECTION_SUFFIX, WIDTH as COLLECTION_WIDTH
+
 ORIGINAL_INPUT = 'original273-v1'
 SEPARATED_INPUT = 'semantic-separated-v1'
 ORIGINAL_TIMERS_INPUT = 'original273-timers-v2'
@@ -17,6 +19,9 @@ ORIGINAL_SCHEMAS = (ORIGINAL_INPUT, ORIGINAL_TIMERS_INPUT)
 SEPARATED_SCHEMAS = (SEPARATED_INPUT, SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
 TIMER_SCHEMAS = (ORIGINAL_TIMERS_INPUT, SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
 SEPARATED_TIMER_SCHEMAS = (SEPARATED_TIMERS_INPUT, *PRIORITY_INPUT_SCHEMAS)
+NBNM_LIVE_EX_INPUTS = ('connectome-nbnm-route281-live-ex24-v1', 'connectome-nbnm-route281-live-ex96-v1')
+COLLECTION_BASES = (COMPACT_STORY_INPUT, NBNM_INPUT, NBNM_ATLAS_INPUT, NBNM_FUTURE_INPUT,
+                    NBNM_CORRIDOR_INPUT, *NBNM_LIVE_EX_INPUTS)
 VERSIONED_SCHEMAS = ORIGINAL_SCHEMAS + SEPARATED_SCHEMAS + (COMPACT_SPIKING_INPUT,COMPACT_STORY_INPUT,NBNM_INPUT,NBNM_ATLAS_INPUT,NBNM_FUTURE_INPUT,NBNM_CORRIDOR_INPUT)
 
 
@@ -29,10 +34,15 @@ def is_original_input(schema):
 
 
 def feature_dimension(schema):
+    if isinstance(schema, str) and schema.endswith(COLLECTION_SUFFIX):
+        base = schema.removesuffix(COLLECTION_SUFFIX)
+        if base in COLLECTION_BASES:
+            return feature_dimension(base) + COLLECTION_WIDTH
+        raise ValueError('Unknown collection observation schema: '+schema)
     if schema==NBNM_CORRIDOR_INPUT:return 407
     if schema==NBNM_FUTURE_INPUT:return 425
     if schema==NBNM_ATLAS_INPUT:return 389
-    if schema==NBNM_INPUT:return 281
+    if schema in (NBNM_INPUT, *NBNM_LIVE_EX_INPUTS):return 281
     if schema==COMPACT_STORY_INPUT:return 129
     if schema==COMPACT_SPIKING_INPUT:return 111
     dimensions = {ORIGINAL_INPUT: 273, SEPARATED_INPUT: 20,
@@ -55,10 +65,12 @@ def policy_is_recurrent(config):
 
 
 def observation_shapes(schema=SEPARATED_INPUT):
+    if isinstance(schema, str) and schema.endswith(COLLECTION_SUFFIX):
+        return {'features': (feature_dimension(schema),)}
     if schema==NBNM_CORRIDOR_INPUT:return {'features':(407,)}
     if schema==NBNM_FUTURE_INPUT:return {'features':(425,)}
     if schema==NBNM_ATLAS_INPUT:return {'features':(389,)}
-    if schema==NBNM_INPUT:return {'features':(281,)}
+    if schema in (NBNM_INPUT, *NBNM_LIVE_EX_INPUTS):return {'features':(281,)}
     if schema==COMPACT_STORY_INPUT:return {'features':(129,)}
     if schema==COMPACT_SPIKING_INPUT:return {'features':(111,)}
     if is_original_input(schema):
@@ -75,16 +87,21 @@ def object_dimension(schema):
 
 
 def make_encoder(schema=SEPARATED_INPUT):
+    item_collection = isinstance(schema, str) and schema.endswith(COLLECTION_SUFFIX)
+    if item_collection:
+        feature_dimension(schema)
+        schema = schema.removesuffix(COLLECTION_SUFFIX)
     if schema==NBNM_CORRIDOR_INPUT:
         from .nbnm_sensation import NBNMEncoder
         from .nbnm_corridor import REVISION
-        return NBNMEncoder(corridor_risk=dict(revision=REVISION,actor_weight=1.,loss_weight=.25))
+        return NBNMEncoder(corridor_risk=dict(revision=REVISION,actor_weight=1.,loss_weight=.25),
+                           item_collection_input=item_collection)
     if schema==NBNM_INPUT:
         from .nbnm_sensation import NBNMEncoder
-        return NBNMEncoder()
+        return NBNMEncoder(item_collection_input=item_collection)
     if schema==COMPACT_STORY_INPUT:
         from .compact_story_sensation import CompactStoryEncoder
-        return CompactStoryEncoder()
+        return CompactStoryEncoder(item_collection_input=item_collection)
     if schema==COMPACT_SPIKING_INPUT:
         from .compact_spiking_sensation import CompactObservationEncoder
         return CompactObservationEncoder()

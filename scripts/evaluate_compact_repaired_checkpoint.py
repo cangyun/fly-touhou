@@ -78,6 +78,10 @@ def main():
             model = from_story_checkpoint(args.connectome, point, device='cuda:0').eval()
         finally:
             graph_module.load_connectome = original
+        from fly_touhou.thrl_inputs import feature_dimension
+        cfg['compact_item_collection_input'] = model.item_collection_input
+        launch.update(observation_features=feature_dimension(model.input_schema),
+                      neural_input_per_candidate=model.core.sensory_width, input_schema=model.input_schema)
         model.pad_candidate_batch = False
         from fly_touhou.compact_frozen_decoding import configure
         launch['frozen_decoding']=configure(model,cfg)

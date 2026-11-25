@@ -6,6 +6,7 @@ ordinary line births from observed emitters. All sensory values enter VP ports.
 import re
 import numpy as np
 from .compact_story_sensation import CompactStoryEncoder
+from .games.item_collection import NAMES as COLLECTION_NAMES, input_schema
 from .native_bullet_release import share_release_sweeps
 from .native_ex_conditional import share_waiting_aim
 from .native_projection_cache import share_native_projections
@@ -217,7 +218,7 @@ class NBNMEncoder(CompactStoryEncoder):
     feature_names = (*CompactStoryEncoder.feature_names,
         *(f'action{a}_{name}' for a in range(18) for name in DIRECTION_NAMES), *CONTEXT_NAMES)
 
-    def __init__(self, *, risk_mode='route', task=None, task_context='legacy', route_prior=None, future_rules=None,native_rule_geometry=None, corridor_risk=None):
+    def __init__(self, *, risk_mode='route', task=None, task_context='legacy', route_prior=None, future_rules=None,native_rule_geometry=None, corridor_risk=None, item_collection_input=False):
         super().__init__()
         from .nbnm_geometry_revision import validate,schema
         self.native_rule_geometry=validate(native_rule_geometry)
@@ -258,6 +259,11 @@ class NBNMEncoder(CompactStoryEncoder):
             self.schema=SCHEMA
             self.feature_names=(*self.feature_names,*(f'action{a}_rule_{name}' for a in range(18) for name in NAMES))
             self.feature_shape=(len(self.feature_names),)
+        self.item_collection_input = item_collection_input
+        if item_collection_input:
+            self.schema = input_schema(self.schema, True)
+            self.feature_names = (*self.feature_names, *COLLECTION_NAMES)
+            self.feature_shape = (len(self.feature_names),)
 
     def reset(self):
         super().reset()
@@ -393,7 +399,8 @@ class NBNMEncoder(CompactStoryEncoder):
         features=self.last_result['features'].copy()
         if self.base.last_result is not None:
             features[18:72]=self.base.last_result['features'][18:72]
-        features[FEATURE_WIDTH:]=self.current_corridor()
+        corridor = self.current_corridor()
+        features[FEATURE_WIDTH:FEATURE_WIDTH+len(corridor)] = corridor
         self._apply_pending_warnings(features)
         if self.corridor_risk.get('align_pending_clearances'):
             # Resume may switch forecasts at the same decision. Always rebuild
@@ -453,6 +460,9 @@ class NBNMEncoder(CompactStoryEncoder):
             if actual!=self.native_rule_geometry:
                 raise ValueError('NBNM encoder and native reader geometry revisions must match')
         original = super().encode(snapshot)['features']
+        if self.item_collection_input:
+            original, collection = original[:-len(COLLECTION_NAMES)], original[-len(COLLECTION_NAMES):]
+            self.last_result['features'] = original
         extra = np.zeros((18, DIRECTION_WIDTH), np.float32)
         context = np.zeros(CONTEXT_WIDTH, np.float32)
         turn_options = {'capture_turns': True} if self.frozen_exit_scoring else {}
@@ -492,7 +502,8 @@ class NBNMEncoder(CompactStoryEncoder):
         if self.corridor_risk:
             self._corridor_snapshot=snapshot
             if getattr(self,'replaying_before_corridor_migration',False):
-                extra=np.zeros(self.feature_shape[0]-FEATURE_WIDTH,np.float32)
+                from .nbnm_corridor import WIDTH
+                extra=np.zeros(18*WIDTH,np.float32)
             else:
                 extra=self.current_corridor()
             features=np.concatenate((features,extra))
@@ -505,6 +516,8 @@ class NBNMEncoder(CompactStoryEncoder):
         # the base 111 features were encoded. Expose its corrected trust bits.
         features[72:75]=self.last_result['details']['trusted']
         teacher_route = self._apply_exit_forecast(features, teacher_route)
+        if self.item_collection_input:
+            features = np.concatenate((features, collection))
         if not np.isfinite(features).all():
             bad=np.flatnonzero(~np.isfinite(features))
             raise ValueError('Non-finite NBNM sensory features: '+str([self.feature_names[i] for i in bad]))
@@ -521,7 +534,7 @@ class NBNMEncoder(CompactStoryEncoder):
         return dict(super().specification(), schema=self.schema, risk_mode=self.risk_mode,
             native_rule_geometry=self.native_rule_geometry,
             features=dict(shape=list(self.feature_shape),names=names),
-            feature_width=self.feature_shape[0], extension_per_candidate=EXTENSION_WIDTH+(6 if self.route_atlas else 0)+(8 if self.future_rules else 0)+(7 if self.corridor_risk else 0),
+            feature_width=self.feature_shape[0], extension_per_candidate=EXTENSION_WIDTH+(6 if self.route_atlas else 0)+(8 if self.future_rules else 0)+(7 if self.corridor_risk else 0)+(len(COLLECTION_NAMES) if self.item_collection_input else 0),
             corridor_risk=self.corridor_risk,
             direction_names=DIRECTION_NAMES, context_names=CONTEXT_NAMES,
             physical_exit_revision='clipped-distinct-endpoints-v2',

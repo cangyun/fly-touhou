@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from fly_touhou.nbnm_fixed_movement_activity import capture_movement_activity
+from fly_touhou.games.item_collection import WIDTH as COLLECTION_WIDTH
+from fly_touhou.nbnm_corridor import FEATURE_WIDTH
 from fly_touhou.nbnm_job_phase import gpu_phase
 from fly_touhou.nbnm_run import atomic_torch_save, load_model, read, runtime
 from fly_touhou.th08_attack_readout import ATTACK_AGE_COLUMN, CONTEXT_COUNT, OBSERVATION_COLUMN
@@ -44,7 +46,8 @@ def guide_data(folder, device):
         features = torch.as_tensor(recorded["features"], dtype=torch.float32, device=device)
         actions = torch.as_tensor(recorded["actions"], dtype=torch.long, device=device)
     first = certificate["training_start"]
-    if (features.shape != (len(actions), 407) or not torch.isfinite(features).all()
+    if (features.shape not in ((len(actions), FEATURE_WIDTH), (len(actions), FEATURE_WIDTH + COLLECTION_WIDTH))
+            or not torch.isfinite(features).all()
             or not ((actions >= 0) & (actions < 18)).all()
             or not 0 <= first < len(actions) or first + certificate["verified_guide_decisions"] != len(actions)):
         raise ValueError("The original action tape and observations must match the certified route")
@@ -63,11 +66,15 @@ def run(args):
     try:
         progress("loading", 0)
         spec = portable_spec(read(args.spec))
-        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False)
+        model, migrated = load_model(spec, args.checkpoint, apply_native_sensors=False,
+                                     preserve_collection_input=True)
         if migrated or model.native_attack_readout is None or not model.bombs_disabled:
             raise ValueError("Choose the observed-attack TH08 NBNM connectome checkpoint")
         model.eval().requires_grad_(False)
         certificate, features, actions, first = guide_data(args.guide, model.device)
+        from fly_touhou.thrl_inputs import feature_dimension
+        if features.shape[-1] != feature_dimension(model.input_schema):
+            raise ValueError("Record the verified route using the checkpoint's observation schema")
         context = certificate["spell"] + 1
         recorded_context = (features[:, OBSERVATION_COLUMN] * CONTEXT_COUNT).round().long()
         if not (recorded_context[first:] == context).all():
@@ -147,8 +154,8 @@ def run(args):
         payload = model.parameter_payload(dict(TH08_attack_context=context, TH08_fit_updates=chosen_update))
         if spec.get("run_contract"):
             from fly_touhou.training.run_contract import mark_parameters
-            mark_parameters(payload, dict(spec["run_contract"], native_attack_context=context,
-                                          minimum_attack_age=minimum_age))
+            mark_parameters(payload, dict(spec["run_contract"], observation_version=model.input_schema,
+                                          native_attack_context=context, minimum_attack_age=minimum_age))
         atomic_torch_save(payload, selected)
         result = dict(parent=str(args.checkpoint), guide=str(args.guide), certified_attack=certificate["spell"],
                       fit_start=certificate["native_start"], fit_end=certificate["native_end"],

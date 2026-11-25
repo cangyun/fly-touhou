@@ -302,6 +302,8 @@ def main():
     from fly_touhou.thrl_durable_records import write_json,append_jsonl
     from fly_touhou.owned_worker_affinity import worker_cpu_pool
     cfg=read(a.environment_config);cfg['seed']=a.seed
+    from fly_touhou.games.item_collection import SUFFIX as COLLECTION_SUFFIX, input_schema as collection_schema
+    from fly_touhou.thrl_inputs import feature_dimension
     from fly_touhou.training.run_contract import mark_parameters, restore_contract, trainable_groups
     identity = cfg.get('run_contract')
     if identity is not None and identity['train_scope'] != a.train_scope:
@@ -470,13 +472,23 @@ def main():
         bomb_temperature=sampling_temperature(a.bomb_sampling_temperature if a.bomb_sampling_temperature is not None
             else (restored or {}).get('bomb_sampling_temperature',1.))
         launch['bomb_sampling_temperature']=bomb_temperature
+        point=restored['model_payload'] if restored else torch.load(a.checkpoint,map_location='cpu',weights_only=False)
+        collection_input = point.get('item_collection_input', False) or (
+            restored is None and cfg.get('compact_item_collection_input', False))
+        cfg['compact_item_collection_input'] = collection_input
+        if identity is not None:
+            identity['observation_version'] = collection_schema(
+                identity['observation_version'].removesuffix(COLLECTION_SUFFIX), collection_input)
         if restored:
             restore_contract(restored, identity)
-        point=restored['model_payload'] if restored else torch.load(a.checkpoint,map_location='cpu',weights_only=False)
         if identity is not None and point.get('bombs_disabled', False):
             raise ValueError('The TH14 clear preset needs a compatible Bomb-enabled checkpoint')
         inherited_costs=point.get('costs',{})
         model=(from_story_checkpoint if point['schema']==SCHEMA else from_avoidance_checkpoint)(a.connectome,point);del point
+        if collection_input:
+            model.enable_item_collection()
+        launch.update(observation_features=feature_dimension(model.input_schema),
+                      neural_input_per_candidate=model.core.sensory_width, input_schema=model.input_schema)
         if a.unpad_candidates:model.pad_candidate_batch=False
         if a.batch_invariant_sensory:model.core.input_encoder.batch_invariant=True
         if a.deterministic_spmm:model.core.sparse.deterministic_spmm=True

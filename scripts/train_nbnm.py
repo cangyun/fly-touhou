@@ -59,7 +59,7 @@ def run(a, p):
         if a.evaluation_output is None:p.error('--evaluation-output required')
         if a.evaluation_task and a.evaluation_task not in spec['tasks']:p.error('Unknown --evaluation-task')
         runtime(a.evaluation_output)
-        model,_=load_model(spec,a.evaluate_only)
+        model,_=load_model(spec,a.evaluate_only,preserve_collection_input=True)
         evaluate(model,spec,a.evaluation_output,task=spec['tasks'].get(a.evaluation_task),split=a.evaluation_split)
         return
     output=Path(spec['output']);output.mkdir(parents=True,exist_ok=a.resume is not None)

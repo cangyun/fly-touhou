@@ -36,7 +36,7 @@ class TH08StoryWorld:
                  forecast_native_branches=False, forecast_native_narrow_exits=False,
                  forecast_native_carried_courses=False, forecast_native_hold_fallback=False,
                  forecast_native_corner_turns=False, forecast_final_spark_cue=False,
-                 native_dialogue_edges=False):
+                 native_dialogue_edges=False, item_collection_input=False):
         self.controller = controller
         self.practice_slot = practice_slot
         self.spell_slot = spell_slot
@@ -61,7 +61,8 @@ class TH08StoryWorld:
                                               forecast_native_carried_courses=forecast_native_carried_courses,
                                               forecast_native_hold_fallback=forecast_native_hold_fallback,
                                               forecast_native_corner_turns=forecast_native_corner_turns,
-                                              forecast_final_spark_cue=forecast_final_spark_cue)
+                                              forecast_final_spark_cue=forecast_final_spark_cue,
+                                              item_collection_input=item_collection_input)
         self.retain_raw_scene = retain_raw_scene
         self.align_native_stage_entry = align_native_stage_entry
         self.stage_entry_clocks = stage_entry_clocks or {}

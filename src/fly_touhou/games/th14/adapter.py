@@ -4,6 +4,7 @@ import numpy as np
 
 from ..contracts import Coverage, HORIZONS, HorizonResult, NativeFrame, RouteResult, ScriptObservation
 from ...nbnm_corridor import LEGS
+from .items import collection_state
 
 
 class TH14Adapter:
@@ -28,7 +29,8 @@ class TH14Adapter:
                            dict(player=raw.player, collision=geometry.get("player")),
                            env.controller.profile.bounds, raw.bullets, raw.lasers, raw.enemies,
                            raw.extra.get("native_attack"), raw.lives, raw.bombs, events.get("misses"),
-                           events.get("bombs_used"), raw.extra.get("continues"), self.info.get("outcome"), events)
+                           events.get("bombs_used"), raw.extra.get("continues"), self.info.get("outcome"), events,
+                           item_collection=collection_state(raw))
 
     def predict(self, frame, candidates, horizons=HORIZONS):
         raw = self._check_frame(frame)

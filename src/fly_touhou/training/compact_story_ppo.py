@@ -355,6 +355,8 @@ def optimizer_for(model, *, trainable_groups=None, include_native_attack_readout
     if future is not None:context.extend(future.parameters())
     corridor=getattr(model.core.input_encoder,'corridor_context',None)
     if corridor is not None:context.extend(corridor.parameters())
+    collection=getattr(model.core.input_encoder,'collection_context',None)
+    if collection is not None:context.extend(collection.parameters())
     movement=list(model.route.parameters())
     if include_native_attack_readout and getattr(model,'native_attack_readout',None) is not None:
         movement.extend(model.native_attack_readout.parameters())
@@ -494,7 +496,7 @@ def update(model,optimizer,rollout,*,epochs=1,micro_scenes=8,seed=1,guard=lambda
             duration = data['native_action_frames']
             data['corridor_label_outcomes'] = torch.where((duration > 0) & (duration <= 4), data['outcomes'], -1)
             data['corridor_label_features'] = data['features'].clone()
-            labels = data['corridor_label_features'][..., 281:]
+            labels = data['corridor_label_features'][..., 281:407]
             if 'native_branch_course_hits' in observed:
                 # Each hit belongs to the exact action tape executed from this
                 # frame. Use it for training, independent of action sampling.

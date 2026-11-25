@@ -110,7 +110,8 @@ def capture(controller, stage, args):
                                      forecast_wide_beam_births=args.forecast_wide_beam_births,
                                      forecast_orbital_point_births=args.forecast_orbital_point_births,
                                      forecast_final_b_ring=args.forecast_final_b_ring,
-                                     forecast_final_spark_cue=getattr(args, "forecast_final_spark_cue", False))
+                                     forecast_final_spark_cue=getattr(args, "forecast_final_spark_cue", False),
+                                     item_collection_input=getattr(args, "item_collection_input", False))
     rows = []
     proc = psutil.Process()
     start_frame = state["stage_timer"]
@@ -137,6 +138,7 @@ def capture(controller, stage, args):
             skipped_transition_polls += count
             continue
         before = state
+        power_before = game["power"]
         motion = controller.read_motion(before)
         feature = encoder.encode(before, game, motion, controller.read_projectiles(),
                                   controller.read_enemies(), controller.read_items())["features"]
@@ -178,6 +180,8 @@ def capture(controller, stage, args):
                          scripted_beams=scripted_beams, pending_wide_beams=pending_wide_beams,
                          native_action_frames=len(positions), observed_contact=False,
                          verified_exit_focus=has_precursor))
+        if encoder.item_collection_input:
+            rows[-1]["native_power_gain"] = max(0., game["power"] - power_before)
         if len(rows) % 64 == 0:
             write_json(args.output / "progress.json", dict(phase="capture_replay", PID=proc.pid,
                 create_time=proc.create_time(), native_pid=controller.pid, rows=len(rows),
@@ -191,6 +195,7 @@ def capture(controller, stage, args):
                       final_stage_frame=state["stage_timer"], end_reason=end_reason,
                       skipped_transition_polls=skipped_transition_polls,
                       final_input_poll=state["input_poll"] - entry_poll,
+                      input_schema=encoder.schema, observation_features=encoder.feature_shape[0],
                       native_audio=False, native_unpaced=controller.unpaced,
                       forecast_scripted_beams=controller.forecast_scripted_beams,
                       forecast_spawn_animations=controller.forecast_spawn_animations,
@@ -222,6 +227,8 @@ def save_windows(output, rows, raw_stage, native_seed, *, replay=None, policy=No
         arrays = dict(features=np.stack([r["features"] for r in exact]),
                       actions=commands[left:right], native_poll=polls[left:right],
                       pending_wide_beams=np.asarray([r.get("pending_wide_beams", 0) for r in exact], np.uint8))
+        if all("native_power_gain" in row for row in exact):
+            arrays["native_power_gain"] = np.asarray([row["native_power_gain"] for row in exact], np.float32)
         if all("reference_logits" in row for row in exact):
             arrays["reference_logits"] = np.asarray([row["reference_logits"] for row in exact], np.float32)
         measured = all(row.get("native_action_frames") == 4 and row.get("observed_contact") is False for row in exact)
@@ -294,6 +301,8 @@ def main():
     parser.add_argument("--forecast-orbital-point-births", action="store_true")
     parser.add_argument("--forecast-final-b-ring", action="store_true")
     parser.add_argument("--forecast-final-spark-cue", action="store_true")
+    parser.add_argument("--item-collection-input", action="store_true",
+                        help="Record native collection observations and actual Power gains")
     args = parser.parse_args()
     metadata, stages = read_replay(args.replay)
     stage = next((item for item in stages if item.raw_stage == args.raw_stage), None)

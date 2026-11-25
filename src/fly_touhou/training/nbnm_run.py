@@ -25,6 +25,8 @@ def validate_spec(spec):
     from ..nbnm_sampling import group_block_budget
     from ..nbnm_task import TaskTracker,entry_matches,fresh_opening
     from ..nbnm_prefix import SCHEMA
+    from ..games.item_collection import validate as validate_collection
+    validate_collection(spec['nbnm'].get('item_collection_input', False))
     objective=Objective(**spec['nbnm']['objective'])
     for option in ('packed_binary_messages','fused_lif_tick','expanded_worker_cpu_pool','deterministic_learner',
                    'reuse_initial_message'):
@@ -260,18 +262,22 @@ def load_cpu_checkpoint(path):
     return torch.load(path, map_location='cpu', weights_only=False, mmap=zipped)
 
 
-def load_model(spec, checkpoint=None, *, payload=None, apply_native_sensors=True):
+def load_model(spec, checkpoint=None, *, payload=None, apply_native_sensors=True,
+               preserve_collection_input=False, reset_collection_line=False):
     from ..compact_story_model import from_story_checkpoint
     from ..nbnm_model import configure_model
     point = load_cpu_checkpoint(checkpoint or spec['initial_checkpoint']) if payload is None else payload
     if 'model_payload' in point:point=point['model_payload']
+    if preserve_collection_input:
+        saved_collection = (point.get('nbnm') or {}).get('item_collection_input', False)
+        if saved_collection or 'item_collection_input' in spec['nbnm']:
+            spec['nbnm']['item_collection_input'] = saved_collection
     migrated=not bool(point.get('nbnm'))
     if not migrated and point['nbnm']['risk_mode']!=spec['nbnm']['risk_mode']:
         raise ValueError('Use matching route/baseline input checkpoints')
     model=from_story_checkpoint(spec['connectome'],point)
-    saved_sensory_width=model.core.sensory_width
-    configure_model(model,spec['nbnm'],reset_critics=migrated)
-    if model.shared_directions is not None and model.core.sensory_width!=saved_sensory_width:
+    configure_model(model,spec['nbnm'],reset_critics=migrated,reset_collection_line=reset_collection_line)
+    if model.shared_directions is not None and model.directional_cue_width != model.shared_directions.cue_width:
         raise ValueError('Single-state direction checkpoints require their saved candidate input width')
     if apply_native_sensors:
         from ..compact_full_story import apply_sensor_patches

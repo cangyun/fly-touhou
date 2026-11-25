@@ -16,7 +16,7 @@ def risk_readout(head, candidates):
 def compose(logits, risk, features, vulnerable, weight):
     if features.shape[-1]!=FEATURE_WIDTH:
         return logits
-    cue=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    cue=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     observed=cue[...,6].amax(-1)>0
     # The confidence bit gates the whole scene. Neither per-action corridor
     # scores nor the teacher choose an action outside the connectome.
@@ -28,7 +28,7 @@ def compose(logits, risk, features, vulnerable, weight):
 def compose_witness(logits, witness, features, vulnerable, weight):
     if features.shape[-1]!=FEATURE_WIDTH:
         return logits
-    present=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)[...,6].amax(-1)>0
+    present=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)[...,6].amax(-1)>0
     p=witness.sigmoid()
     # Relative support across first moves, with a bounded effect. This is an
     # independent DN estimate of a found exit, separate from predicted danger.
@@ -59,7 +59,7 @@ def endpoint_adjustment(prediction,features,settings):
     if settings.get('paired_only',False):
         # This readout learned a relative endpoint preference only on scenes that
         # contained both types. The switch is common to every movement logit.
-        cue=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+        cue=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
         status=cue[...,3]
         credible=cue[...,6]>0
         limited=((status>0)&(status<=.25)&credible).any(-1)
@@ -141,13 +141,13 @@ def exit_supervision(batch, road_stages=None, *, allow_48=False):
 
 def recovered_exits(features,actions,native_survived):
     """A successful original continuation witnesses an exit from only the executed first move."""
-    cues=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    cues=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     chosen=F.one_hot(actions.clamp(0,18).long(),19)[...,:18].bool()
     return chosen[...,None] & native_survived.unsqueeze(-2) & (cues[...,2:4]<0) & (cues[...,6:7]>0)
 
 
 def witness_targets(features,actions=None,outcomes=None,course_hits=None,*,recovered=None):
-    x=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    x=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     status=x[...,2:4]
     found=status>0
     # When learning physical reachability, an exhausted beam (-.5) is
@@ -180,7 +180,7 @@ def course_targets(features,actions=None,outcomes=None,course_hits=None,*,allow_
     if features.shape[-1]!=FEATURE_WIDTH:
         blank=torch.zeros((*features.shape[:-1],18),dtype=torch.bool,device=features.device)
         return blank,blank.any(-1)
-    x=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    x=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     available=(x[...,3]>0)&(x[...,6]>0)
     alias=torch.arange(18,device=x.device)%9==0
     physical_alias=(features[...,11]<0)[...,None] | alias
@@ -223,7 +223,7 @@ def course_targets(features,actions=None,outcomes=None,course_hits=None,*,allow_
 def continuation_preference(batch):
     """Trust a checked suffix, and allow a meaningfully wider executable replacement."""
     features = batch['features']
-    cue = features[..., 281:].reshape(*features.shape[:-1], 18, WIDTH)
+    cue = features[..., 281:407].reshape(*features.shape[:-1], 18, WIDTH)
     clearance = 8 * cue[..., :2] / (1 - cue[..., :2]).clamp_min(1e-6)
     action = batch['actions']
     chosen = F.one_hot(action.clamp(0, 18).long(), 19)[..., :18].bool()
@@ -347,7 +347,7 @@ def course_loss(logits,targets,rows,normalizer=None, *, row_weights=None):
 def compose_course(logits,course,features,vulnerable,settings):
     if features.shape[-1]!=FEATURE_WIDTH:
         return logits
-    present=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)[...,6].amax(-1)>0
+    present=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)[...,6].amax(-1)>0
     enabled=present & vulnerable
     if settings.get('revalidated_course_only'):
         # The DN may express a soft continuation preference only while a
@@ -438,7 +438,7 @@ def native_exit_measurements(rollout):
 
 
 def targets(features,actions=None,outcomes=None,course_hits=None,*,recovered=None):
-    x=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    x=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     evidence=x[...,2:4]
     good=evidence>0
     blocked=evidence==-1
@@ -498,7 +498,7 @@ def _competitive_exits(quality):
 def full_horizon_preference(features, values, recovered):
     """Choose among complete turning routes when available. Reweight scarce exits in the actor loss."""
     risk, certainty, quality, _ = values
-    cues = features[..., 281:].reshape(*features.shape[:-1], 18, WIDTH)
+    cues = features[..., 281:407].reshape(*features.shape[:-1], 18, WIDTH)
     geometric = (cues[..., 3] > 0) & (certainty[..., 1] > 0) & (risk[..., 1] < 1.)
     witnessed = geometric | recovered[..., 1]
     # A positively observed native deviation remains an alternative even when
@@ -523,7 +523,7 @@ def full_horizon_preference(features, values, recovered):
 def supported_exit_order(features,values):
     """Compare two witnessed continuations after both clear the near bottleneck."""
     risk,certainty,_,_=values
-    cues=features[...,281:].reshape(*features.shape[:-1],18,WIDTH)
+    cues=features[...,281:407].reshape(*features.shape[:-1],18,WIDTH)
     # The planner stores gap/(8+gap). At least eight native pixels at 48
     # frames prevents a wider 96-frame endpoint from buying a risky approach.
     eligible=((cues[...,0]>=.5)&(cues[...,2]>0)&(cues[...,3]>0)

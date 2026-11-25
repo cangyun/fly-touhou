@@ -1,6 +1,7 @@
 """Player movement and collision bounds in the original TH08 coordinate frame."""
 
 from dataclasses import dataclass
+import math
 import struct
 
 import numpy as np
@@ -26,6 +27,7 @@ class TH08Motion:
     focused_diagonal: float
     speed_multiplier: tuple[float, float]
     time_scale: float
+    poc_line_y: float | None = None
 
     def velocities(self, masks):
         inputs = np.asarray(masks, dtype=np.uint16)
@@ -58,7 +60,7 @@ class TH08Motion:
 def read_th08_motion(memory, state):
     player = memory.base + PLAYER_RVA
     human, focused = struct.unpack("<II", memory.read(player + 0xE2A74, 8))
-    fast, _, diagonal, _ = struct.unpack("<4f", memory.read(human + 0x24, 16))
+    line, _, fast, _, diagonal, _ = struct.unpack("<6f", memory.read(human + 0x1C, 24))
     slow, _, slow_diagonal = struct.unpack("<3f", memory.read(focused + 0x28, 12))
     x, y, width, height = struct.unpack("<4f", memory.read(memory.base + MOVEMENT_BOUNDS_RVA, 16))
     return TH08Motion(
@@ -69,4 +71,5 @@ def read_th08_motion(memory, state):
         fast_speed=fast, fast_diagonal=diagonal, focused_speed=slow, focused_diagonal=slow_diagonal,
         speed_multiplier=memory.pair(player + 0x404),
         time_scale=memory.floating(memory.base + MOVEMENT_SCALE_RVA),
+        poc_line_y=line if math.isfinite(line) and y <= line <= y + height else None,
     )

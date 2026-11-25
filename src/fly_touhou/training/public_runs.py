@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+from ..games.item_collection import input_schema as collection_schema, validate as validate_collection
 from .run_contract import contract
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -78,7 +79,7 @@ def build_plan(options, *, root=ROOT):
     settings_dir = output.with_name(output.name + ".settings")
     saved_spec = None
     spec_file = settings_dir / "spec.json"
-    if (key == ("th08", "nbnm") and resume == output / "latest-training.pt"
+    if (objective == "nbnm" and resume == output / "latest-training.pt"
             and options.spec is None and spec_file.is_file()):
         saved_spec = read_json(spec_file)
     previous = saved_spec or {}
@@ -97,6 +98,10 @@ def build_plan(options, *, root=ROOT):
 
     if objective == "nbnm":
         spec = saved_spec if saved_spec is not None else read_json(path_at(root, options.spec or f"configs/{game}/nbnm.json"))
+        if options.operation == "train" and options.spec is None and resume is None:
+            spec["nbnm"]["item_collection_input"] = True
+        identity["observation_version"] = collection_schema(
+            identity["observation_version"], validate_collection(spec["nbnm"].get("item_collection_input", False)))
         spec["connectome"] = str(connectome)
         spec["initial_checkpoint"] = str(weights)
         spec["output"] = str(output)
@@ -182,6 +187,11 @@ def build_plan(options, *, root=ROOT):
                         "--environment-config", environment_file, "--output", output]
                 if options.operation == "train":
                     runner = "train_compact_story_ppo.py"
+                    if options.environment is None and resume is None:
+                        environment["compact_item_collection_input"] = True
+                    identity["observation_version"] = collection_schema(
+                        identity["observation_version"],
+                        validate_collection(environment.get("compact_item_collection_input", False)))
                     environment["run_contract"] = identity
                     workers = options.workers or 8
                     steps = options.segment or 512

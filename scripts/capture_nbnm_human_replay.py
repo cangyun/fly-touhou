@@ -37,6 +37,8 @@ def main():
     p.add_argument('--stop-after-stage',type=int,choices=range(1,7))
     p.add_argument('--routes-only',action='store_true',help='Capture route positions/context without recomputing neural risk features')
     p.add_argument('--stride',type=int,default=4,choices=(4,12))
+    p.add_argument('--item-collection-input', action='store_true',
+                   help='Record native collection observations with the movement labels')
     a=p.parse_args()
     if a.decoder_libs:sys.path.insert(0,str(a.decoder_libs))
     from fly_touhou.th14_human_replay import read_replay,movement_distribution
@@ -51,13 +53,15 @@ def main():
             or meta['spell_id']!=0xffffffff or any(s.metadata['continues'] or s.metadata['Bomb_pressed_frames'] for s in stages)):
         raise ValueError('Require a six-stage Lunatic ReimuA replay without Bomb input or continues')
     a.output.mkdir(parents=True,exist_ok=False);temporary=runtime(a.output)
-    write_json(a.output/'source.json',dict(source=str(a.replay.resolve()),metadata=meta,
-        input_source='original TH14 Replay playback',network_training=False,PPO_rows=0,
-        feature_kind='route-matching-only' if a.routes_only else 'student-route281',
-        movement_target_order='policy18',native_sample_stride=a.stride))
     spec=read(a.config);cfg=environment(spec,evaluation=True)
     cfg['nbnm']=dict(spec['nbnm'],task=dict(mode='full_story'),entry_mode='story_prefix')
+    if a.item_collection_input:
+        cfg['nbnm']['item_collection_input'] = True
     env=factory(story_kwargs(cfg,a.output/'native',1,'train',teacher=False)[0])
+    feature_kind = 'route-matching-only' if a.routes_only else env.encoder.schema
+    write_json(a.output/'source.json',dict(source=str(a.replay.resolve()),metadata=meta,
+        input_source='original TH14 Replay playback',network_training=False,PPO_rows=0,
+        feature_kind=feature_kind, movement_target_order='policy18',native_sample_stride=a.stride))
     env.native_seed=None;env.private_appdata=a.output/'userdata'
     dest=env.private_appdata/'ShanghaiAlice/th14/replay/th14_01.rpy'
     dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(a.replay,dest)
@@ -150,7 +154,7 @@ def main():
             Misses=events['misses'],Bombs=events['bombs_used'],input_checks=input_checks,
             input_disagreements=input_disagreements,elapsed_seconds=time.monotonic()-started,
             network_training=False,PPO_rows=0,source_replay_playback=True,
-            feature_kind='route-matching-only' if a.routes_only else 'student-route281',
+            feature_kind=feature_kind,
             movement_target_order='policy18',native_sample_stride=a.stride,
             notes='Human replay evidence, not student performance. Soft movement labels preserve within-decision human key changes.')
         write_json(a.output/'report.json',report)

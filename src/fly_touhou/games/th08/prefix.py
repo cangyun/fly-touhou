@@ -187,7 +187,7 @@ def prepare_replay(args, source_dir, controller, settings, source_episode, sourc
         entry_clocks[practice_slot] = trace[0]["stage_frame"]
     align_entry = args.match_recorded_stage_entry or source_report.get("aligned_native_stage_entries", False)
     world = TH08StoryWorld(controller, task_context=settings.get("task_context", "legacy"), retain_raw_scene=True,
-                           practice_slot=practice_slot, spell_slot=source_report.get("practice_spell_slot"),
+                           item_collection_input=settings.get("item_collection_input", False), practice_slot=practice_slot, spell_slot=source_report.get("practice_spell_slot"),
                            forecast_sweep_laser_births=settings.get("forecast_sweep_laser_births", False),
                            forecast_wide_beam_births=settings.get("forecast_wide_beam_births", False),
                            forecast_orbital_point_births=settings.get("forecast_orbital_point_births", False),
@@ -283,6 +283,7 @@ def prepare_policy_window(world, settings, report, trace, offsets, start, decisi
     encoder.forecast_native_narrow_exits = settings.get("forecast_native_narrow_exits", False)
     encoder.forecast_final_spark_cue = settings.get("forecast_final_spark_cue", False)
     encoder.task_context = settings.get("task_context", "legacy")
+    encoder.item_collection_input = settings.get("item_collection_input", False)
     observation, info = world._prepare()
     history = {"features": [], "actions": []}
     hold_fallback = settings.get("forecast_native_hold_fallback", False)

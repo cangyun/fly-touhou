@@ -25,7 +25,8 @@ class NBNMEnv(CompactFullStoryEnv):
         self._calm_movement = None
         kwargs['observation_encoder'] = NBNMEncoder(risk_mode=nbnm.get('risk_mode','route'),task=nbnm['task'],
             task_context=nbnm.get('task_context','legacy'), route_prior=nbnm.get('route_prior'),future_rules=nbnm.get('future_rules'),
-            native_rule_geometry=nbnm.get('native_rule_geometry'),corridor_risk=nbnm.get('corridor_risk'))
+            native_rule_geometry=nbnm.get('native_rule_geometry'),corridor_risk=nbnm.get('corridor_risk'),
+            item_collection_input=nbnm.get('item_collection_input', False))
         kwargs['observation_encoder'].frozen_exit_scoring = nbnm.get('frozen_corridor_exit_scoring', False)
         kwargs['observation_encoder'].frozen_exit_limit = nbnm.get('frozen_corridor_exit_limit', 'auto')
         self.native_emitter_forecast_frames = nbnm.get('native_emitter_forecast_frames', 0)
