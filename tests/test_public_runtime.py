@@ -36,6 +36,21 @@ def test_published_runner_selection(game, objective, train, frozen):
     assert any("owned game" in str(path) for path in evaluation.inputs)
 
 
+def test_same_output_th08_resume_keeps_previous_reward_recipe(tmp_path):
+    output = tmp_path / "th08-run"
+    fresh = plan("train", "th08", "nbnm", "--output", str(output))
+    ((path, previous),) = fresh.settings.items()
+    assert previous["nbnm"].pop("reward_shaping")["wall_band_px"] == 24
+    previous["initial_checkpoint"] = str(tmp_path / "custom-weights.pt")
+    path.parent.mkdir()
+    path.write_text(json.dumps(previous), encoding="utf-8")
+
+    resumed = plan("train", "th08", "nbnm", "--resume", str(output / "latest-training.pt"))
+    assert "--resume" in resumed.arguments
+    assert resumed.settings[path] == previous
+    assert tmp_path / "custom-weights.pt" in resumed.inputs
+
+
 def test_th14_nbnm_example_matches_existing_training_schema(tmp_path):
     from fly_touhou.nbnm_run import validate_spec
 

@@ -76,8 +76,15 @@ def build_plan(options, *, root=ROOT):
               resume.parent if resume and objective == "nbnm" else
               root / "outputs" / "workbench" / controls.name)
     settings_dir = output.with_name(output.name + ".settings")
-    weights = path_at(root, options.checkpoint or "weights/published/" + STOCK_WEIGHT[key])
-    connectome = path_at(root, options.connectome or "data/connectome")
+    saved_spec = None
+    spec_file = settings_dir / "spec.json"
+    if (key == ("th08", "nbnm") and resume == output / "latest-training.pt"
+            and options.spec is None and spec_file.is_file()):
+        saved_spec = read_json(spec_file)
+    previous = saved_spec or {}
+    weights = path_at(root, options.checkpoint or previous.get("initial_checkpoint")
+                      or "weights/published/" + STOCK_WEIGHT[key])
+    connectome = path_at(root, options.connectome or previous.get("connectome") or "data/connectome")
     scope = options.train_scope if options.operation == "train" else "joint"
     identity = contract(game, options.difficulty, objective, scope, SUPPORT[key], heads=options.trainable_heads)
     if options.operation == "fit-attack":
@@ -89,11 +96,10 @@ def build_plan(options, *, root=ROOT):
         raise ValueError(f"Seed outside the native range for {game}")
 
     if objective == "nbnm":
-        spec = read_json(path_at(root, options.spec or f"configs/{game}/nbnm.json"))
+        spec = saved_spec if saved_spec is not None else read_json(path_at(root, options.spec or f"configs/{game}/nbnm.json"))
         spec["connectome"] = str(connectome)
         spec["initial_checkpoint"] = str(weights)
         spec["output"] = str(output)
-        spec_file = settings_dir / "spec.json"
         files[spec_file] = spec
         if options.operation in ("train", "fit-attack"):
             spec["run_contract"] = identity

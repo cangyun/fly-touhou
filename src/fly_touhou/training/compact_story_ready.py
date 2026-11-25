@@ -92,6 +92,7 @@ class ReadyCollector(Collector):
             rolling_student_supported_mass_sum=0.)
         event_stats=dict(events=0,unweighted_progress=0.,weighted_reward=0.,
             by_kind=dict(road=0,nonspell=0,spell=0,stage_clear=0,power=0),by_stage={},by_task_mode={})
+        shaping_totals = {}
         task_counts={}
         episode_initial_states={}
         suspended=set()
@@ -432,6 +433,9 @@ class ReadyCollector(Collector):
                     append_jsonl(self.output/'training-nonspell-successes.jsonl',
                         dict(info['native_nonspell_success'],world=i,student_decisions=self.actions+1))
                 event_stats['weighted_reward']+=float(info.get('nbnm_event_reward',0.))
+                if terms := info.get('nbnm_reward_shaping'):
+                    for key, value in terms.items():
+                        shaping_totals[key] = shaping_totals.get(key, 0.) + value
                 if adaptive is not None:adaptive.observe_step(i,before.get('nb_nm_task_key'))
                 if stage_course is not None:stage_course.observe_step(i,before.get('nb_nm_task_key'))
                 done=bool(message['terminated'])
@@ -583,5 +587,7 @@ class ReadyCollector(Collector):
                 nbnm_issun_guidance=lure_stats, nbnm_pace=pace_stats,
                 task_group_decisions={g:int(sum(counts[i] for i,k in enumerate(groups) if k==g))
                     for g in set(groups)} if groups is not None else {})
+        if shaping_totals:
+            result['metadata']['nbnm_reward_shaping'] = shaping_totals
         if episode_initial_states:result['episode_initial_states']=episode_initial_states
         return result

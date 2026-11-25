@@ -28,6 +28,15 @@
       "calm_cost_limit": 0.05,
       "completion_pace_weight": 0.01
     },
+    "reward_shaping": {
+      "wall_band_px": 24,
+      "wall_grace_frames": 48,
+      "wall_budget_frames": 1800,
+      "wall_limit": 0.18,
+      "power_limit": 0.10,
+      "score_limit": 0.02,
+      "score_scale": 100000000
+    },
     "teacher_mode": "nbnm-route-v1",
     "rule_guidance_coefficient": 0.3,
     "task_context": "th08-observed-attack-practice-opening-nonspells-v1",

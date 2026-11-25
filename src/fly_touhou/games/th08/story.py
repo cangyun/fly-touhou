@@ -232,7 +232,7 @@ class TH08StoryWorld:
                     misses=max(state["misses"], game.get("recorded_misses", 0)),
                     Bombs=max(state["bombs_used"], game.get("recorded_bombs", 0)),
                     deathbombs=state["deathbombs_used"], continues=game.get("continues"), time=game.get("clock"),
-                    time_orbs=game.get("time_orbs"), power=game.get("power"), native_mode=state["mode"],
+                    time_orbs=game.get("time_orbs"), power=game.get("power"), score=game.get("score"), native_mode=state["mode"],
                     native_phase=game["raw_phase"], native_next_mode=game["next_mode"], outcome=self.outcome,
                     native_normal_ending=game["normal_ending"], spell_active=game["spell_active"],
                     native_spell_practice=game["spell_practice"], practice_spell=game.get("practice_spell"),

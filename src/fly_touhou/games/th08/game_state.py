@@ -11,6 +11,7 @@ GUI_RVA = 0x120F428
 GUI_MESSAGE_OFFSET = 0x21814
 STAGE_NUMBERS = (1, 2, 3, 4, 4, 5, 6, 6)
 POWER_OFFSET = 0x98
+SCORE_OFFSET = 0x08  # Actual score in tens. The animated HUD counter is at +0x00.
 
 
 def read_native_power(memory):
@@ -108,6 +109,7 @@ def read_game_state(memory, state):
     resources = memory.integer(manager + 8)
     if resources:
         result.update(
+            score=10 * memory.integer(resources + SCORE_OFFSET),
             spellcards_captured=memory.integer(resources + 0x1C, signed=True),
             clock=memory.integer(resources + 0x28, size=1, signed=True),
             continues=memory.integer(resources + 0x29, size=1),

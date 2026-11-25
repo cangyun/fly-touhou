@@ -1,6 +1,7 @@
 """Original TH08 Story episodes for ready-driven whole-connectome PPO."""
 
 from copy import deepcopy
+from dataclasses import asdict
 import json
 from pathlib import Path
 from shutil import copy2
@@ -16,6 +17,7 @@ from ...th08_controller import TH08InputController
 from ...th08_game_state import STAGE_NUMBERS, capture_goal_outcome
 from ...th08_prefix import prepare_replay, read_prefix_source
 from ...th08_story import TH08StoryWorld
+from .rewards import RewardShapingConfig, TH08RewardShaping
 
 
 def portable_spec(source, *, native_forecasts=True):
@@ -39,6 +41,10 @@ def portable_spec(source, *, native_forecasts=True):
                 "order_supported_exits", "prefer_full_horizon"):
         settings["corridor_risk"].pop(key, None)
     settings["objective"].update(phase="completion", progress_revision="native-events-v1", calm_cost_limit=0.)
+    if settings.get("reward_shaping") is not None:
+        settings["reward_shaping"] = asdict(RewardShapingConfig(**settings["reward_shaping"]))
+        if not Objective(**settings["objective"]).weights[2]:
+            raise ValueError("TH08 auxiliary rewards require a positive native progress weight")
     spec["frozen_corridor_exit_scoring"] = False
     return spec
 
@@ -167,6 +173,11 @@ class TH08TrainingEnv:
         self.survival_guidance = settings.get("native_survival_guidance", False)
         self.native_forecasts = settings.get("forecast_native_branches", False)
         self.objective = Objective(**settings["objective"])
+        shaping = settings.get("reward_shaping")
+        self.reward_config = RewardShapingConfig(**shaping) if shaping is not None else None
+        if self.reward_config is not None and not self.objective.progress_weight:
+            raise ValueError("TH08 auxiliary rewards require a positive native progress weight")
+        self.reward_shaping = None
         self.controller = None
         self.world = None
         self.native_episode = 0
@@ -258,6 +269,9 @@ class TH08TrainingEnv:
             else:
                 self.course_index += 1
         self._start_route(observation, history)
+        if self.reward_config is not None:
+            self.reward_shaping = TH08RewardShaping(self.reward_config, status,
+                                                   full_story=self.task["mode"] == "full_story")
         info = self._policy_info(observation, status, action=-1)
         if history is not None:
             info["policy_burn_in"] = history
@@ -352,6 +366,10 @@ class TH08TrainingEnv:
         previous_scene = self.world.raw_scene
         previous_spells = len(self.world.spell_results)
         previous_power = self.world.game["power"]
+        shaping = self.reward_shaping
+        if shaping is not None:
+            before_x = self.world.state["player_position"][0]
+            geometry = self.world.encoder.last_result
         observation, status = self.world.step(action)
         if self.nonspell_end is not None and (status["outcome"] is None or status["outcome"] == "stage-practice-clear"):
             if status["raw_stage"] != self.capture_entry["raw_stage"] or status["native_spell_id"] is not None:
@@ -364,11 +382,18 @@ class TH08TrainingEnv:
         terminal = status["outcome"] is not None
         completed_spells = self.world.spell_results[previous_spells:] if self.required_captures else ()
         current_power = status["power"]
-        gained_power = (self.capture_power_guidance and not status["contact"] and current_power is not None
-                        and 0. <= previous_power < current_power <= 128.)
+        gained_power = (shaping is None and self.capture_power_guidance and not status["contact"]
+                        and current_power is not None and 0. <= previous_power < current_power <= 128.)
         power_gain = current_power - previous_power if gained_power else 0.
+        terms = None
+        if shaping is not None:
+            ticks = self.world.state["input_poll"] - previous_poll
+            eligible = (not terminal and not status["contact"] and previous_raw_stage == status["raw_stage"]
+                        and ticks == self.world.decision_ticks)
+            terms = shaping.observe(before_x=before_x, after=status, motion=previous_scene[0] if previous_scene else None,
+                                    geometry=geometry, ticks=ticks, eligible=eligible)
         info = self._policy_info(observation, status, action, previous_stage=previous_stage,
-                                 spells=completed_spells, power_gain=power_gain)
+                                 spells=completed_spells, power_gain=power_gain, shaping=terms)
         if self.route_output is not None:
             if (self._entry_scope() in ("full_story", "stage") and previous_spell is None
                     and self._route_observation[273] > .5 and status["native_spell_id"] is not None
@@ -400,7 +425,7 @@ class TH08TrainingEnv:
         reward = float(np.dot(info["reward_vector"], self.objective.weights))
         return observation, reward, terminal, False, info
 
-    def _policy_info(self, observation, status, action, *, previous_stage=None, spells=(), power_gain=0.):
+    def _policy_info(self, observation, status, action, *, previous_stage=None, spells=(), power_gain=0., shaping=None):
         stage = status["stage"]
         frames = status["native_frames"] - self.initial_frame
         terminal = status["outcome"] is not None
@@ -423,6 +448,10 @@ class TH08TrainingEnv:
                     reward_vector=rewards, nb_nm_task=self.task, nb_nm_task_key=self.task_key,
                     nbnm_success=success, nbnm_progress_events=events,
                     nbnm_event_reward=progress * self.objective.progress_weight)
+        if shaping is not None:
+            # Share the existing progress critic and actor weight.
+            rewards[2] += shaping["power_bonus"] + shaping["score_bonus"] - shaping["side_wall_cost"]
+            info["nbnm_reward_shaping"] = shaping
         if self.native_forecasts:
             info["native_forecast_matched_decisions"] = self.world.native_forecast_checks
         if terminal:
@@ -431,6 +460,8 @@ class TH08TrainingEnv:
                                            task_Bombs=status["Bombs"], native_seed=self.native_seed,
                                            task_key=self.task_key, entry_scope=self._entry_scope(),
                                            training_reproduction=self.reproducing)
+            if shaping is not None:
+                info["episode_summary"]["nbnm_reward_shaping"] = dict(self.reward_shaping.totals)
             if self.required_captures:
                 info["episode_summary"]["spell_results"] = self.world.spell_results[self.capture_start:]
                 info["episode_summary"]["capture_entry"] = self.capture_entry
